@@ -133,12 +133,42 @@ class _AuthButton extends StatelessWidget {
         final user = AuthService.currentUser;
         final bool signedIn = user != null;
         final String label = signedIn ? 'Sign out' : 'Sign in';
+
         return ElevatedButton.icon(
           onPressed: () async {
-            if (signedIn) {
-              await AuthService.signOut();
-            } else {
-              await AuthService.signInWithGoogle();
+            try {
+              if (signedIn) {
+                await AuthService.signOut();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Signed out successfully')),
+                );
+              } else {
+                // Show loading indicator
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('Signing in...')));
+
+                final result = await AuthService.signInWithGoogle();
+                if (result != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Signed in successfully!')),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Sign in failed. Please try again.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Error: ${e.toString()}'),
+                  backgroundColor: Colors.red,
+                ),
+              );
             }
           },
           style: ElevatedButton.styleFrom(
@@ -151,7 +181,7 @@ class _AuthButton extends StatelessWidget {
           ),
           icon: Icon(signedIn ? Icons.logout : Icons.login, size: 18),
           label: Text(
-            signedIn ? (user?.displayName ?? label) : label,
+            signedIn ? (user?.displayName ?? 'Sign out') : label,
             style: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
           ),
         );
