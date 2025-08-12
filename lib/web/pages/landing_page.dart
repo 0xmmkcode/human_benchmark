@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
 import 'package:human_benchmark/web/constants/web_constants.dart';
 import 'dart:html' as html;
+import 'dart:ui' as ui;
 
 class LandingPage extends StatefulWidget {
   final VoidCallback onStartApp;
@@ -99,28 +100,24 @@ class _LandingPageState extends State<LandingPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: WebTheme.grey50,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Animated Header
-            _buildAnimatedHeader(context),
-
-            // Hero Section with Parallax Effect
-            _buildHeroSection(context),
-
-            // Features Section
-            _buildFeaturesSection(context),
-
-            // About Section
-            _buildAboutSection(context),
-
-            // Mobile App Showcase
-            _buildMobileShowcase(context),
-
-            // Footer
-            _buildFooter(context),
-          ],
-        ),
+      body: Stack(
+        children: [
+          // Decorative animated background
+          const _DecorBackground(),
+          // Content
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildAnimatedHeader(context),
+                _buildHeroSection(context),
+                _buildFeaturesSection(context),
+                _buildAboutSection(context),
+                _buildMobileShowcase(context),
+                _buildFooter(context),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -184,10 +181,10 @@ class _LandingPageState extends State<LandingPage>
               style: WebTheme.headingMedium.copyWith(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                background: Paint()
+                foreground: Paint()
                   ..shader = LinearGradient(
                     colors: [WebTheme.primaryBlue, WebTheme.primaryBlueLight],
-                  ).createShader(Rect.fromLTWH(0, 0, 200, 30)),
+                  ).createShader(const Rect.fromLTWH(0, 0, 200, 30)),
               ),
             ),
 
@@ -279,13 +276,16 @@ class _LandingPageState extends State<LandingPage>
                             style: WebTheme.headingLarge.copyWith(
                               fontSize: 56,
                               fontWeight: FontWeight.bold,
-                              background: Paint()
-                                ..shader = LinearGradient(
-                                  colors: [
-                                    WebTheme.primaryBlue,
-                                    WebTheme.primaryBlueLight,
-                                  ],
-                                ).createShader(Rect.fromLTWH(0, 0, 600, 70)),
+                              foreground: Paint()
+                                ..shader =
+                                    LinearGradient(
+                                      colors: [
+                                        WebTheme.primaryBlue,
+                                        WebTheme.primaryBlueLight,
+                                      ],
+                                    ).createShader(
+                                      const Rect.fromLTWH(0, 0, 600, 70),
+                                    ),
                             ),
                           ),
                         ),
@@ -478,13 +478,6 @@ class _LandingPageState extends State<LandingPage>
                     style: WebTheme.headingLarge.copyWith(
                       fontSize: 42,
                       fontWeight: FontWeight.bold,
-                      background: Paint()
-                        ..shader = LinearGradient(
-                          colors: [
-                            WebTheme.primaryBlue,
-                            WebTheme.primaryBlueLight,
-                          ],
-                        ).createShader(Rect.fromLTWH(0, 0, 500, 50)),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -623,13 +616,13 @@ class _LandingPageState extends State<LandingPage>
                     style: WebTheme.headingLarge.copyWith(
                       fontSize: 42,
                       fontWeight: FontWeight.bold,
-                      background: Paint()
+                      foreground: Paint()
                         ..shader = LinearGradient(
                           colors: [
                             WebTheme.primaryBlue,
                             WebTheme.primaryBlueLight,
                           ],
-                        ).createShader(Rect.fromLTWH(0, 0, 500, 50)),
+                        ).createShader(const Rect.fromLTWH(0, 0, 500, 50)),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -661,93 +654,6 @@ class _LandingPageState extends State<LandingPage>
           ),
 
           SizedBox(height: 60),
-
-          // Team Section
-          TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: Duration(milliseconds: 1000),
-            curve: Curves.easeOutCubic,
-            builder: (context, value, child) {
-              return Transform.translate(
-                offset: Offset(0, 30 * (1 - value)),
-                child: Opacity(
-                  opacity: value,
-                  child: Container(
-                    padding: EdgeInsets.all(40),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 30,
-                          offset: Offset(0, 15),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                WebTheme.primaryBlue.withOpacity(0.1),
-                                WebTheme.primaryBlueLight.withOpacity(0.05),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(60),
-                          ),
-                          child: Icon(
-                            Icons.person,
-                            size: 60,
-                            color: WebTheme.primaryBlue,
-                          ),
-                        ),
-                        SizedBox(width: 40),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'MMKode Team',
-                                style: WebTheme.headingMedium.copyWith(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                  color: WebTheme.primaryBlue,
-                                ),
-                              ),
-                              SizedBox(height: 20),
-                              Text(
-                                'A passionate team of developers, designers, and cognitive science enthusiasts dedicated to creating tools that help people understand and improve their mental capabilities.',
-                                style: WebTheme.bodyLarge.copyWith(
-                                  height: 1.6,
-                                  fontSize: 18,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                              SizedBox(height: 20),
-                              Text(
-                                'Based in Morocco, we\'re committed to making cognitive testing accessible to people worldwide through innovative technology and user-centered design.',
-                                style: WebTheme.bodyLarge.copyWith(
-                                  height: 1.6,
-                                  fontSize: 16,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
         ],
       ),
     );
@@ -845,13 +751,13 @@ class _LandingPageState extends State<LandingPage>
                     style: WebTheme.headingLarge.copyWith(
                       fontSize: 42,
                       fontWeight: FontWeight.bold,
-                      background: Paint()
+                      foreground: Paint()
                         ..shader = LinearGradient(
                           colors: [
                             WebTheme.primaryBlue,
                             WebTheme.primaryBlueLight,
                           ],
-                        ).createShader(Rect.fromLTWH(0, 0, 500, 50)),
+                        ).createShader(const Rect.fromLTWH(0, 0, 500, 50)),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -884,207 +790,106 @@ class _LandingPageState extends State<LandingPage>
           ),
           SizedBox(height: 60),
 
-          // Animated Mobile Showcase
+          // Simplified centered download CTA (no phone mockup)
           TweenAnimationBuilder<double>(
             tween: Tween(begin: 0.0, end: 1.0),
-            duration: Duration(milliseconds: 1200),
+            duration: Duration(milliseconds: 1000),
             curve: Curves.easeOutCubic,
             builder: (context, value, child) {
-              return Transform.scale(
-                scale: 0.8 + (0.2 * value),
+              return Transform.translate(
+                offset: Offset(0, 20 * (1 - value)),
                 child: Opacity(
                   opacity: value,
                   child: Container(
-                    padding: EdgeInsets.all(50),
+                    padding: EdgeInsets.all(40),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
+                      borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: WebTheme.primaryBlue.withOpacity(0.15),
-                          blurRadius: 40,
-                          offset: Offset(0, 20),
+                          color: WebTheme.primaryBlue.withOpacity(0.12),
+                          blurRadius: 30,
+                          offset: Offset(0, 16),
                         ),
                       ],
                     ),
-                    child: Row(
+                    child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // Animated Mock Mobile App
-                        TweenAnimationBuilder<double>(
-                          tween: Tween(begin: 0.0, end: 1.0),
-                          duration: Duration(milliseconds: 1000),
-                          curve: Curves.elasticOut,
-                          builder: (context, value, child) {
-                            return Transform.scale(
-                              scale: value,
-                              child: Container(
-                                width: 220,
-                                height: 440,
-                                decoration: BoxDecoration(
-                                  color: WebTheme.grey50,
-                                  borderRadius: BorderRadius.circular(25),
-                                  border: Border.all(
-                                    color: WebTheme.primaryBlue.withOpacity(
-                                      0.3,
-                                    ),
-                                    width: 3,
+                        Text(
+                          'Download Now',
+                          textAlign: TextAlign.center,
+                          style: WebTheme.headingMedium.copyWith(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: WebTheme.primaryBlue,
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Free to play • Track progress • Compete globally • Cross‑platform sync',
+                          textAlign: TextAlign.center,
+                          style: WebTheme.bodyLarge.copyWith(
+                            fontSize: 18,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        SizedBox(height: 28),
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 16,
+                          runSpacing: 12,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                final url =
+                                    'https://play.google.com/store/apps/details?id=xyz.mmkcode.focusflow';
+                                html.window.open(url, '_blank');
+                              },
+                              style: WebTheme.primaryButton.copyWith(
+                                padding: MaterialStateProperty.all(
+                                  EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 16,
                                   ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: WebTheme.primaryBlue.withOpacity(
-                                        0.2,
-                                      ),
-                                      blurRadius: 20,
-                                      offset: Offset(0, 10),
-                                    ),
-                                  ],
                                 ),
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      height: 70,
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            WebTheme.primaryBlue,
-                                            WebTheme.primaryBlueLight,
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ),
-                                        borderRadius: BorderRadius.only(
-                                          topLeft: Radius.circular(22),
-                                          topRight: Radius.circular(22),
-                                        ),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          'Human Benchmark',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 18,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Padding(
-                                        padding: EdgeInsets.all(25),
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.psychology,
-                                              size: 70,
-                                              color: WebTheme.primaryBlue,
-                                            ),
-                                            SizedBox(height: 25),
-                                            Text(
-                                              'Test Your Brain',
-                                              style: TextStyle(
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold,
-                                                color: WebTheme.primaryBlue,
-                                              ),
-                                            ),
-                                            SizedBox(height: 15),
-                                            Text(
-                                              'Tap to start',
-                                              style: TextStyle(
-                                                color: Colors.grey[600],
-                                                fontSize: 16,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                elevation: MaterialStateProperty.all(8),
+                              ),
+                              child: Text(
+                                'Get Mobile App',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            );
-                          },
-                        ),
-                        SizedBox(width: 60),
-
-                        // App Info
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Download Now',
-                                style: WebTheme.headingMedium.copyWith(
-                                  fontSize: 32,
+                            ),
+                            OutlinedButton(
+                              onPressed: widget.onStartApp,
+                              style: WebTheme.secondaryButton.copyWith(
+                                padding: MaterialStateProperty.all(
+                                  EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 16,
+                                  ),
+                                ),
+                                side: MaterialStateProperty.all(
+                                  BorderSide(
+                                    color: WebTheme.primaryBlue,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                'Play on Web',
+                                style: TextStyle(
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: WebTheme.primaryBlue,
                                 ),
                               ),
-                              SizedBox(height: 25),
-                              _buildFeatureListItem('Free to play'),
-                              _buildFeatureListItem('No ads'),
-                              _buildFeatureListItem('Track your progress'),
-                              _buildFeatureListItem('Compete globally'),
-                              _buildFeatureListItem('Cross-platform sync'),
-                              SizedBox(height: 40),
-                              Row(
-                                children: [
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      final url =
-                                          'https://play.google.com/store/apps/details?id=xyz.mmkcode.focusflow';
-                                      html.window.open(url, '_blank');
-                                    },
-                                    style: WebTheme.primaryButton.copyWith(
-                                      padding: MaterialStateProperty.all(
-                                        EdgeInsets.symmetric(
-                                          horizontal: 24,
-                                          vertical: 16,
-                                        ),
-                                      ),
-                                      elevation: MaterialStateProperty.all(8),
-                                    ),
-                                    child: Text(
-                                      'Get Mobile App',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(width: 20),
-                                  OutlinedButton(
-                                    onPressed: widget.onStartApp,
-                                    style: WebTheme.secondaryButton.copyWith(
-                                      padding: MaterialStateProperty.all(
-                                        EdgeInsets.symmetric(
-                                          horizontal: 24,
-                                          vertical: 16,
-                                        ),
-                                      ),
-                                      side: MaterialStateProperty.all(
-                                        BorderSide(
-                                          color: WebTheme.primaryBlue,
-                                          width: 2,
-                                        ),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      'Play on Web',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: WebTheme.primaryBlue,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -1092,33 +897,6 @@ class _LandingPageState extends State<LandingPage>
                 ),
               );
             },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFeatureListItem(String text) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: WebTheme.primaryBlue,
-              shape: BoxShape.circle,
-            ),
-          ),
-          SizedBox(width: 12),
-          Text(
-            text,
-            style: WebTheme.bodyLarge.copyWith(
-              fontSize: 18,
-              color: Colors.grey[700],
-              fontWeight: FontWeight.w500,
-            ),
           ),
         ],
       ),
@@ -1185,6 +963,76 @@ class _LandingPageState extends State<LandingPage>
           ),
         );
       },
+    );
+  }
+}
+
+class _DecorBackground extends StatelessWidget {
+  const _DecorBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: SizedBox.expand(
+        child: Stack(
+          children: [
+            // Subtle radial glow top-left
+            Positioned(
+              left: -80,
+              top: -80,
+              child: _glowCircle(300, WebTheme.primaryBlue, 0.12),
+            ),
+            // Subtle radial glow bottom-right
+            Positioned(
+              right: -100,
+              bottom: -100,
+              child: _glowCircle(360, WebTheme.primaryBlueLight, 0.10),
+            ),
+            // Soft blurred band across center
+            Positioned.fill(
+              top: 220,
+              bottom: 420,
+              child: Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: BackdropFilter(
+                    filter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+                    child: Container(
+                      height: 160,
+                      width: MediaQuery.of(context).size.width * 0.8,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            WebTheme.primaryBlue.withOpacity(0.06),
+                            Colors.white.withOpacity(0.0),
+                            WebTheme.primaryBlueLight.withOpacity(0.06),
+                          ],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _glowCircle(double size, Color color, double opacity) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [color.withOpacity(opacity), Colors.transparent],
+          stops: const [0.0, 1.0],
+        ),
+      ),
     );
   }
 }

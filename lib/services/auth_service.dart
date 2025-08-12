@@ -7,7 +7,9 @@ class AuthService {
   AuthService._();
 
   static FirebaseAuth get _auth => FirebaseAuth.instance;
-  static final GoogleSignIn _googleSignIn = GoogleSignIn();
+  static final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: <String>['email'],
+  );
 
   static Stream<User?> get authStateChanges {
     if (Firebase.apps.isEmpty) {
@@ -39,7 +41,8 @@ class AuthService {
         provider.addScope('email');
         return await _auth.signInWithPopup(provider);
       } else {
-        // Mobile implementation
+        // Mobile implementation: force account chooser
+        await _googleSignIn.signOut();
         final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
         if (googleUser == null) return null;
 
