@@ -67,3 +67,9 @@ android {
 flutter {
     source = "../.."
 }
+
+// Apply Google Services plugin only if google-services.json exists to avoid pre-config build failures
+val googleServicesFile = file("google-services.json")
+if (googleServicesFile.exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}

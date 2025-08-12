@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1043791053268",
+    "project_id": "human-benchmark-80a9a",
+    "storage_bucket": "human-benchmark-80a9a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1043791053268:android:99821bd6cfbb381b7b5641",
+        "android_client_info": {
+          "package_name": "xyz.mmkcode.humanbenchmark.human_benchmark"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC877zVow9pfatZc1l5dw-BVdXAe9G_kJM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
