@@ -8,16 +8,28 @@ class PersonalityRadarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final traits = scores.keys.toList();
-    final values = scores.values.toList();
+    // Ensure stable alignment between labels and values
+    final entries = scores.entries.toList();
+    if (entries.length < 3) {
+      return Center(
+        child: Text(
+          'Not enough data to display chart',
+          style: TextStyle(
+            fontFamily: 'Montserrat',
+            fontSize: 14,
+            color: Colors.grey.shade700,
+          ),
+        ),
+      );
+    }
 
     return RadarChart(
       RadarChartData(
         dataSets: [
           RadarDataSet(
             dataEntries: List.generate(
-              traits.length,
-              (index) => RadarEntry(value: values[index]),
+              entries.length,
+              (index) => RadarEntry(value: entries[index].value),
             ),
             fillColor: Colors.blue.withOpacity(0.3),
             borderColor: Colors.blue.shade600,
@@ -33,7 +45,7 @@ class PersonalityRadarChart extends StatelessWidget {
         titlePositionPercentageOffset: 0.2,
         getTitle: (index, angle) {
           return RadarChartTitle(
-            text: traits[index],
+            text: entries[index].key,
             angle: angle,
             positionPercentageOffset: 0.1,
           );

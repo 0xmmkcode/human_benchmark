@@ -53,7 +53,8 @@ class PersonalityRepository {
     try {
       final User? user = _auth.currentUser;
       if (user == null) {
-        throw Exception('User not authenticated');
+        // If user isn't signed in, skip remote save silently.
+        return;
       }
 
       await _firestore

@@ -16,7 +16,10 @@ final questionsProvider = FutureProvider<List<PersonalityQuestion>>((
   ref,
 ) async {
   final repository = ref.read(personalityRepositoryProvider);
-  return await repository.getQuestions();
+  final all = await repository.getQuestions();
+  if (all.length <= 20) return all;
+  final shuffled = all.toList()..shuffle();
+  return shuffled.take(20).toList();
 });
 
 // Scale provider
