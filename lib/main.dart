@@ -6,6 +6,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:human_benchmark/home_shell.dart';
 import 'package:go_router/go_router.dart';
 import 'package:human_benchmark/screens/reaction_time_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +33,11 @@ void main() async {
   );
 
   runApp(
-    MaterialApp.router(routerConfig: router, debugShowCheckedModeBanner: false),
+    ProviderScope(
+      child: MaterialApp.router(
+        routerConfig: router,
+        debugShowCheckedModeBanner: false,
+      ),
+    ),
   );
 }

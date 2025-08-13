@@ -465,6 +465,18 @@ class _LandingPageState extends State<LandingPage>
               ),
             ],
           ),
+          SizedBox(height: 24),
+          Row(
+            children: [
+              _buildAnimatedFeatureCard(
+                icon: Icons.psychology,
+                title: 'Personality Quiz',
+                description:
+                    'Take our research-grade Big Five personality assessment with 50 certified questions from validated psychological instruments.',
+                delay: 800,
+              ),
+            ],
+          ),
         ],
       ),
     );

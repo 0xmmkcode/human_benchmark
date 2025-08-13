@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:human_benchmark/firebase_options.dart';
 import 'package:human_benchmark/web/pages/landing_page.dart';
 import 'package:human_benchmark/web/pages/about_page.dart';
@@ -10,6 +11,7 @@ import 'package:human_benchmark/web/pages/leaderboard_page.dart';
 import 'package:human_benchmark/web/components/web_sidebar.dart';
 import 'package:human_benchmark/web/pages/privacy_policy_page.dart';
 import 'package:human_benchmark/web/pages/terms_of_service_page.dart';
+import 'package:human_benchmark/screens/personality_quiz_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,7 +57,7 @@ void main() async {
       ShellRoute(
         builder: (context, state, child) {
           final String location = state.uri.toString();
-          final int selectedIndex = location.endsWith('/leaderboard') ? 1 : 0;
+          final int selectedIndex = _getSelectedIndex(location);
           return Scaffold(
             body: Row(
               children: [
@@ -68,6 +70,9 @@ void main() async {
                         break;
                       case 1:
                         context.go('/app/leaderboard');
+                        break;
+                      case 2:
+                        context.go('/app/personality');
                         break;
                     }
                   },
@@ -89,21 +94,36 @@ void main() async {
             path: '/app/leaderboard',
             builder: (context, state) => WebLeaderboardPage(),
           ),
+          GoRoute(
+            path: '/app/personality',
+            builder: (context, state) => const PersonalityQuizPage(),
+          ),
         ],
       ),
     ],
   );
 
   runApp(
-    MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      title: 'Human Benchmark l Test your limits',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-        brightness: Brightness.light,
+    ProviderScope(
+      child: MaterialApp.router(
+        debugShowCheckedModeBanner: false,
+        title: 'Human Benchmark l Test your limits',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          useMaterial3: true,
+          brightness: Brightness.light,
+        ),
+        routerConfig: router,
       ),
-      routerConfig: router,
     ),
   );
+}
+
+int _getSelectedIndex(String location) {
+  if (location.endsWith('/leaderboard')) {
+    return 1;
+  } else if (location.endsWith('/personality')) {
+    return 2;
+  }
+  return 0; // Default to reaction time
 }
