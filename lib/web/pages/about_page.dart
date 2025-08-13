@@ -6,10 +6,7 @@ import 'dart:html' as html;
 class AboutPage extends StatelessWidget {
   final VoidCallback? onBackToLanding;
 
-  const AboutPage({
-    Key? key,
-    this.onBackToLanding,
-  }) : super(key: key);
+  const AboutPage({Key? key, this.onBackToLanding}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +16,7 @@ class AboutPage extends StatelessWidget {
         children: [
           // Navigation Header
           if (onBackToLanding != null) _buildNavigationHeader(context),
-          
+
           // Content
           Expanded(
             child: SingleChildScrollView(
@@ -27,16 +24,16 @@ class AboutPage extends StatelessWidget {
                 children: [
                   // Header
                   _buildHeader(context),
-                  
+
                   // Mission Section
                   _buildMissionSection(context),
-                  
+
                   // Team Section
                   _buildTeamSection(context),
-                  
+
                   // Technology Section
                   _buildTechnologySection(context),
-                  
+
                   // Contact Section
                   _buildContactSection(context),
                 ],
@@ -97,10 +94,7 @@ class AboutPage extends StatelessWidget {
           SizedBox(height: 24),
           Text(
             'Discover the science behind cognitive testing and how we\'re helping people understand their mental capabilities.',
-            style: WebTheme.bodyLarge.copyWith(
-              fontSize: 18,
-              height: 1.6,
-            ),
+            style: WebTheme.bodyLarge.copyWith(fontSize: 18, height: 1.6),
             textAlign: TextAlign.center,
           ),
         ],
@@ -301,19 +295,22 @@ class AboutPage extends StatelessWidget {
               _buildTechCard(
                 icon: Icons.flutter_dash,
                 title: 'Flutter Framework',
-                description: 'Built with Flutter for cross-platform compatibility and smooth performance across all devices.',
+                description:
+                    'Built with Flutter for cross-platform compatibility and smooth performance across all devices.',
               ),
               SizedBox(width: 24),
               _buildTechCard(
                 icon: Icons.science,
                 title: 'Scientific Validation',
-                description: 'Our tests are based on established cognitive science research and validated methodologies.',
+                description:
+                    'Our tests are based on established cognitive science research and validated methodologies.',
               ),
               SizedBox(width: 24),
               _buildTechCard(
                 icon: Icons.cloud,
                 title: 'Cloud Integration',
-                description: 'Firebase-powered backend ensures data security and cross-device synchronization.',
+                description:
+                    'Firebase-powered backend ensures data security and cross-device synchronization.',
               ),
             ],
           ),
@@ -344,11 +341,7 @@ class AboutPage extends StatelessWidget {
                 color: WebTheme.primaryBlue.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(
-                icon,
-                size: 40,
-                color: WebTheme.primaryBlue,
-              ),
+              child: Icon(icon, size: 40, color: WebTheme.primaryBlue),
             ),
             SizedBox(height: 24),
             Text(
@@ -413,9 +406,9 @@ class AboutPage extends StatelessWidget {
                 _buildContactItem(
                   icon: Icons.email,
                   title: 'Email',
-                  value: 'mmkcode.business@gmail.com',
+                  value: 'admin@mmkcode.cloud',
                   onTap: () {
-                    final url = 'mailto:mmkcode.business@gmail.com';
+                    final url = 'mailto:admin@mmkcode.cloud';
                     html.window.open(url, '_blank');
                   },
                 ),
@@ -458,11 +451,7 @@ class AboutPage extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Icon(
-              icon,
-              size: 40,
-              color: WebTheme.primaryBlue,
-            ),
+            Icon(icon, size: 40, color: WebTheme.primaryBlue),
             SizedBox(height: 16),
             Text(
               title,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:human_benchmark/models/user_score.dart';
-import 'package:human_benchmark/services/leaderboard_service.dart';
+import 'package:gap/gap.dart';
+import 'package:human_benchmark/web/components/web_banner_ad.dart';
+// import 'package:human_benchmark/models/user_score.dart';
+// import 'package:human_benchmark/services/leaderboard_service.dart';
 
 class WebReactionTimePage extends StatefulWidget {
   @override
@@ -88,6 +90,7 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
       _times.add(reactionTime);
       _isGameOver = true;
       _isGreen = false;
+      _isWaiting = false; // hide "Wait for it" when showing result
     });
 
     _colorController.reverse();
@@ -115,8 +118,8 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(32),
+    return SingleChildScrollView(
+      padding: EdgeInsets.symmetric(horizontal: 32, vertical: 40),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -124,7 +127,7 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
           Text(
             'Reaction Time Test',
             style: TextStyle(
-              fontSize: 32,
+              fontSize: 35,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
@@ -136,219 +139,225 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
           ),
           SizedBox(height: 40),
 
-          // Game Area
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Game Instructions
-                  if (!_isWaiting && !_isGreen && !_isGameOver)
-                    Container(
-                      padding: EdgeInsets.all(32),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.grey[200]!),
-                      ),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.touch_app,
-                            size: 64,
-                            color: Colors.blue[400],
-                          ),
-                          SizedBox(height: 24),
-                          Text(
-                            'Click Start to begin',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            'Wait for the screen to turn green, then click as fast as you can!',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          SizedBox(height: 32),
-                          ElevatedButton(
-                            onPressed: _startGame,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue[600],
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 32,
-                                vertical: 16,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: Text(
-                              'Start Test',
-                              style: TextStyle(fontSize: 18),
-                            ),
-                          ),
-                        ],
-                      ),
+          // Game Area (scroll-friendly, no Expanded)
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Game Instructions
+                if (!_isWaiting && !_isGreen && !_isGameOver)
+                  Container(
+                    padding: EdgeInsets.all(32),
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey[200]!),
                     ),
-
-                  // Waiting State
-                  if (_isWaiting && !_isGreen)
-                    Container(
-                      padding: EdgeInsets.all(32),
-                      decoration: BoxDecoration(
-                        color: Colors.orange[50],
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.orange[200]!),
-                      ),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.hourglass_empty,
-                            size: 64,
-                            color: Colors.orange[400],
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.touch_app,
+                          size: 64,
+                          color: Colors.blue[400],
+                        ),
+                        SizedBox(height: 24),
+                        Text(
+                          'Click Start to begin',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[800],
                           ),
-                          SizedBox(height: 24),
-                          Text(
-                            'Wait for it...',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.orange[800],
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Wait for the screen to turn green, then click as fast as you can!',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        SizedBox(height: 32),
+                        ElevatedButton(
+                          onPressed: _startGame,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue[600],
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          SizedBox(height: 16),
-                          Text(
-                            'The screen will turn green soon. Don\'t click yet!',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.orange[600],
-                            ),
+                          child: Text(
+                            'Start Test',
+                            style: TextStyle(fontSize: 18),
                           ),
-                        ],
-                      ),
+                        ),
+                        WebBannerAd(height: 90),
+                      ],
                     ),
+                  ),
 
-                  // Game Area (Green Screen)
-                  if (_isGreen)
-                    GestureDetector(
-                      onTapDown: (_) => _onTap(),
-                      child: AnimatedBuilder(
-                        animation: _scaleAnimation,
-                        builder: (context, child) {
-                          return Transform.scale(
-                            scale: _scaleAnimation.value,
-                            child: Container(
-                              width: 400,
-                              height: 300,
-                              decoration: BoxDecoration(
-                                color: Colors.green,
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.green.withOpacity(0.3),
-                                    blurRadius: 20,
-                                    spreadRadius: 5,
-                                  ),
-                                ],
-                              ),
-                              child: Center(
-                                child: Text(
-                                  'CLICK NOW!',
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
+                // Waiting State
+                if (_isWaiting && !_isGreen)
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[50],
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.orange[200]!),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.hourglass_empty,
+                          size: 64,
+                          color: Colors.orange[400],
+                        ),
+                        SizedBox(height: 24),
+                        Text(
+                          'Wait for it...',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.orange[800],
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'The screen will turn green soon. Don\'t click yet!',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.orange[600],
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        WebBannerAd(height: 90),
+                      ],
+                    ),
+                  ),
+
+                // Game Area (Green Screen)
+                if (_isGreen)
+                  GestureDetector(
+                    onTapDown: (_) => _onTap(),
+                    child: AnimatedBuilder(
+                      animation: _scaleAnimation,
+                      builder: (context, child) {
+                        return Transform.scale(
+                          scale: _scaleAnimation.value,
+                          child: Container(
+                            width: 400,
+                            height: 300,
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.green.withOpacity(0.3),
+                                  blurRadius: 20,
+                                  spreadRadius: 5,
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Text(
+                                'CLICK NOW!',
+                                style: TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      },
                     ),
+                  ),
 
-                  // Results
-                  if (_isGameOver)
-                    Container(
-                      padding: EdgeInsets.all(32),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[50],
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.blue[200]!),
-                      ),
-                      child: Column(
-                        children: [
-                          Icon(Icons.timer, size: 64, color: Colors.blue[400]),
-                          SizedBox(height: 24),
-                          Text(
-                            'Your Reaction Time',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            '${_reactionTime}ms',
-                            style: TextStyle(
-                              fontSize: 48,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue[600],
-                            ),
-                          ),
-                          SizedBox(height: 24),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              ElevatedButton(
-                                onPressed: _startGame,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue[600],
-                                  foregroundColor: Colors.white,
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: Text('Try Again'),
-                              ),
-                              SizedBox(width: 16),
-                              OutlinedButton(
-                                onPressed: _resetGame,
-                                style: OutlinedButton.styleFrom(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: Text('New Game'),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                // Results
+                if (_isGameOver)
+                  Container(
+                    padding: EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.blue[200]!),
                     ),
-                ],
-              ),
+                    child: Column(
+                      children: [
+                        Icon(Icons.timer, size: 64, color: Colors.blue[400]),
+                        SizedBox(height: 24),
+                        Text(
+                          'Your Reaction Time',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          '${_reactionTime}ms',
+                          style: TextStyle(
+                            fontSize: 48,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue[600],
+                          ),
+                        ),
+                        SizedBox(height: 24),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton(
+                              onPressed: _startGame,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue[600],
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Text('Try Again'),
+                            ),
+                            SizedBox(width: 16),
+                            OutlinedButton(
+                              onPressed: _resetGame,
+                              style: OutlinedButton.styleFrom(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Text('New Game'),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 12),
+                        WebBannerAd(height: 90),
+                      ],
+                    ),
+                  ),
+              ],
             ),
           ),
 
+          Gap(30),
           // Stats Bar
           Container(
             padding: EdgeInsets.all(24),
@@ -427,4 +436,3 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
     );
   }
 }
-

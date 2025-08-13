@@ -4,7 +4,8 @@ import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+// import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:gap/gap.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -21,7 +22,7 @@ class ReactionTimePage extends StatefulWidget {
 enum GameState { ready, waiting, go, result }
 
 class _ReactionTimePageState extends State<ReactionTimePage> {
-  late BannerAd _bannerAd;
+  BannerAd? _bannerAd;
   InterstitialAd? _interstitialAd;
   bool _isAdLoaded = false;
   int _roundCounter = 0;
@@ -41,35 +42,37 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
     super.initState();
     _loadHighScore();
     _loadUserId();
-    _loadInterstitialAd();
-
-    _bannerAd = BannerAd(
-      adUnitId: AdHelper.bannerAdUnitId,
-      request: AdRequest(),
-      size: AdSize.banner,
-      listener: BannerAdListener(
-        onAdLoaded: (_) {
-          setState(() {
-            _isBannerAdReady = true;
-          });
-        },
-        onAdFailedToLoad: (ad, err) {
-          ad.dispose();
-        },
-      ),
-    );
-
-    _bannerAd.load();
+    if (kReleaseMode) {
+      _loadInterstitialAd();
+      _bannerAd = BannerAd(
+        adUnitId: AdHelper.bannerAdUnitId,
+        request: const AdRequest(),
+        size: AdSize.banner,
+        listener: BannerAdListener(
+          onAdLoaded: (_) {
+            if (!mounted) return;
+            setState(() {
+              _isBannerAdReady = true;
+            });
+          },
+          onAdFailedToLoad: (ad, err) {
+            ad.dispose();
+          },
+        ),
+      );
+      _bannerAd!.load();
+    }
   }
 
   @override
   void dispose() {
     _interstitialAd?.dispose();
-    _bannerAd.dispose();
+    _bannerAd?.dispose();
     super.dispose();
   }
 
   void _loadInterstitialAd() {
+    if (!kReleaseMode) return;
     InterstitialAd.load(
       adUnitId: AdHelper.interstitialAdUnitId,
       request: const AdRequest(),
@@ -104,7 +107,7 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
   void _onScreenTap() async {
     _roundCounter++;
 
-    if (_roundCounter % 5 == 0 && _isAdLoaded) {
+    if (kReleaseMode && _roundCounter % 5 == 0 && _isAdLoaded) {
       _interstitialAd?.show();
       _interstitialAd = null;
       _isAdLoaded = false;
@@ -282,11 +285,11 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
                 ),
                 Align(
                   alignment: Alignment.bottomCenter,
-                  child: _isBannerAdReady
-                      ? Container(
-                          height: _bannerAd.size.height.toDouble(),
-                          width: _bannerAd.size.width.toDouble(),
-                          child: AdWidget(ad: _bannerAd),
+                  child: (kReleaseMode && _isBannerAdReady && _bannerAd != null)
+                      ? SizedBox(
+                          height: _bannerAd!.size.height.toDouble(),
+                          width: _bannerAd!.size.width.toDouble(),
+                          child: AdWidget(ad: _bannerAd!),
                         )
                       : null,
                 ),

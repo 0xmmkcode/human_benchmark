@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:human_benchmark/web/components/web_navigation_item.dart';
+import 'package:human_benchmark/services/auth_service.dart';
 
 class WebSidebar extends StatelessWidget {
   final int selectedIndex;
@@ -50,7 +51,10 @@ class WebSidebar extends StatelessWidget {
                 // Logo and Title
                 Row(
                   children: [
-                    Icon(Icons.speed, color: Colors.blue[600], size: 32),
+                    Image.asset(
+                      "assets/images/human_benchmark_onlylogo.png",
+                      height: 32,
+                    ),
                     SizedBox(width: 16),
                     Expanded(
                       child: Column(
@@ -151,6 +155,21 @@ class WebSidebar extends StatelessWidget {
                         style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
+                  ),
+                ),
+                SizedBox(width: 8),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    await AuthService.signInWithGoogle();
+                  },
+                  icon: Icon(Icons.login, size: 16, color: Colors.blue[700]),
+                  label: Text(
+                    'Sign in',
+                    style: TextStyle(color: Colors.blue[700]),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.blue[200]!),
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                 ),
               ],

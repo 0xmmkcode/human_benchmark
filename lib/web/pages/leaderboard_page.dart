@@ -44,7 +44,7 @@ class _WebLeaderboardPageState extends State<WebLeaderboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SingleChildScrollView(
       padding: EdgeInsets.all(32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,210 +212,204 @@ class _WebLeaderboardPageState extends State<WebLeaderboardPage> {
           SizedBox(height: 32),
 
           // Leaderboard Content
-          Expanded(
-            child: _isLoading
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.blue[600]!,
+          // Content area (no Expanded inside scroll view)
+          _isLoading
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Colors.blue[600]!,
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'Loading leaderboard...',
+                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                )
+              : _scores.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.leaderboard_outlined,
+                        size: 64,
+                        color: Colors.grey[400],
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'No scores yet',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Be the first to set a record!',
+                        style: TextStyle(fontSize: 16, color: Colors.grey[500]),
+                      ),
+                    ],
+                  ),
+                )
+              : Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey[200]!),
+                  ),
+                  child: Column(
+                    children: [
+                      // Header Row
+                      Container(
+                        padding: EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(16),
+                            topRight: Radius.circular(16),
+                          ),
+                          border: Border(
+                            bottom: BorderSide(color: Colors.grey[200]!),
                           ),
                         ),
-                        SizedBox(height: 16),
-                        Text(
-                          'Loading leaderboard...',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : _scores.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.leaderboard_outlined,
-                          size: 64,
-                          color: Colors.grey[400],
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          'No scores yet',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Be the first to set a record!',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey[200]!),
-                    ),
-                    child: Column(
-                      children: [
-                        // Header Row
-                        Container(
-                          padding: EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(16),
-                              topRight: Radius.circular(16),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 60,
+                              child: Text(
+                                'Rank',
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
                             ),
-                            border: Border(
-                              bottom: BorderSide(color: Colors.grey[200]!),
+                            Expanded(
+                              child: Text(
+                                'Player ID',
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
                             ),
-                          ),
-                          child: Row(
-                            children: [
-                              SizedBox(
-                                width: 60,
-                                child: Text(
-                                  'Rank',
-                                  style: TextStyle(fontWeight: FontWeight.w600),
-                                ),
+                            SizedBox(
+                              width: 120,
+                              child: Text(
+                                'Score',
+                                style: TextStyle(fontWeight: FontWeight.w600),
                               ),
-                              Expanded(
-                                child: Text(
-                                  'Player ID',
-                                  style: TextStyle(fontWeight: FontWeight.w600),
-                                ),
+                            ),
+                            SizedBox(
+                              width: 120,
+                              child: Text(
+                                'Date',
+                                style: TextStyle(fontWeight: FontWeight.w600),
                               ),
-                              SizedBox(
-                                width: 120,
-                                child: Text(
-                                  'Score',
-                                  style: TextStyle(fontWeight: FontWeight.w600),
-                                ),
-                              ),
-                              SizedBox(
-                                width: 120,
-                                child: Text(
-                                  'Date',
-                                  style: TextStyle(fontWeight: FontWeight.w600),
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
+                      ),
 
-                        // Scores List
-                        Expanded(
-                          child: ListView.builder(
-                            itemCount: _scores.length,
-                            itemBuilder: (context, index) {
-                              final score = _scores[index];
-                              final isTop3 = index < 3;
+                      // Scores List
+                      SizedBox(
+                        height: 600,
+                        child: ListView.builder(
+                          itemCount: _scores.length,
+                          itemBuilder: (context, index) {
+                            final score = _scores[index];
+                            final isTop3 = index < 3;
 
-                              return Container(
-                                padding: EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  color: isTop3
-                                      ? _getTop3Color(index)
-                                      : Colors.white,
-                                  border: Border(
-                                    bottom: BorderSide(
-                                      color: Colors.grey[100]!,
-                                      width: 1,
-                                    ),
+                            return Container(
+                              padding: EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: isTop3
+                                    ? _getTop3Color(index)
+                                    : Colors.white,
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: Colors.grey[100]!,
+                                    width: 1,
                                   ),
                                 ),
-                                child: Row(
-                                  children: [
-                                    // Rank
-                                    SizedBox(
-                                      width: 60,
-                                      child: Row(
-                                        children: [
-                                          if (isTop3) ...[
-                                            Icon(
-                                              _getTop3Icon(index),
-                                              color: _getTop3IconColor(index),
-                                              size: 20,
-                                            ),
-                                            SizedBox(width: 8),
-                                          ],
-                                          Text(
-                                            '${index + 1}',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              color: isTop3
-                                                  ? Colors.white
-                                                  : Colors.grey[800],
-                                            ),
+                              ),
+                              child: Row(
+                                children: [
+                                  // Rank
+                                  SizedBox(
+                                    width: 60,
+                                    child: Row(
+                                      children: [
+                                        if (isTop3) ...[
+                                          Icon(
+                                            _getTop3Icon(index),
+                                            color: _getTop3IconColor(index),
+                                            size: 20,
                                           ),
+                                          SizedBox(width: 8),
                                         ],
-                                      ),
-                                    ),
-
-                                    // Player ID
-                                    Expanded(
-                                      child: Text(
-                                        score.userId,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w500,
-                                          color: isTop3
-                                              ? Colors.white
-                                              : Colors.grey[800],
+                                        Text(
+                                          '${index + 1}',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: isTop3
+                                                ? Colors.white
+                                                : Colors.grey[800],
+                                          ),
                                         ),
-                                      ),
+                                      ],
                                     ),
+                                  ),
 
-                                    // Score
-                                    SizedBox(
-                                      width: 120,
-                                      child: Text(
-                                        '${score.highScoreMs}ms',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: isTop3
-                                              ? Colors.white
-                                              : Colors.blue[600],
-                                        ),
+                                  // Player ID
+                                  Expanded(
+                                    child: Text(
+                                      score.userId,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        color: isTop3
+                                            ? Colors.white
+                                            : Colors.grey[800],
                                       ),
                                     ),
+                                  ),
 
-                                    // Date
-                                    SizedBox(
-                                      width: 120,
-                                      child: Text(
-                                        _formatDate(score.lastPlayedAt),
-                                        style: TextStyle(
-                                          color: isTop3
-                                              ? Colors.white70
-                                              : Colors.grey[600],
-                                        ),
+                                  // Score
+                                  SizedBox(
+                                    width: 120,
+                                    child: Text(
+                                      '${score.highScoreMs}ms',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: isTop3
+                                            ? Colors.white
+                                            : Colors.blue[600],
                                       ),
                                     ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
+                                  ),
+
+                                  // Date
+                                  SizedBox(
+                                    width: 120,
+                                    child: Text(
+                                      _formatDate(score.lastPlayedAt),
+                                      style: TextStyle(
+                                        color: isTop3
+                                            ? Colors.white70
+                                            : Colors.grey[600],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-          ),
+                ),
         ],
       ),
     );
@@ -475,4 +469,3 @@ class _WebLeaderboardPageState extends State<WebLeaderboardPage> {
     }
   }
 }
-

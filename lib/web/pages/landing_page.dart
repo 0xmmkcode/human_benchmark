@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:gap/gap.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
 import 'package:human_benchmark/web/constants/web_constants.dart';
 import 'dart:html' as html;
@@ -103,7 +105,6 @@ class _LandingPageState extends State<LandingPage>
       body: Stack(
         children: [
           // Decorative animated background
-          const _DecorBackground(),
           // Content
           SingleChildScrollView(
             child: Column(
@@ -126,17 +127,8 @@ class _LandingPageState extends State<LandingPage>
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 20,
-              offset: Offset(0, 10),
-            ),
-          ],
-        ),
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 23),
+        decoration: BoxDecoration(color: Colors.white),
         child: Row(
           children: [
             // Animated Logo
@@ -166,10 +158,12 @@ class _LandingPageState extends State<LandingPage>
                         ),
                       ],
                     ),
-                    child: Icon(
-                      Icons.psychology,
-                      color: Colors.white,
-                      size: 24,
+                    child: Padding(
+                      padding: EdgeInsetsGeometry.all(8),
+                      child: Image.asset(
+                        "assets/images/human_benchmark_onlylogo_white.png",
+                        height: 18,
+                      ),
                     ),
                   ),
                 );
@@ -207,7 +201,7 @@ class _LandingPageState extends State<LandingPage>
                 SizedBox(width: 16),
                 _buildAnimatedButton(
                   onPressed: widget.onStartApp,
-                  child: Text('Test Your Brain'),
+                  child: Text('Get Started'),
                   isPrimary: true,
                   delay: 800,
                 ),
@@ -253,7 +247,7 @@ class _LandingPageState extends State<LandingPage>
     return SlideTransition(
       position: _slideAnimation,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 100),
+        padding: EdgeInsets.symmetric(horizontal: 100, vertical: 100),
         child: Row(
           children: [
             Expanded(
@@ -339,60 +333,16 @@ class _LandingPageState extends State<LandingPage>
                 ],
               ),
             ),
-            SizedBox(width: 80),
+            Gap(100),
             Expanded(
               flex: 1,
               child: ScaleTransition(
                 scale: _scaleAnimation,
                 child: Container(
-                  height: 450,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: WebTheme.primaryBlue.withOpacity(0.2),
-                        blurRadius: 30,
-                        offset: Offset(0, 20),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(30),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            WebTheme.primaryBlue.withOpacity(0.1),
-                            WebTheme.primaryBlueLight.withOpacity(0.05),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
-                      child: Image.asset(
-                        'assets/images/main_icon.png',
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  WebTheme.primaryBlue.withOpacity(0.1),
-                                  WebTheme.primaryBlueLight.withOpacity(0.05),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                            ),
-                            child: Icon(
-                              Icons.psychology,
-                              size: 150,
-                              color: WebTheme.primaryBlue,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
+                  child: Image.asset(
+                    'assets/images/frame_phone.jpg',
+                    fit: BoxFit.fitHeight,
+                    height: 700,
                   ),
                 ),
               ),
@@ -598,7 +548,7 @@ class _LandingPageState extends State<LandingPage>
 
   Widget _buildAboutSection(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 100),
+      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 60),
       child: Column(
         children: [
           // Animated Section Title
@@ -733,7 +683,7 @@ class _LandingPageState extends State<LandingPage>
 
   Widget _buildMobileShowcase(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 100),
+      padding: EdgeInsets.only(left: 40, right: 40, bottom: 100),
       child: Column(
         children: [
           // Animated Section Title
@@ -935,7 +885,7 @@ class _LandingPageState extends State<LandingPage>
                   Row(
                     children: [
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () => context.go('/privacy'),
                         child: Text(
                           'Privacy Policy',
                           style: TextStyle(
@@ -946,7 +896,7 @@ class _LandingPageState extends State<LandingPage>
                       ),
                       SizedBox(width: 20),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () => context.go('/terms'),
                         child: Text(
                           'Terms of Service',
                           style: TextStyle(

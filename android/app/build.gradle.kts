@@ -18,7 +18,7 @@ plugins {
 android {
     namespace = "xyz.mmkcode.humanbenchmark.human_benchmark"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -68,8 +68,9 @@ flutter {
     source = "../.."
 }
 
-// Apply Google Services plugin only if google-services.json exists to avoid pre-config build failures
+// Apply Google Services plugin only for release builds when google-services.json exists
 val googleServicesFile = file("google-services.json")
-if (googleServicesFile.exists()) {
+val isReleaseBuild = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
+if (googleServicesFile.exists() && isReleaseBuild) {
     apply(plugin = "com.google.gms.google-services")
 }
