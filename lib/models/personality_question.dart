@@ -12,21 +12,22 @@ class PersonalityQuestion {
   });
 
   factory PersonalityQuestion.fromJson(Map<String, dynamic> json) {
+    final dynamic rawId = json['id'];
+    final int parsedId = rawId is int
+        ? rawId
+        : (rawId is num
+              ? rawId.toInt()
+              : (rawId is String ? int.tryParse(rawId) ?? 0 : 0));
     return PersonalityQuestion(
-      id: json['id'] as int,
-      text: json['text'] as String,
-      trait: json['trait'] as String,
+      id: parsedId,
+      text: (json['text'] ?? '').toString(),
+      trait: (json['trait'] ?? '').toString(),
       active: json['active'] as bool? ?? true,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'text': text,
-      'trait': trait,
-      'active': active,
-    };
+    return {'id': id, 'text': text, 'trait': trait, 'active': active};
   }
 
   @override

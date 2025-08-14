@@ -13,6 +13,8 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    // Apply Google Services plugin for all builds to enable Google Sign-In
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -66,11 +68,4 @@ android {
 
 flutter {
     source = "../.."
-}
-
-// Apply Google Services plugin only for release builds when google-services.json exists
-val googleServicesFile = file("google-services.json")
-val isReleaseBuild = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
-if (googleServicesFile.exists() && isReleaseBuild) {
-    apply(plugin = "com.google.gms.google-services")
 }

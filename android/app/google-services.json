@@ -1,85 +1,42 @@
 {
   "project_info": {
-    "project_number": "65127114081",
-    "project_id": "nearbyluv-67de1",
-    "storage_bucket": "nearbyluv-67de1.firebasestorage.app"
+    "project_number": "1043791053268",
+    "project_id": "human-benchmark-80a9a",
+    "storage_bucket": "human-benchmark-80a9a.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:65127114081:android:e57e81f2f434e33759d120",
+        "mobilesdk_app_id": "1:1043791053268:android:99821bd6cfbb381b7b5641",
         "android_client_info": {
-          "package_name": "com.example.nearluv_admin_panel"
+          "package_name": "xyz.mmkcode.humanbenchmark.human_benchmark"
         }
       },
       "oauth_client": [
         {
-          "client_id": "65127114081-ipd655tq9afo3n5sk7rg90rcf599k6af.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyBFmQnVIDSb5WaR73bYttdPCxQnY0h9p1Y"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "65127114081-ipd655tq9afo3n5sk7rg90rcf599k6af.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "65127114081-72rv9qdmdc7khm16hbtr12dah35ajla4.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.example.nearluvAdminPanel"
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:65127114081:android:62c03e8df623b78859d120",
-        "android_client_info": {
-          "package_name": "com.nearluv.near_luv"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "65127114081-b4ha0l08k0dsf52plij40j6m16t5irrb.apps.googleusercontent.com",
+          "client_id": "1043791053268-m3s9jn0bra7sb6ktm2r1gt5iu7ipmce4.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.nearluv.near_luv",
-            "certificate_hash": "82dbfee504b45186b63351e0fc41ee63d1071873"
+            "package_name": "xyz.mmkcode.humanbenchmark.human_benchmark",
+            "certificate_hash": "62294d21a78f4767af1f76112572376f07799910"
           }
         },
         {
-          "client_id": "65127114081-ipd655tq9afo3n5sk7rg90rcf599k6af.apps.googleusercontent.com",
+          "client_id": "1043791053268-0t32q3i4sij0q5hhrjfh1uahl3epq5cb.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBFmQnVIDSb5WaR73bYttdPCxQnY0h9p1Y"
+          "current_key": "AIzaSyC877zVow9pfatZc1l5dw-BVdXAe9G_kJM"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "65127114081-ipd655tq9afo3n5sk7rg90rcf599k6af.apps.googleusercontent.com",
+              "client_id": "1043791053268-0t32q3i4sij0q5hhrjfh1uahl3epq5cb.apps.googleusercontent.com",
               "client_type": 3
-            },
-            {
-              "client_id": "65127114081-72rv9qdmdc7khm16hbtr12dah35ajla4.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.example.nearluvAdminPanel"
-              }
             }
           ]
         }

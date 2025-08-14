@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "human-benchmark-80a9a"
-  }
+    "default": "human-benchmark-80a9a",
+    "staging": "human-benchmark-80a9a"
+  },
+  "targets": {},
+  "etags": {}
 }

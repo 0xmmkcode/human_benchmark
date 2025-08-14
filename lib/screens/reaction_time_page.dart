@@ -196,7 +196,7 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
         break;
       case GameState.result:
         if (_reactionTime == -1) {
-          message = 'Too Soon!\nTap to Try Again';
+          message = 'Game Over\nWait for green to appear\nTap to try again';
           bgColor = Colors.red.shade900;
         } else {
           message = 'Your Reaction Time: $_reactionTime ms\nTap to Retry';

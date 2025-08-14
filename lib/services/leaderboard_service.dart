@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:human_benchmark/models/user_score.dart';
+import 'package:human_benchmark/services/app_logger.dart';
 
 class LeaderboardService {
   LeaderboardService._();
@@ -12,11 +13,16 @@ class LeaderboardService {
   static Future<void> submitHighScore(UserScore score) async {
     try {
       if (Firebase.apps.isEmpty) return;
+      AppLogger.event('leaderboard.submit', {
+        'userId': score.userId,
+        'highScoreMs': score.highScoreMs,
+      });
       await _collection
           .doc(score.userId)
           .set(score.toMap(), SetOptions(merge: true));
-    } catch (_) {
+    } catch (e, st) {
       // Intentionally ignore failures to avoid breaking UX if Firebase is not configured
+      AppLogger.error('leaderboard.submit', e, st);
     }
   }
 
@@ -24,6 +30,7 @@ class LeaderboardService {
     if (Firebase.apps.isEmpty) {
       return Stream<List<UserScore>>.value(const <UserScore>[]);
     }
+    AppLogger.event('leaderboard.topScores', {'limit': limit});
     return _collection.orderBy('highScore').limit(limit).snapshots().map((
       QuerySnapshot<Map<String, dynamic>> snapshot,
     ) {

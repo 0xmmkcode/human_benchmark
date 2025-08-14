@@ -4,6 +4,7 @@ import '../models/personality_question.dart';
 import '../models/personality_scale.dart';
 import '../models/personality_result.dart';
 import '../models/personality_aggregates.dart';
+import '../services/app_logger.dart';
 
 class PersonalityRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -12,6 +13,11 @@ class PersonalityRepository {
   // Get all personality questions
   Future<List<PersonalityQuestion>> getQuestions() async {
     try {
+      AppLogger.event('firestore.query', {
+        'collection': 'personality_questions',
+        'where': {'active': true},
+        'orderBy': 'id',
+      });
       final QuerySnapshot snapshot = await _firestore
           .collection('personality_questions')
           .where('active', isEqualTo: true)
@@ -25,7 +31,33 @@ class PersonalityRepository {
             ),
           )
           .toList();
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.error('getQuestions', e, st);
+      // Fallback for missing composite index on web: fetch without order and sort locally
+      if (e is FirebaseException && e.code == 'failed-precondition') {
+        try {
+          AppLogger.event('firestore.query.fallback', {
+            'collection': 'personality_questions',
+            'where': {'active': true},
+          });
+          final QuerySnapshot fallback = await _firestore
+              .collection('personality_questions')
+              .where('active', isEqualTo: true)
+              .get();
+          final List<PersonalityQuestion> items = fallback.docs
+              .map(
+                (doc) => PersonalityQuestion.fromJson(
+                  doc.data() as Map<String, dynamic>,
+                ),
+              )
+              .toList();
+          items.sort((a, b) => a.id.compareTo(b.id));
+          return items;
+        } catch (inner, st2) {
+          AppLogger.error('getQuestions.fallback', inner, st2);
+          throw Exception('Failed to fetch questions (fallback): $inner');
+        }
+      }
       throw Exception('Failed to fetch questions: $e');
     }
   }
@@ -33,27 +65,101 @@ class PersonalityRepository {
   // Get personality scale
   Future<PersonalityScale> getScale() async {
     try {
+      AppLogger.event('firestore.get', {'doc': 'personality_scale/bigfive_v1'});
       final DocumentSnapshot doc = await _firestore
           .collection('personality_scale')
           .doc('bigfive_v1')
           .get();
 
       if (!doc.exists) {
-        throw Exception('Personality scale not found');
+        // Fallback to a safe default scale to avoid breaking UX
+        return _defaultScale();
       }
 
-      return PersonalityScale.fromJson(doc.data() as Map<String, dynamic>);
-    } catch (e) {
-      throw Exception('Failed to fetch scale: $e');
+      final data = doc.data() as Map<String, dynamic>;
+
+      // Be resilient to data shape differences
+      final dynamic rawScale = data['scale'];
+      final List<ScaleOption> scaleOptions;
+      if (rawScale is List) {
+        scaleOptions = rawScale
+            .map<ScaleOption>((e) {
+              if (e is Map<String, dynamic>) {
+                final dynamic v = e['value'];
+                final dynamic l = e['label'];
+                final int value = v is int
+                    ? v
+                    : (v is num
+                          ? v.toInt()
+                          : (v is String ? int.tryParse(v) ?? 0 : 0));
+                final String label = l?.toString() ?? value.toString();
+                return ScaleOption(value: value, label: label);
+              }
+              if (e is num) {
+                final int value = e.toInt();
+                return ScaleOption(value: value, label: value.toString());
+              }
+              return const ScaleOption(value: 0, label: '');
+            })
+            .where((s) => s.value != 0 || s.label.isNotEmpty)
+            .toList();
+      } else {
+        scaleOptions = _defaultScale().scale;
+      }
+
+      final List<String> traits = (data['traits'] is List)
+          ? List<String>.from((data['traits'] as List).map((e) => e.toString()))
+          : _defaultScale().traits;
+
+      final dynamic qptRaw = data['questionsPerTrait'];
+      final int questionsPerTrait = qptRaw is int
+          ? qptRaw
+          : (qptRaw is num
+                ? qptRaw.toInt()
+                : _defaultScale().questionsPerTrait);
+
+      return PersonalityScale(
+        scale: scaleOptions,
+        traits: traits,
+        questionsPerTrait: questionsPerTrait,
+      );
+    } catch (e, st) {
+      AppLogger.error('getScale', e, st);
+      // Fallback to default on format/permission errors to keep the quiz usable
+      return _defaultScale();
     }
+  }
+
+  PersonalityScale _defaultScale() {
+    return PersonalityScale(
+      scale: const [
+        ScaleOption(value: 1, label: 'Strongly disagree'),
+        ScaleOption(value: 2, label: 'Disagree'),
+        ScaleOption(value: 3, label: 'Neutral'),
+        ScaleOption(value: 4, label: 'Agree'),
+        ScaleOption(value: 5, label: 'Strongly agree'),
+      ],
+      traits: const [
+        'Openness',
+        'Conscientiousness',
+        'Extraversion',
+        'Agreeableness',
+        'Neuroticism',
+      ],
+      questionsPerTrait: 10,
+    );
   }
 
   // Save user's personality result
   Future<void> saveResult(PersonalityResult result) async {
     try {
+      AppLogger.event('saveResult.start', {'resultId': result.id});
       final User? user = _auth.currentUser;
       if (user == null) {
         // If user isn't signed in, skip remote save silently.
+        AppLogger.log('saveResult.skipped (anonymous)', {
+          'resultId': result.id,
+        });
         return;
       }
 
@@ -66,7 +172,12 @@ class PersonalityRepository {
 
       // Update aggregates
       await _updateAggregates(result);
+      AppLogger.event('saveResult.success', {
+        'resultId': result.id,
+        'userId': user.uid,
+      });
     } catch (e) {
+      AppLogger.error('saveResult', e);
       throw Exception('Failed to save result: $e');
     }
   }
@@ -122,6 +233,7 @@ class PersonalityRepository {
   // Get aggregates
   Future<PersonalityAggregates> getAggregates() async {
     try {
+      AppLogger.event('firestore.get', {'doc': 'aggregates/bigfive_v1'});
       final DocumentSnapshot doc = await _firestore
           .collection('aggregates')
           .doc('bigfive_v1')
@@ -132,7 +244,8 @@ class PersonalityRepository {
       }
 
       return PersonalityAggregates.fromJson(doc.data() as Map<String, dynamic>);
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.error('getAggregates', e, st);
       throw Exception('Failed to fetch aggregates: $e');
     }
   }
@@ -189,7 +302,7 @@ class PersonalityRepository {
       });
     } catch (e) {
       // Log error but don't fail the main operation
-      print('Failed to update aggregates: $e');
+      AppLogger.error('_updateAggregates', e);
     }
   }
 }

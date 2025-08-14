@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:human_benchmark/web/components/web_navigation_item.dart';
 import 'package:human_benchmark/services/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class WebSidebar extends StatelessWidget {
   final int selectedIndex;
@@ -112,75 +113,129 @@ class WebSidebar extends StatelessWidget {
                 ),
                 SizedBox(height: 32),
                 WebNavigationItem(
-                  icon: Icons.info_outline,
-                  title: 'About',
-                  subtitle: 'Learn more',
+                  icon: Icons.speed,
+                  title: 'Decision Making',
+                  subtitle: 'Speed vs accuracy',
                   isSelected: selectedIndex == 3,
-                  isComingSoon: true,
-                ),
-                WebNavigationItem(
-                  icon: Icons.settings,
-                  title: 'Settings',
-                  subtitle: 'Customize your experience',
-                  isSelected: selectedIndex == 4,
-                  isComingSoon: true,
+                  onTap: () => onIndexChanged(3),
                 ),
               ],
             ),
           ),
 
           // Footer
-          Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                top: BorderSide(color: Colors.grey[300]!, width: 1),
-              ),
-            ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: Colors.blue[100],
-                  child: Icon(Icons.person, color: Colors.blue[600]),
+          StreamBuilder<User?>(
+            stream: AuthService.authStateChanges,
+            builder: (context, snapshot) {
+              final User? user = snapshot.data;
+              final bool isSignedIn = user != null;
+
+              return Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border(
+                    top: BorderSide(color: Colors.grey[300]!, width: 1),
+                  ),
                 ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Guest User',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[800],
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 20,
+                      backgroundColor: isSignedIn
+                          ? Colors.blue[100]
+                          : Colors.grey[100],
+                      backgroundImage:
+                          (isSignedIn &&
+                              user.photoURL != null &&
+                              user.photoURL!.isNotEmpty)
+                          ? NetworkImage(user.photoURL!)
+                          : null,
+                      child:
+                          (!isSignedIn ||
+                              user.photoURL == null ||
+                              user.photoURL!.isEmpty)
+                          ? Icon(
+                              isSignedIn ? Icons.person : Icons.person_outline,
+                              color: isSignedIn
+                                  ? Colors.blue[600]
+                                  : Colors.grey[600],
+                            )
+                          : null,
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isSignedIn
+                                ? (user.displayName ?? 'User')
+                                : 'Guest User',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                          Text(
+                            isSignedIn
+                                ? user.email ?? 'Signed in user'
+                                : 'Sign in for more features',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isSignedIn
+                                  ? Colors.blue[600]
+                                  : Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    if (isSignedIn)
+                      // Logout button with only icon
+                      IconButton(
+                        onPressed: () async {
+                          await AuthService.signOut();
+                        },
+                        icon: Icon(
+                          Icons.logout,
+                          size: 20,
+                          color: Colors.red[600],
+                        ),
+                        tooltip: 'Sign out',
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.red[50],
+                          side: BorderSide(color: Colors.red[200]!),
+                        ),
+                      )
+                    else
+                      // Sign in button
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          await AuthService.signInWithGoogle();
+                        },
+                        icon: Icon(
+                          Icons.login,
+                          size: 16,
+                          color: Colors.blue[700],
+                        ),
+                        label: Text(
+                          'Sign in',
+                          style: TextStyle(color: Colors.blue[700]),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.blue[200]!),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
                         ),
                       ),
-                      Text(
-                        'Sign in for more features',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
+                  ],
                 ),
-                SizedBox(width: 8),
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    await AuthService.signInWithGoogle();
-                  },
-                  icon: Icon(Icons.login, size: 16, color: Colors.blue[700]),
-                  label: Text(
-                    'Sign in',
-                    style: TextStyle(color: Colors.blue[700]),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.blue[200]!),
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
         ],
       ),

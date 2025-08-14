@@ -12,6 +12,7 @@ import 'package:human_benchmark/web/components/web_sidebar.dart';
 import 'package:human_benchmark/web/pages/privacy_policy_page.dart';
 import 'package:human_benchmark/web/pages/terms_of_service_page.dart';
 import 'package:human_benchmark/screens/personality_quiz_page.dart';
+import 'package:human_benchmark/web/pages/decision_making_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -74,6 +75,9 @@ void main() async {
                       case 2:
                         context.go('/app/personality');
                         break;
+                      case 3:
+                        context.go('/app/decision');
+                        break;
                     }
                   },
                   onBackToLanding: () => context.go('/'),
@@ -97,6 +101,10 @@ void main() async {
           GoRoute(
             path: '/app/personality',
             builder: (context, state) => const PersonalityQuizPage(),
+          ),
+          GoRoute(
+            path: '/app/decision',
+            builder: (context, state) => const WebDecisionMakingPage(),
           ),
         ],
       ),
@@ -124,6 +132,8 @@ int _getSelectedIndex(String location) {
     return 1;
   } else if (location.endsWith('/personality')) {
     return 2;
+  } else if (location.endsWith('/decision')) {
+    return 3;
   }
   return 0; // Default to reaction time
 }

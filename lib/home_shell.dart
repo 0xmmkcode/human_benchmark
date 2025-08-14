@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:human_benchmark/screens/leaderboard_page.dart';
+import 'package:human_benchmark/screens/decision_risk_page.dart';
 
 class HomeShell extends StatefulWidget {
   final Widget playPage;
@@ -17,6 +18,7 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     final List<Widget> pages = <Widget>[
       widget.playPage,
+      const DecisionRiskPage(),
       const LeaderboardPage(),
     ];
 
@@ -42,6 +44,11 @@ class _HomeShellState extends State<HomeShell> {
               icon: Icon(Icons.flash_on_outlined),
               activeIcon: Icon(Icons.flash_on),
               label: 'Play',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.psychology_outlined),
+              activeIcon: Icon(Icons.psychology),
+              label: 'Decision',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.emoji_events_outlined),

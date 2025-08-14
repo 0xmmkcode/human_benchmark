@@ -205,42 +205,53 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
 
                 // Waiting State
                 if (_isWaiting && !_isGreen)
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      color: Colors.orange[50],
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.orange[200]!),
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.hourglass_empty,
-                          size: 64,
-                          color: Colors.orange[400],
-                        ),
-                        SizedBox(height: 24),
-                        Text(
-                          'Wait for it...',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.orange[800],
+                  GestureDetector(
+                    onTapDown: (_) {
+                      // Too early -> game over
+                      setState(() {
+                        _isGameOver = true;
+                        _isWaiting = false;
+                        _isGreen = false;
+                        _reactionTime = -1;
+                      });
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: Colors.orange[50],
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.orange[200]!),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.hourglass_empty,
+                            size: 64,
+                            color: Colors.orange[400],
                           ),
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          'The screen will turn green soon. Don\'t click yet!',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.orange[600],
+                          SizedBox(height: 24),
+                          Text(
+                            'Wait for it...',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.orange[800],
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 16),
-                        WebBannerAd(height: 90),
-                      ],
+                          SizedBox(height: 16),
+                          Text(
+                            'The screen will turn green soon. Don\'t click yet!',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.orange[600],
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          WebBannerAd(height: 90),
+                        ],
+                      ),
                     ),
                   ),
 
@@ -288,31 +299,65 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
                   Container(
                     padding: EdgeInsets.all(32),
                     decoration: BoxDecoration(
-                      color: Colors.blue[50],
+                      color: _reactionTime == -1
+                          ? Colors.red[50]
+                          : Colors.blue[50],
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.blue[200]!),
+                      border: Border.all(
+                        color: _reactionTime == -1
+                            ? Colors.red[200]!
+                            : Colors.blue[200]!,
+                      ),
                     ),
                     child: Column(
                       children: [
-                        Icon(Icons.timer, size: 64, color: Colors.blue[400]),
+                        Icon(
+                          _reactionTime == -1
+                              ? Icons.error_outline
+                              : Icons.timer,
+                          size: 64,
+                          color: _reactionTime == -1
+                              ? Colors.red[400]
+                              : Colors.blue[400],
+                        ),
                         SizedBox(height: 24),
-                        Text(
-                          'Your Reaction Time',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[800],
+                        if (_reactionTime == -1) ...[
+                          Text(
+                            'Game Over',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.red[800],
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          '${_reactionTime}ms',
-                          style: TextStyle(
-                            fontSize: 48,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue[600],
+                          SizedBox(height: 8),
+                          Text(
+                            'Wait for green to appear',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.red[600],
+                            ),
                           ),
-                        ),
+                        ] else ...[
+                          Text(
+                            'Your Reaction Time',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            '${_reactionTime}ms',
+                            style: TextStyle(
+                              fontSize: 48,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue[600],
+                            ),
+                          ),
+                        ],
                         SizedBox(height: 24),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -320,7 +365,9 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
                             ElevatedButton(
                               onPressed: _startGame,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue[600],
+                                backgroundColor: _reactionTime == -1
+                                    ? Colors.red[600]
+                                    : Colors.blue[600],
                                 foregroundColor: Colors.white,
                                 padding: EdgeInsets.symmetric(
                                   horizontal: 24,
