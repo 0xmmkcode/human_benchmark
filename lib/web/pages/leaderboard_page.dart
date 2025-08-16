@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:human_benchmark/models/user_score.dart';
 import 'package:human_benchmark/services/leaderboard_service.dart';
+import 'package:human_benchmark/screens/comprehensive_leaderboard_page.dart';
 
 class WebLeaderboardPage extends StatefulWidget {
   @override
@@ -62,6 +63,36 @@ class _WebLeaderboardPageState extends State<WebLeaderboardPage> {
           Text(
             'See how you rank against the best players',
             style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+          ),
+          SizedBox(height: 16),
+          // Navigation to comprehensive leaderboard
+          Row(
+            children: [
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const ComprehensiveLeaderboardPage(),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue[600],
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                icon: Icon(Icons.leaderboard, size: 20),
+                label: Text(
+                  'View Comprehensive Leaderboard',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
           ),
           SizedBox(height: 40),
 
@@ -379,7 +410,7 @@ class _WebLeaderboardPageState extends State<WebLeaderboardPage> {
                                   SizedBox(
                                     width: 120,
                                     child: Text(
-                                      '${score.highScoreMs}ms',
+                                      '${score.getHighScore(GameType.reactionTime)}ms',
                                       style: TextStyle(
                                         fontWeight: FontWeight.w600,
                                         color: isTop3
@@ -393,7 +424,12 @@ class _WebLeaderboardPageState extends State<WebLeaderboardPage> {
                                   SizedBox(
                                     width: 120,
                                     child: Text(
-                                      _formatDate(score.lastPlayedAt),
+                                      _formatDate(
+                                        score.getLastPlayed(
+                                              GameType.reactionTime,
+                                            ) ??
+                                            DateTime.now(),
+                                      ),
                                       style: TextStyle(
                                         color: isTop3
                                             ? Colors.white70

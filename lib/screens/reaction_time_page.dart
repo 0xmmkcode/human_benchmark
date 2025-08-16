@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 // import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kReleaseMode;
@@ -11,7 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:human_benchmark/ad_helper.dart';
 import 'package:human_benchmark/models/user_score.dart';
-import 'package:human_benchmark/services/leaderboard_service.dart';
+import 'package:human_benchmark/services/score_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ReactionTimePage extends StatefulWidget {
@@ -130,18 +128,21 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
         _highScore = _reactionTime;
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setInt('highScore', _highScore!);
-        // Save to Firestore (best effort)
-        final String userId =
-            (Firebase.apps.isNotEmpty &&
-                FirebaseAuth.instance.currentUser != null)
-            ? FirebaseAuth.instance.currentUser!.uid
-            : (_userId ?? await _ensureUserId());
-        final UserScore score = UserScore(
-          userId: userId,
-          highScoreMs: _highScore!,
-          lastPlayedAt: DateTime.now(),
-        );
-        await LeaderboardService.submitHighScore(score);
+
+        // Save to Firebase using new ScoreService
+        try {
+          await ScoreService.submitGameScore(
+            gameType: GameType.reactionTime,
+            score: _reactionTime!,
+            gameData: {
+              'roundCounter': _roundCounter,
+              'timestamp': DateTime.now().millisecondsSinceEpoch,
+            },
+          );
+        } catch (e) {
+          // Log error but don't break the game
+          print('Failed to save score: $e');
+        }
       }
     } else if (_state == GameState.result) {
       setState(() {

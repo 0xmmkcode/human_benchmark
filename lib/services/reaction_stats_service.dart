@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:human_benchmark/models/user_score.dart';
-import 'package:human_benchmark/services/leaderboard_service.dart';
+import 'package:human_benchmark/services/score_service.dart';
 
 class ReactionStatsService {
   ReactionStatsService._();
@@ -63,14 +63,16 @@ class ReactionStatsService {
       if (Firebase.apps.isNotEmpty) {
         final User? user = FirebaseAuth.instance.currentUser;
         if (user != null) {
-          final UserScore score = UserScore(
-            userId: user.uid,
-            highScoreMs: newBest,
-            lastPlayedAt: DateTime.now(),
-            testsTaken: newTests,
-            averageMs: newAvg,
+          // Use the new ScoreService to submit the game score
+          await ScoreService.submitGameScore(
+            gameType: GameType.reactionTime,
+            score: newBest,
+            gameData: {
+              'testsTaken': newTests,
+              'averageMs': newAvg,
+              'timestamp': DateTime.now().millisecondsSinceEpoch,
+            },
           );
-          await LeaderboardService.submitHighScore(score);
         }
       }
     } catch (_) {

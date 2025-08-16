@@ -27,38 +27,27 @@ class QuestionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Question number and trait
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade100,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    question.trait,
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.blue.shade700,
-                    ),
-                  ),
+            // Trait indicator
+            Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
                 ),
-                const Spacer(),
-                Text(
-                  'Question ${question.id}',
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade100,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  question.trait,
                   style: TextStyle(
                     fontFamily: 'Montserrat',
-                    fontSize: 16,
-                    color: Colors.grey.shade600,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blue.shade700,
                   ),
                 ),
-              ],
+              ),
             ),
             const SizedBox(height: 24),
 
@@ -77,63 +66,62 @@ class QuestionCard extends StatelessWidget {
 
             // Answer options
             Expanded(
-              child: ListView.builder(
-                itemCount: scale.scale.length,
-                itemBuilder: (context, index) {
-                  final option = scale.scale[index];
+              child: Row(
+                children: scale.scale.map((option) {
                   final isSelected = selectedAnswer == option.value;
 
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: InkWell(
-                      onTap: () => onAnswerSelected(option.value),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.all(20.0),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? Colors.blue.shade50
-                              : Colors.grey.shade50,
-                          border: Border.all(
+                  return Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      child: InkWell(
+                        onTap: () => onAnswerSelected(option.value),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
                             color: isSelected
-                                ? Colors.blue.shade300
-                                : Colors.grey.shade300,
-                            width: isSelected ? 2 : 1,
+                                ? Colors.blue.shade50
+                                : Colors.grey.shade50,
+                            border: Border.all(
+                              color: isSelected
+                                  ? Colors.blue.shade300
+                                  : Colors.grey.shade300,
+                              width: isSelected ? 2 : 1,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isSelected
-                                    ? Colors.blue.shade500
-                                    : Colors.transparent,
-                                border: Border.all(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
                                   color: isSelected
                                       ? Colors.blue.shade500
-                                      : Colors.grey.shade400,
-                                  width: 2,
+                                      : Colors.transparent,
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? Colors.blue.shade500
+                                        : Colors.grey.shade400,
+                                    width: 2,
+                                  ),
                                 ),
+                                child: isSelected
+                                    ? const Icon(
+                                        Icons.check,
+                                        size: 16,
+                                        color: Colors.white,
+                                      )
+                                    : null,
                               ),
-                              child: isSelected
-                                  ? const Icon(
-                                      Icons.check,
-                                      size: 16,
-                                      color: Colors.white,
-                                    )
-                                  : null,
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Text(
+                              const SizedBox(height: 12),
+                              Text(
                                 option.label,
                                 style: TextStyle(
                                   fontFamily: 'Montserrat',
-                                  fontSize: 18,
+                                  fontSize: 14,
                                   fontWeight: isSelected
                                       ? FontWeight.w600
                                       : FontWeight.w500,
@@ -141,14 +129,15 @@ class QuestionCard extends StatelessWidget {
                                       ? Colors.blue.shade700
                                       : Colors.grey.shade700,
                                 ),
+                                textAlign: TextAlign.center,
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   );
-                },
+                }).toList(),
               ),
             ),
           ],

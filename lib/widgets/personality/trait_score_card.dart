@@ -24,7 +24,7 @@ class TraitScoreCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Trait name
             Text(
@@ -35,46 +35,45 @@ class TraitScoreCard extends StatelessWidget {
                 fontWeight: FontWeight.bold,
                 color: traitColor.shade700,
               ),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
 
             // Score circle
-            Center(
-              child: Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [traitColor.shade100, traitColor.shade200],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  border: Border.all(color: traitColor.shade300, width: 3),
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [traitColor.shade100, traitColor.shade200],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '${score.toInt()}%',
-                        style: TextStyle(
-                          fontFamily: 'Montserrat',
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: traitColor.shade700,
-                        ),
+                border: Border.all(color: traitColor.shade300, width: 3),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '${score.toInt()}%',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: traitColor.shade700,
                       ),
-                      Text(
-                        '${rawScore.toStringAsFixed(1)}/5',
-                        style: TextStyle(
-                          fontFamily: 'Montserrat',
-                          fontSize: 12,
-                          color: traitColor.shade600,
-                        ),
+                    ),
+                    Text(
+                      '${rawScore.toStringAsFixed(1)}/5',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 12,
+                        color: traitColor.shade600,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),

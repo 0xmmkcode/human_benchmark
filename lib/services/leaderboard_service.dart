@@ -15,7 +15,7 @@ class LeaderboardService {
       if (Firebase.apps.isEmpty) return;
       AppLogger.event('leaderboard.submit', {
         'userId': score.userId,
-        'highScoreMs': score.highScoreMs,
+        'overallScore': score.overallScore,
       });
       await _collection
           .doc(score.userId)
@@ -31,12 +31,14 @@ class LeaderboardService {
       return Stream<List<UserScore>>.value(const <UserScore>[]);
     }
     AppLogger.event('leaderboard.topScores', {'limit': limit});
-    return _collection.orderBy('highScore').limit(limit).snapshots().map((
-      QuerySnapshot<Map<String, dynamic>> snapshot,
-    ) {
-      return snapshot.docs
-          .map((doc) => UserScore.fromMap(doc.data()))
-          .toList(growable: false);
-    });
+    return _collection
+        .orderBy('overallScore', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map((QuerySnapshot<Map<String, dynamic>> snapshot) {
+          return snapshot.docs
+              .map((doc) => UserScore.fromMap(doc.data()))
+              .toList(growable: false);
+        });
   }
 }

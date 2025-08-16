@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:human_benchmark/web/components/web_banner_ad.dart';
-// import 'package:human_benchmark/models/user_score.dart';
-// import 'package:human_benchmark/services/leaderboard_service.dart';
+import 'package:human_benchmark/models/user_score.dart';
+import 'package:human_benchmark/models/game_score.dart';
+import 'package:human_benchmark/services/score_service.dart';
+import 'package:human_benchmark/widgets/score_display.dart';
+import 'package:human_benchmark/screens/comprehensive_leaderboard_page.dart';
 
 class WebReactionTimePage extends StatefulWidget {
   @override
@@ -79,7 +82,7 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
     });
   }
 
-  void _onTap() {
+  Future<void> _onTap() async {
     if (!_isGreen || _isGameOver) return;
 
     final endTime = DateTime.now();
@@ -101,7 +104,22 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
       setState(() {
         _bestTime = reactionTime;
       });
-      // Save best time
+
+      // Save score using new ScoreService
+      try {
+        await ScoreService.submitGameScore(
+          gameType: GameType.reactionTime,
+          score: reactionTime,
+          gameData: {
+            'times': _times,
+            'bestTime': _bestTime,
+            'timestamp': DateTime.now().millisecondsSinceEpoch,
+          },
+        );
+      } catch (e) {
+        // Log error but don't break the game
+        print('Failed to save score: $e');
+      }
     }
   }
 
@@ -356,6 +374,40 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
                               fontWeight: FontWeight.bold,
                               color: Colors.blue[600],
                             ),
+                          ),
+                          SizedBox(height: 16),
+                          // Show user's score profile
+                          FutureBuilder<UserScore?>(
+                            future: ScoreService.getUserScoreProfile(),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return SizedBox(
+                                  height: 100,
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                );
+                              }
+
+                              if (snapshot.hasData && snapshot.data != null) {
+                                return ScoreDisplay(
+                                  userScore: snapshot.data,
+                                  currentGame: GameType.reactionTime,
+                                  onViewLeaderboard: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const ComprehensiveLeaderboardPage(),
+                                      ),
+                                    );
+                                  },
+                                );
+                              }
+
+                              return SizedBox.shrink();
+                            },
                           ),
                         ],
                         SizedBox(height: 24),

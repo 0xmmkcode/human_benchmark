@@ -458,6 +458,7 @@ class _PersonalityQuizPageState extends ConsumerState<PersonalityQuizPage> {
                   fontSize: 14,
                   color: Colors.blue.shade600,
                 ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
@@ -479,7 +480,7 @@ class _PersonalityQuizPageState extends ConsumerState<PersonalityQuizPage> {
             ],
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
                 'Trait Overview',
@@ -489,6 +490,7 @@ class _PersonalityQuizPageState extends ConsumerState<PersonalityQuizPage> {
                   fontWeight: FontWeight.bold,
                   color: Colors.grey.shade800,
                 ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
               SizedBox(
@@ -500,13 +502,15 @@ class _PersonalityQuizPageState extends ConsumerState<PersonalityQuizPage> {
         ),
         const SizedBox(height: 24),
 
-        Text(
-          'Detailed Scores',
-          style: TextStyle(
-            fontFamily: 'Montserrat',
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey.shade800,
+        Center(
+          child: Text(
+            'Detailed Scores',
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade800,
+            ),
           ),
         ),
         const SizedBox(height: 12),
@@ -532,36 +536,35 @@ class _PersonalityQuizPageState extends ConsumerState<PersonalityQuizPage> {
         ),
         const SizedBox(height: 24),
 
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () {
-                  // Reset quiz to start over
-                  ref.read(quizStateProvider.notifier).reset();
-                  setState(() {
-                    _lastResult = null;
-                  });
-                },
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: BorderSide(color: Colors.blue.shade300),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+        Center(
+          child: SizedBox(
+            width: 200,
+            child: OutlinedButton(
+              onPressed: () {
+                // Reset quiz to start over
+                ref.read(quizStateProvider.notifier).reset();
+                setState(() {
+                  _lastResult = null;
+                });
+              },
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                side: BorderSide(color: Colors.blue.shade300),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  'Take Quiz Again',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.blue.shade600,
-                  ),
+              ),
+              child: Text(
+                'Take Quiz Again',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blue.shade600,
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ],
     );

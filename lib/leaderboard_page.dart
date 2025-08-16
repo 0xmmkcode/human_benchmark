@@ -64,11 +64,11 @@ class LeaderboardPage extends StatelessWidget {
                           ),
                         ),
                         subtitle: Text(
-                          'Last played: ${_formatDate(score.lastPlayedAt)}',
+                          'Last played: ${_formatDate(score.getLastPlayed(GameType.reactionTime) ?? DateTime.now())}',
                           style: GoogleFonts.montserrat(fontSize: 12),
                         ),
                         trailing: Text(
-                          '${score.highScoreMs} ms',
+                          '${score.getHighScore(GameType.reactionTime)} ms',
                           style: GoogleFonts.montserrat(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
