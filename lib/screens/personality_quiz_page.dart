@@ -11,6 +11,7 @@ import '../services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/personality/personality_radar_chart.dart';
 import '../widgets/personality/trait_score_card.dart';
+import '../widgets/personality_leaderboard.dart';
 
 class PersonalityQuizPage extends ConsumerStatefulWidget {
   const PersonalityQuizPage({super.key});
@@ -533,6 +534,28 @@ class _PersonalityQuizPageState extends ConsumerState<PersonalityQuizPage> {
               rawScore: result.traitScores[trait]!,
             );
           },
+        ),
+        const SizedBox(height: 24),
+
+        // Personality Leaderboard
+        Center(
+          child: Text(
+            'Compare with Others',
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade800,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: const PersonalityLeaderboard(
+            showTitle: false,
+            maxItems: 5,
+          ),
         ),
         const SizedBox(height: 24),
 

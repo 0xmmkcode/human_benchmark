@@ -16,7 +16,6 @@ class _ComprehensiveLeaderboardPageState
     extends ConsumerState<ComprehensiveLeaderboardPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  GameType _selectedGame = GameType.reactionTime;
 
   @override
   void initState() {

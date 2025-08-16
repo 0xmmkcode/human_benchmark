@@ -6,8 +6,12 @@ class WebUtils {
     switch (iconName) {
       case 'timer':
         return Icons.timer;
-      case 'leaderboard':
-        return Icons.leaderboard;
+      case 'dashboard':
+        return Icons.dashboard;
+      case 'memory':
+        return Icons.memory;
+      case 'psychology':
+        return Icons.psychology;
       case 'info_outline':
         return Icons.info_outline;
       case 'settings':
@@ -36,34 +40,6 @@ class WebUtils {
         return Icons.refresh;
       default:
         return Icons.help_outline;
-    }
-  }
-
-  // Color mapping for leaderboard top 3
-  static Color getTop3Color(int index) {
-    switch (index) {
-      case 0:
-        return Colors.amber[600]!;
-      case 1:
-        return Colors.grey[400]!;
-      case 2:
-        return Colors.orange[600]!;
-      default:
-        return Colors.white;
-    }
-  }
-
-  // Icon color mapping for leaderboard top 3
-  static Color getTop3IconColor(int index) {
-    switch (index) {
-      case 0:
-        return Colors.yellow[100]!;
-      case 1:
-        return Colors.white;
-      case 2:
-        return Colors.orange[100]!;
-      default:
-        return Colors.grey[600]!;
     }
   }
 

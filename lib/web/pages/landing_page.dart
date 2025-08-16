@@ -112,6 +112,10 @@ class _LandingPageState extends State<LandingPage>
                 _buildAnimatedHeader(context),
                 _buildHeroSection(context),
                 _buildFeaturesSection(context),
+                _buildPersonalityTestSection(context),
+                const Gap(80),
+                _buildNumberMemorySection(context),
+                const Gap(80),
                 _buildAboutSection(context),
                 _buildMobileShowcase(context),
                 _buildFooter(context),
@@ -409,7 +413,7 @@ class _LandingPageState extends State<LandingPage>
 
   Widget _buildFeaturesSection(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 100),
+      padding: EdgeInsets.symmetric(horizontal: 100, vertical: 100),
       color: Colors.white,
       child: Column(
         children: [
@@ -466,7 +470,7 @@ class _LandingPageState extends State<LandingPage>
             ],
           ),
           SizedBox(height: 24),
-          Row(
+          /*Row(
             children: [
               _buildAnimatedFeatureCard(
                 icon: Icons.psychology,
@@ -476,7 +480,7 @@ class _LandingPageState extends State<LandingPage>
                 delay: 800,
               ),
             ],
-          ),
+          ),*/
         ],
       ),
     );
@@ -558,9 +562,430 @@ class _LandingPageState extends State<LandingPage>
     );
   }
 
+  Widget _buildPersonalityTestSection(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 100, vertical: 100),
+      color: WebTheme.grey50,
+      child: Column(
+        children: [
+          // Animated Section Title
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: Duration(milliseconds: 1000),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, child) {
+              return Transform.translate(
+                offset: Offset(0, 30 * (1 - value)),
+                child: Opacity(
+                  opacity: value,
+                  child: Text(
+                    'Discover Your Personality',
+                    style: WebTheme.headingLarge.copyWith(
+                      fontSize: 42,
+                      fontWeight: FontWeight.bold,
+                      foreground: Paint()
+                        ..shader = LinearGradient(
+                          colors: [
+                            WebTheme.primaryBlue,
+                            WebTheme.primaryBlueLight,
+                          ],
+                        ).createShader(const Rect.fromLTWH(0, 0, 500, 50)),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              );
+            },
+          ),
+          SizedBox(height: 40),
+
+          // Animated Description
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: Duration(milliseconds: 1200),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, child) {
+              return Transform.translate(
+                offset: Offset(0, 30 * (1 - value)),
+                child: Opacity(
+                  opacity: value,
+                  child: Text(
+                    'Take our scientifically-validated Big Five personality assessment and see how you compare to others worldwide.',
+                    textAlign: TextAlign.center,
+                    style: WebTheme.bodyLarge.copyWith(
+                      fontSize: 20,
+                      height: 1.6,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          SizedBox(height: 60),
+
+          // Personality Test Cards
+          Row(
+            children: [
+              _buildPersonalityTestCard(
+                icon: Icons.psychology,
+                title: 'Big Five Assessment',
+                description:
+                    '50 research-grade questions measuring Openness, Conscientiousness, Extraversion, Agreeableness, and Neuroticism.',
+                delay: 200,
+              ),
+              SizedBox(width: 24),
+              _buildPersonalityTestCard(
+                icon: Icons.analytics,
+                title: 'Detailed Results',
+                description:
+                    'Get comprehensive insights into your personality traits with percentile rankings and detailed explanations.',
+                delay: 400,
+              ),
+              SizedBox(width: 24),
+              _buildPersonalityTestCard(
+                icon: Icons.leaderboard,
+                title: 'Global Comparison',
+                description:
+                    'See how your personality traits compare to people worldwide and discover what makes you unique.',
+                delay: 600,
+              ),
+            ],
+          ),
+          SizedBox(height: 60),
+
+          // Call to Action Button
+          /*TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: Duration(milliseconds: 1000),
+            curve: Curves.elasticOut,
+            builder: (context, value, child) {
+              return Transform.scale(
+                scale: value,
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Navigate to personality quiz
+                    context.go('/app/personality');
+                  },
+                  style: WebTheme.largePrimaryButton.copyWith(
+                    elevation: MaterialStateProperty.all(12),
+                    shadowColor: MaterialStateProperty.all(
+                      WebTheme.primaryBlue.withOpacity(0.4),
+                    ),
+                    backgroundColor: MaterialStateProperty.all(
+                      WebTheme.primaryBlue,
+                    ),
+                    padding: MaterialStateProperty.all(
+                      EdgeInsets.symmetric(horizontal: 48, vertical: 20),
+                    ),
+                  ),
+                  child: Text(
+                    'Take Personality Test Now',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ), */
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPersonalityTestCard({
+    required IconData icon,
+    required String title,
+    required String description,
+    required int delay,
+  }) {
+    return Expanded(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: Duration(milliseconds: 800),
+        curve: Curves.easeOutCubic,
+        builder: (context, value, child) {
+          return Transform.translate(
+            offset: Offset(0, 50 * (1 - value)),
+            child: Opacity(
+              opacity: value,
+              child: Container(
+                padding: EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 20,
+                      offset: Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            WebTheme.primaryBlue.withOpacity(0.1),
+                            WebTheme.primaryBlueLight.withOpacity(0.05),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      child: Icon(icon, size: 50, color: WebTheme.primaryBlue),
+                    ),
+                    SizedBox(height: 28),
+                    Text(
+                      title,
+                      style: WebTheme.headingMedium.copyWith(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: WebTheme.primaryBlue,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      description,
+                      style: WebTheme.bodyLarge.copyWith(
+                        height: 1.6,
+                        color: Colors.grey[700],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildNumberMemorySection(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 100, vertical: 100),
+      color: Colors.white,
+      child: Column(
+        children: [
+          // Animated Section Title
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: Duration(milliseconds: 1000),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, child) {
+              return Transform.translate(
+                offset: Offset(0, 30 * (1 - value)),
+                child: Opacity(
+                  opacity: value,
+                  child: Text(
+                    'Number Memory',
+                    style: WebTheme.headingLarge.copyWith(
+                      fontSize: 42,
+                      fontWeight: FontWeight.bold,
+                      foreground: Paint()
+                        ..shader = LinearGradient(
+                          colors: [
+                            WebTheme.primaryBlue,
+                            WebTheme.primaryBlueLight,
+                          ],
+                        ).createShader(const Rect.fromLTWH(0, 0, 500, 50)),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              );
+            },
+          ),
+          SizedBox(height: 40),
+
+          // Animated Description
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: Duration(milliseconds: 1200),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, child) {
+              return Transform.translate(
+                offset: Offset(0, 30 * (1 - value)),
+                child: Opacity(
+                  opacity: value,
+                  child: Text(
+                    'Test your ability to remember numbers and sequences. Challenge your memory and concentration. The game continues progressively until you make a mistake. Sign in to play and save your scores.',
+                    textAlign: TextAlign.center,
+                    style: WebTheme.bodyLarge.copyWith(
+                      fontSize: 20,
+                      height: 1.6,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          SizedBox(height: 60),
+
+          // Number Memory Cards
+          Row(
+            children: [
+              _buildNumberMemoryCard(
+                icon: Icons.memory,
+                title: 'Number Recall',
+                description:
+                    'Test your ability to recall numbers from a sequence. Challenge your memory and concentration.',
+                delay: 200,
+              ),
+              SizedBox(width: 24),
+              _buildNumberMemoryCard(
+                icon: Icons.numbers,
+                title: 'Sequence Memory',
+                description:
+                    'Test your ability to remember and repeat a sequence of numbers. Challenge your memory and concentration.',
+                delay: 400,
+              ),
+              SizedBox(width: 24),
+              _buildNumberMemoryCard(
+                icon: Icons.leaderboard,
+                title: 'Global Leaderboard',
+                description:
+                    'Compete with players worldwide and see how you rank among the fastest minds.',
+                delay: 600,
+              ),
+            ],
+          ),
+          SizedBox(height: 60),
+
+          // Call to Action Button
+          /*TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: Duration(milliseconds: 1000),
+            curve: Curves.elasticOut,
+            builder: (context, value, child) {
+              return Transform.scale(
+                scale: value,
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Navigate to personality quiz
+                    context.go('/app/personality');
+                  },
+                  style: WebTheme.largePrimaryButton.copyWith(
+                    elevation: MaterialStateProperty.all(12),
+                    shadowColor: MaterialStateProperty.all(
+                      WebTheme.primaryBlue.withOpacity(0.4),
+                    ),
+                    backgroundColor: MaterialStateProperty.all(
+                      WebTheme.primaryBlue,
+                    ),
+                    padding: MaterialStateProperty.all(
+                      EdgeInsets.symmetric(horizontal: 48, vertical: 20),
+                    ),
+                  ),
+                  child: Text(
+                    'Take Personality Test Now',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ), */
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNumberMemoryCard({
+    required IconData icon,
+    required String title,
+    required String description,
+    required int delay,
+  }) {
+    return Expanded(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: Duration(milliseconds: 800),
+        curve: Curves.easeOutCubic,
+        builder: (context, value, child) {
+          return Transform.translate(
+            offset: Offset(0, 50 * (1 - value)),
+            child: Opacity(
+              opacity: value,
+              child: Container(
+                padding: EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 20,
+                      offset: Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            WebTheme.primaryBlue.withOpacity(0.1),
+                            WebTheme.primaryBlueLight.withOpacity(0.05),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      child: Icon(icon, size: 50, color: WebTheme.primaryBlue),
+                    ),
+                    SizedBox(height: 28),
+                    Text(
+                      title,
+                      style: WebTheme.headingMedium.copyWith(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: WebTheme.primaryBlue,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      description,
+                      style: WebTheme.bodyLarge.copyWith(
+                        height: 1.6,
+                        color: Colors.grey[700],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildAboutSection(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 60),
+      color: Colors.white,
+      padding: EdgeInsets.symmetric(horizontal: 100, vertical: 60),
       child: Column(
         children: [
           // Animated Section Title
@@ -695,7 +1120,7 @@ class _LandingPageState extends State<LandingPage>
 
   Widget _buildMobileShowcase(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(left: 40, right: 40, bottom: 100),
+      padding: EdgeInsets.only(top: 40, left: 60, right: 60, bottom: 100),
       child: Column(
         children: [
           // Animated Section Title

@@ -10,6 +10,9 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:human_benchmark/ad_helper.dart';
 import 'package:human_benchmark/models/user_score.dart';
 import 'package:human_benchmark/services/score_service.dart';
+import 'package:human_benchmark/services/local_storage_service.dart';
+import 'package:human_benchmark/services/auth_service.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ReactionTimePage extends StatefulWidget {
@@ -31,7 +34,6 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
   DateTime? _startTime;
   int? _reactionTime;
   int? _highScore;
-  String? _userId;
   final Random _random = Random();
   final Color backgroundColor = Color(0xFF0074EB);
 
@@ -39,7 +41,6 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
   void initState() {
     super.initState();
     _loadHighScore();
-    _loadUserId();
     if (kReleaseMode) {
       _loadInterstitialAd();
       _bannerAd = BannerAd(
@@ -124,24 +125,29 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
         _state = GameState.result;
         _reactionTime = now.difference(_startTime!).inMilliseconds;
       });
+
+      // Always save to local storage
+      await LocalStorageService.addTime(_reactionTime!);
+
       if (_reactionTime == null || _reactionTime! < (_highScore ?? 999999)) {
         _highScore = _reactionTime;
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setInt('highScore', _highScore!);
+        await LocalStorageService.saveBestTime(_reactionTime!);
 
-        // Save to Firebase using new ScoreService
-        try {
-          await ScoreService.submitGameScore(
-            gameType: GameType.reactionTime,
-            score: _reactionTime!,
-            gameData: {
-              'roundCounter': _roundCounter,
-              'timestamp': DateTime.now().millisecondsSinceEpoch,
-            },
-          );
-        } catch (e) {
-          // Log error but don't break the game
-          print('Failed to save score: $e');
+        // Save to Firebase if user is logged in
+        if (AuthService.currentUser != null) {
+          try {
+            await ScoreService.submitGameScore(
+              gameType: GameType.reactionTime,
+              score: _reactionTime!,
+              gameData: {
+                'roundCounter': _roundCounter,
+                'timestamp': DateTime.now().millisecondsSinceEpoch,
+              },
+            );
+          } catch (e) {
+            // Log error but don't break the game
+            print('Failed to save score to Firebase: $e');
+          }
         }
       }
     } else if (_state == GameState.result) {
@@ -152,30 +158,10 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
   }
 
   Future<void> _loadHighScore() async {
-    final prefs = await SharedPreferences.getInstance();
+    final bestTime = await LocalStorageService.getBestTime();
     setState(() {
-      _highScore = prefs.getInt('highScore');
+      _highScore = bestTime;
     });
-  }
-
-  Future<void> _loadUserId() async {
-    _userId = await _ensureUserId();
-  }
-
-  Future<String> _ensureUserId() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? id = prefs.getString('userId');
-    if (id == null || id.isEmpty) {
-      id = _generatePseudoId();
-      await prefs.setString('userId', id);
-    }
-    return id;
-  }
-
-  String _generatePseudoId() {
-    final int millis = DateTime.now().millisecondsSinceEpoch;
-    final int rand = _random.nextInt(1 << 32);
-    return '${millis.toRadixString(16)}-${rand.toRadixString(16)}';
   }
 
   @override
@@ -286,13 +272,19 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
                 ),
                 Align(
                   alignment: Alignment.bottomCenter,
-                  child: (kReleaseMode && _isBannerAdReady && _bannerAd != null)
-                      ? SizedBox(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Banner Ad
+                      // Banner Ad
+                      if (kReleaseMode && _isBannerAdReady && _bannerAd != null)
+                        SizedBox(
                           height: _bannerAd!.size.height.toDouble(),
                           width: _bannerAd!.size.width.toDouble(),
                           child: AdWidget(ad: _bannerAd!),
-                        )
-                      : null,
+                        ),
+                    ],
+                  ),
                 ),
               ],
             ),

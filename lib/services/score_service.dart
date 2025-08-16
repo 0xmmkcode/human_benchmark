@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import '../models/user_score.dart';
 import '../models/game_score.dart';
 import 'app_logger.dart';
+import 'local_storage_service.dart';
 
 class ScoreService {
   ScoreService._();
@@ -24,10 +25,25 @@ class ScoreService {
     String? userName,
   }) async {
     try {
-      if (Firebase.apps.isEmpty) return;
+      if (Firebase.apps.isEmpty) {
+        AppLogger.log('Firebase not initialized, skipping score submission');
+        return;
+      }
 
       final String userId = await _getUserId();
-      if (userId.isEmpty) return;
+      if (userId.isEmpty) {
+        AppLogger.log('No user ID available, skipping score submission');
+        return;
+      }
+
+      // Check if user is authenticated
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        AppLogger.log('User not authenticated, using local storage only');
+        // Still save to local storage even if not authenticated
+        await LocalStorageService.addTime(score);
+        return;
+      }
 
       // Check if this is a high score
       final bool isHighScore = await _isHighScore(userId, gameType, score);
@@ -43,10 +59,22 @@ class ScoreService {
       );
 
       // Save game score
-      await _gameScoresCollection.doc(gameScore.id).set(gameScore.toMap());
+      try {
+        await _gameScoresCollection.doc(gameScore.id).set(gameScore.toMap());
+        AppLogger.log('Game score saved successfully');
+      } catch (e) {
+        AppLogger.error('score.submit.gameScore', e);
+        // Continue with user score update even if game score fails
+      }
 
       // Update user's high score and stats
-      await _updateUserScore(userId, userName, gameType, score, isHighScore);
+      try {
+        await _updateUserScore(userId, userName, gameType, score, isHighScore);
+        AppLogger.log('User score updated successfully');
+      } catch (e) {
+        AppLogger.error('score.submit.userScore', e);
+        // Don't rethrow - we want to continue even if this fails
+      }
 
       AppLogger.event('score.submitted', {
         'userId': userId,
@@ -56,7 +84,8 @@ class ScoreService {
       });
     } catch (e, st) {
       AppLogger.error('score.submit', e, st);
-      rethrow;
+      // Don't rethrow - we want the app to continue working even if score submission fails
+      // The score is still saved locally
     }
   }
 
@@ -76,8 +105,58 @@ class ScoreService {
       final UserScore userScore = UserScore.fromMap(doc.data()!);
       return userScore.getHighScore(gameType);
     } catch (e, st) {
-      AppLogger.error('score.getHighScore', e, st);
+      AppLogger.error('score.getUserHighScore', e, st);
       return 0;
+    }
+  }
+
+  // Get top scores for a specific game type
+  static Future<List<GameScore>> getTopScores({
+    required GameType gameType,
+    int limit = 10,
+  }) async {
+    try {
+      if (Firebase.apps.isEmpty) return [];
+
+      final QuerySnapshot<Map<String, dynamic>> querySnapshot =
+          await _gameScoresCollection
+              .where('gameType', isEqualTo: gameType.name)
+              .orderBy('score', descending: true)
+              .limit(limit)
+              .get();
+
+      return querySnapshot.docs
+          .map((doc) => GameScore.fromMap(doc.data()))
+          .toList();
+    } catch (e, st) {
+      AppLogger.error('score.getTopScores', e, st);
+      return [];
+    }
+  }
+
+  // Get recent game activities for a user
+  static Future<List<GameScore>> getRecentActivities({
+    int limit = 10,
+  }) async {
+    try {
+      if (Firebase.apps.isEmpty) return [];
+
+      final String userId = await _getUserId();
+      if (userId.isEmpty) return [];
+
+      final QuerySnapshot<Map<String, dynamic>> querySnapshot =
+          await _gameScoresCollection
+              .where('userId', isEqualTo: userId)
+              .orderBy('playedAt', descending: true)
+              .limit(limit)
+              .get();
+
+      return querySnapshot.docs
+          .map((doc) => GameScore.fromMap(doc.data()))
+          .toList();
+    } catch (e, st) {
+      AppLogger.error('score.getRecentActivities', e, st);
+      return [];
     }
   }
 
@@ -208,9 +287,12 @@ class ScoreService {
       return FirebaseAuth.instance.currentUser!.uid;
     }
 
-    // Fallback to anonymous ID from SharedPreferences
-    // This would need to be implemented based on your current user ID system
-    return '';
+    // Fallback to local storage user ID
+    try {
+      return await LocalStorageService.getLocalUserId();
+    } catch (e) {
+      return '';
+    }
   }
 
   static Future<bool> _isHighScore(
@@ -293,12 +375,12 @@ class ScoreService {
       // Calculate and store overall score
       final overallScore = userScore.overallScore;
       final totalGamesPlayedOverall = userScore.totalGamesPlayedOverall;
-      
+
       // Update with calculated fields
       final updatedData = userScore.toMap();
       updatedData['overallScore'] = overallScore;
       updatedData['totalGamesPlayedOverall'] = totalGamesPlayedOverall;
-      
+
       await _userScoresCollection.doc(userId).set(updatedData);
     } catch (e, st) {
       AppLogger.error('score.updateUserScore', e, st);

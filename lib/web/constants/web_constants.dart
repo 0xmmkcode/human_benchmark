@@ -1,6 +1,6 @@
 class WebConstants {
   // Navigation Items
-  static const List<Map<String, dynamic>> navigationItems = [
+  static List<Map<String, dynamic>> get navigationItems => [
     {
       'icon': 'timer',
       'title': 'Reaction Time',
@@ -9,40 +9,47 @@ class WebConstants {
       'isComingSoon': false,
     },
     {
-      'icon': 'leaderboard',
-      'title': 'Leaderboard',
-      'subtitle': 'See top scores',
+      'icon': 'dashboard',
+      'title': 'Global Dashboard',
+      'subtitle': 'View global statistics',
       'index': 1,
       'isComingSoon': false,
     },
     {
-      'icon': 'info_outline',
-      'title': 'About',
-      'subtitle': 'Learn more',
+      'icon': 'psychology',
+      'title': 'Personality Quiz',
+      'subtitle': 'Big Five assessment (Sign in required)',
       'index': 2,
-      'isComingSoon': true,
+      'isComingSoon': false,
+    },
+    {
+      'icon': 'speed',
+      'title': 'Decision Making',
+      'subtitle': 'Speed vs accuracy',
+      'index': 3,
+      'isComingSoon': false,
+    },
+    {
+      'icon': 'memory',
+      'title': 'Number Memory',
+      'subtitle': 'Test your memory (Sign in required)',
+      'index': 4,
+      'isComingSoon': false,
     },
     {
       'icon': 'settings',
       'title': 'Settings',
       'subtitle': 'Customize your experience',
-      'index': 3,
-      'isComingSoon': true,
+      'index': 5,
+      'isComingSoon': false,
     },
-  ];
-
-  // Categories for Leaderboard
-  static const List<Map<String, String>> leaderboardCategories = [
-    {'value': 'reaction_time', 'label': 'Reaction Time'},
-    {'value': 'memory', 'label': 'Memory'},
-    {'value': 'typing', 'label': 'Typing Speed'},
-  ];
-
-  // Time Frames for Leaderboard
-  static const List<Map<String, String>> timeFrames = [
-    {'value': 'all_time', 'label': 'All Time'},
-    {'value': 'this_month', 'label': 'This Month'},
-    {'value': 'this_week', 'label': 'This Week'},
+    {
+      'icon': 'person',
+      'title': 'Profile',
+      'subtitle': 'View your statistics',
+      'index': 6,
+      'isComingSoon': false,
+    },
   ];
 
   // App Information
@@ -58,7 +65,6 @@ class WebConstants {
   // Game Constants
   static const int minReactionDelay = 1000; // 1 second
   static const int maxReactionDelay = 5000; // 5 seconds
-  static const int leaderboardLimit = 50;
 
   // UI Constants
   static const double sidebarWidth = 280.0;

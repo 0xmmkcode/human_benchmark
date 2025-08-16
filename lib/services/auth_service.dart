@@ -31,14 +31,48 @@ class AuthService {
     }
   }
 
+  static bool get isAuthenticated {
+    return currentUser != null;
+  }
+
+  static Future<void> initializeAuth() async {
+    if (kIsWeb && Firebase.apps.isNotEmpty) {
+      try {
+        // Set persistence to LOCAL for web to maintain auth state across sessions
+        await _auth.setPersistence(Persistence.LOCAL);
+        print('Auth persistence set to LOCAL successfully');
+
+        // Check if user was previously authenticated
+        final User? user = _auth.currentUser;
+        if (user != null) {
+          print('User was previously authenticated: ${user.email}');
+        }
+      } catch (e) {
+        print('Failed to set auth persistence: $e');
+      }
+    }
+  }
+
+  static Future<bool> wasPreviouslyAuthenticated() async {
+    if (Firebase.apps.isEmpty) return false;
+    try {
+      // Wait a bit for auth state to restore
+      await Future.delayed(Duration(milliseconds: 500));
+      return _auth.currentUser != null;
+    } catch (_) {
+      return false;
+    }
+  }
+
   static Future<UserCredential?> signInWithGoogle() async {
     if (Firebase.apps.isEmpty) return null;
 
     try {
       if (kIsWeb) {
-        // Web implementation
+        // Web implementation with persistent auth
         final GoogleAuthProvider provider = GoogleAuthProvider();
         provider.addScope('email');
+        // This will automatically use the persistence setting we configured
         return await _auth.signInWithPopup(provider);
       } else {
         // Mobile implementation: force account chooser

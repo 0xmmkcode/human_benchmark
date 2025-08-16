@@ -62,6 +62,51 @@ class PersonalityRepository {
     }
   }
 
+  // Get top personality results for a specific trait
+  Future<List<PersonalityResult>> getTopResults({
+    required String trait,
+    int limit = 10,
+  }) async {
+    try {
+      AppLogger.event('firestore.query', {
+        'collection': 'personality_results',
+        'orderBy': 'normalizedScores.$trait',
+        'limit': limit,
+      });
+      
+      final QuerySnapshot snapshot = await _firestore
+          .collection('personality_results')
+          .orderBy('normalizedScores.$trait', descending: true)
+          .limit(limit)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => PersonalityResult.fromJson(doc.data() as Map<String, dynamic>))
+          .toList();
+    } catch (e, st) {
+      AppLogger.error('getTopResults', e, st);
+      // Fallback: get all results and sort locally
+      try {
+        final QuerySnapshot fallback = await _firestore
+            .collection('personality_results')
+            .limit(100)
+            .get();
+        
+        final List<PersonalityResult> results = fallback.docs
+            .map((doc) => PersonalityResult.fromJson(doc.data() as Map<String, dynamic>))
+            .toList();
+        
+        // Sort by the specified trait score
+        results.sort((a, b) => (b.normalizedScores[trait] ?? 0).compareTo(a.normalizedScores[trait] ?? 0));
+        
+        return results.take(limit).toList();
+      } catch (inner, st2) {
+        AppLogger.error('getTopResults.fallback', inner, st2);
+        return [];
+      }
+    }
+  }
+
   // Get personality scale
   Future<PersonalityScale> getScale() async {
     try {

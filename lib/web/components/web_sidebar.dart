@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
+import 'package:human_benchmark/web/constants/web_constants.dart';
+import 'package:human_benchmark/web/utils/web_utils.dart';
 import 'package:human_benchmark/web/components/web_navigation_item.dart';
 import 'package:human_benchmark/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -91,33 +94,53 @@ class WebSidebar extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: 16),
               children: [
                 WebNavigationItem(
-                  icon: Icons.timer,
+                  icon: WebUtils.getIconFromString('timer'),
                   title: 'Reaction Time',
                   subtitle: 'Test your reflexes',
                   isSelected: selectedIndex == 0,
                   onTap: () => onIndexChanged(0),
                 ),
                 WebNavigationItem(
-                  icon: Icons.leaderboard,
-                  title: 'Leaderboard',
-                  subtitle: 'See top scores',
+                  icon: WebUtils.getIconFromString('dashboard'),
+                  title: 'Global Dashboard',
+                  subtitle: 'View global statistics',
                   isSelected: selectedIndex == 1,
                   onTap: () => onIndexChanged(1),
                 ),
                 WebNavigationItem(
-                  icon: Icons.psychology,
+                  icon: WebUtils.getIconFromString('psychology'),
                   title: 'Personality Quiz',
-                  subtitle: 'Big Five assessment',
+                  subtitle: 'Big Five assessment (Sign in required)',
                   isSelected: selectedIndex == 2,
                   onTap: () => onIndexChanged(2),
                 ),
-                SizedBox(height: 32),
                 WebNavigationItem(
-                  icon: Icons.speed,
+                  icon: WebUtils.getIconFromString('speed'),
                   title: 'Decision Making',
                   subtitle: 'Speed vs accuracy',
                   isSelected: selectedIndex == 3,
                   onTap: () => onIndexChanged(3),
+                ),
+                WebNavigationItem(
+                  icon: WebUtils.getIconFromString('memory'),
+                  title: 'Number Memory',
+                  subtitle: 'Test your memory (Sign in required)',
+                  isSelected: selectedIndex == 4,
+                  onTap: () => onIndexChanged(4),
+                ),
+                WebNavigationItem(
+                  icon: WebUtils.getIconFromString('settings'),
+                  title: 'Settings',
+                  subtitle: 'Customize your experience',
+                  isSelected: selectedIndex == 5,
+                  onTap: () => onIndexChanged(5),
+                ),
+                WebNavigationItem(
+                  icon: WebUtils.getIconFromString('person'),
+                  title: 'Profile',
+                  subtitle: 'View your statistics',
+                  isSelected: selectedIndex == 6,
+                  onTap: () => onIndexChanged(6),
                 ),
               ],
             ),

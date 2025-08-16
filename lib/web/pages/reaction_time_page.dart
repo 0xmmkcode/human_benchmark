@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:human_benchmark/web/components/web_banner_ad.dart';
 import 'package:human_benchmark/models/user_score.dart';
-import 'package:human_benchmark/models/game_score.dart';
 import 'package:human_benchmark/services/score_service.dart';
+import 'package:human_benchmark/services/local_storage_service.dart';
+import 'package:human_benchmark/services/auth_service.dart';
 import 'package:human_benchmark/widgets/score_display.dart';
+import 'package:human_benchmark/widgets/reaction_time_leaderboard.dart';
 import 'package:human_benchmark/screens/comprehensive_leaderboard_page.dart';
 
 class WebReactionTimePage extends StatefulWidget {
@@ -50,10 +52,9 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
   }
 
   Future<void> _loadBestTime() async {
-    // Load best time from local storage or service
-    // For now, we'll use a placeholder
+    final bestTime = await LocalStorageService.getBestTime();
     setState(() {
-      _bestTime = 0;
+      _bestTime = bestTime ?? 0;
     });
   }
 
@@ -99,26 +100,34 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
     _colorController.reverse();
     _scaleController.reverse();
 
+    // Always save to local storage
+    await LocalStorageService.addTime(reactionTime);
+
     // Update best time if this is better
     if (_bestTime == 0 || reactionTime < _bestTime) {
       setState(() {
         _bestTime = reactionTime;
       });
 
-      // Save score using new ScoreService
-      try {
-        await ScoreService.submitGameScore(
-          gameType: GameType.reactionTime,
-          score: reactionTime,
-          gameData: {
-            'times': _times,
-            'bestTime': _bestTime,
-            'timestamp': DateTime.now().millisecondsSinceEpoch,
-          },
-        );
-      } catch (e) {
-        // Log error but don't break the game
-        print('Failed to save score: $e');
+      // Save best time to local storage
+      await LocalStorageService.saveBestTime(reactionTime);
+
+      // Save score to Firebase if user is logged in
+      if (AuthService.currentUser != null) {
+        try {
+          await ScoreService.submitGameScore(
+            gameType: GameType.reactionTime,
+            score: reactionTime,
+            gameData: {
+              'times': _times,
+              'bestTime': _bestTime,
+              'timestamp': DateTime.now().millisecondsSinceEpoch,
+            },
+          );
+        } catch (e) {
+          // Log error but don't break the game
+          print('Failed to save score to Firebase: $e');
+        }
       }
     }
   }
@@ -497,6 +506,14 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
                 ),
               ],
             ),
+          ),
+
+          Gap(30),
+          // Leaderboard
+          const ReactionTimeLeaderboard(
+            showTitle: true,
+            maxItems: 10,
+            showLocalScores: true,
           ),
         ],
       ),
