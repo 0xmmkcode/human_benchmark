@@ -5,6 +5,7 @@ import 'package:human_benchmark/services/auth_service.dart';
 import 'package:human_benchmark/services/score_service.dart';
 import 'package:human_benchmark/models/user_score.dart';
 import 'package:human_benchmark/models/game_score.dart';
+import 'package:human_benchmark/widgets/user_avatar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -225,10 +226,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildProfileContent(User user) {
     return RefreshIndicator(
       onRefresh: () async {
-        await Future.wait([
-          _loadUserProfile(),
-          _loadRecentActivities(),
-        ]);
+        await Future.wait([_loadUserProfile(), _loadRecentActivities()]);
       },
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -271,15 +269,13 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       child: Row(
         children: [
-          CircleAvatar(
+          UserAvatar(
             radius: 40,
-            backgroundColor: Colors.blue[100],
-            backgroundImage: user.photoURL != null && user.photoURL!.isNotEmpty
-                ? NetworkImage(user.photoURL!)
-                : null,
-            child: user.photoURL == null || user.photoURL!.isEmpty
-                ? Icon(Icons.person, size: 40, color: Colors.blue[600])
-                : null,
+            photoURL: user.photoURL,
+            displayName: user.displayName,
+            email: user.email,
+            borderColor: Colors.blue[200],
+            borderWidth: 2,
           ),
           const Gap(16),
           Expanded(
@@ -578,7 +574,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                             const Gap(4),
                             Text(
-                                                             'Score: ${activity.score} • Date: ${_formatDate(activity.playedAt)}',
+                              'Score: ${activity.score} • Date: ${_formatDateTime(activity.playedAt)}',
                               style: GoogleFonts.montserrat(
                                 fontSize: 12,
                                 color: Colors.grey[600],
@@ -643,5 +639,10 @@ class _ProfilePageState extends State<ProfilePage> {
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }
+  }
+
+  String _formatDateTime(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} '
+        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 }

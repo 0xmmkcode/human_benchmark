@@ -1,23 +1,28 @@
 {
-    "name": "human_benchmark",
-    "short_name": "human_benchmark",
+    "name": "Human Benchmark - Cognitive Testing Platform",
+    "short_name": "Human Benchmark",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "ReactionLab is a fast-paced reaction time tester. Tap when the screen turns green and see how quick your brain really is. Can you beat your best time?",
+    "description": "Challenge your mind with Human Benchmark's comprehensive cognitive tests. Measure reaction time, memory, decision-making, and personality traits. Compare scores globally and track your progress over time.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
+    "categories": ["games", "education", "productivity"],
+    "lang": "en",
+    "dir": "ltr",
     "icons": [
         {
             "src": "icons/Icon-192.png",
             "sizes": "192x192",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
         },
         {
             "src": "icons/Icon-512.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
         },
         {
             "src": "icons/Icon-maskable-192.png",
@@ -30,6 +35,15 @@
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "Human Benchmark Cognitive Testing Platform"
         }
     ]
 }

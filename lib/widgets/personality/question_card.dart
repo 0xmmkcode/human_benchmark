@@ -65,19 +65,24 @@ class QuestionCard extends StatelessWidget {
             const SizedBox(height: 32),
 
             // Answer options
-            Expanded(
-              child: Row(
-                children: scale.scale.map((option) {
-                  final isSelected = selectedAnswer == option.value;
-
-                  return Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            SizedBox(
+              height: 64,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: scale.scale.map((option) {
+                    final isSelected = selectedAnswer == option.value;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6.0),
                       child: InkWell(
                         onTap: () => onAnswerSelected(option.value),
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
-                          padding: const EdgeInsets.all(16.0),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0,
+                            vertical: 12.0,
+                          ),
+                          constraints: const BoxConstraints(minWidth: 110),
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? Colors.blue.shade50
@@ -90,12 +95,12 @@ class QuestionCard extends StatelessWidget {
                             ),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
-                                width: 24,
-                                height: 24,
+                                width: 20,
+                                height: 20,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: isSelected
@@ -111,17 +116,17 @@ class QuestionCard extends StatelessWidget {
                                 child: isSelected
                                     ? const Icon(
                                         Icons.check,
-                                        size: 16,
+                                        size: 14,
                                         color: Colors.white,
                                       )
                                     : null,
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(width: 12),
                               Text(
                                 option.label,
                                 style: TextStyle(
                                   fontFamily: 'Montserrat',
-                                  fontSize: 14,
+                                  fontSize: 15,
                                   fontWeight: isSelected
                                       ? FontWeight.w600
                                       : FontWeight.w500,
@@ -129,15 +134,14 @@ class QuestionCard extends StatelessWidget {
                                       ? Colors.blue.shade700
                                       : Colors.grey.shade700,
                                 ),
-                                textAlign: TextAlign.center,
                               ),
                             ],
                           ),
                         ),
                       ),
-                    ),
-                  );
-                }).toList(),
+                    );
+                  }).toList(),
+                ),
               ),
             ),
           ],

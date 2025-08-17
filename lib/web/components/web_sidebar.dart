@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:gap/gap.dart';
-import 'package:human_benchmark/web/constants/web_constants.dart';
 import 'package:human_benchmark/web/utils/web_utils.dart';
 import 'package:human_benchmark/web/components/web_navigation_item.dart';
 import 'package:human_benchmark/services/auth_service.dart';
+import 'package:human_benchmark/services/admin_service.dart';
+import 'package:human_benchmark/services/game_management_service.dart';
+import 'package:human_benchmark/models/game_management.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class WebSidebar extends StatelessWidget {
+class WebSidebar extends StatefulWidget {
   final int selectedIndex;
   final Function(int) onIndexChanged;
   final VoidCallback? onBackToLanding;
@@ -19,12 +20,71 @@ class WebSidebar extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<WebSidebar> createState() => _WebSidebarState();
+}
+
+class _WebSidebarState extends State<WebSidebar> {
+  bool _isAdmin = false;
+  bool _isLoadingAdmin = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAdminStatus();
+  }
+
+  Future<void> _checkAdminStatus() async {
+    try {
+      final isAdmin = await AdminService.isCurrentUserAdmin();
+      setState(() {
+        _isAdmin = isAdmin;
+        _isLoadingAdmin = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isAdmin = false;
+        _isLoadingAdmin = false;
+      });
+    }
+  }
+
+  int _getGameIndex(String gameId) {
+    switch (gameId) {
+      case 'reaction_time':
+        return 0;
+      case 'personality_quiz':
+        return 2;
+      case 'decision_making':
+        return 3;
+      case 'number_memory':
+        return 4;
+      default:
+        return -1; // No specific index for this game
+    }
+  }
+
+  String _getGameSubtitle(String gameId) {
+    switch (gameId) {
+      case 'reaction_time':
+        return 'Test your reflexes';
+      case 'personality_quiz':
+        return 'Big Five assessment (Sign in required)';
+      case 'decision_making':
+        return 'Speed vs accuracy';
+      case 'number_memory':
+        return 'Test your memory (Sign in required)';
+      default:
+        return '';
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       width: 280,
       decoration: BoxDecoration(
         color: Colors.grey[50],
-        border: Border(right: BorderSide(color: Colors.grey[300]!, width: 1)),
+        // Removed outer right border for cleaner look
       ),
       child: Column(
         children: [
@@ -33,18 +93,16 @@ class WebSidebar extends StatelessWidget {
             padding: EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: Colors.white,
-              border: Border(
-                bottom: BorderSide(color: Colors.grey[300]!, width: 1),
-              ),
+              // Removed bottom border
             ),
             child: Column(
               children: [
                 // Back to Landing Button
-                if (onBackToLanding != null)
+                if (widget.onBackToLanding != null)
                   Row(
                     children: [
                       IconButton(
-                        onPressed: onBackToLanding,
+                        onPressed: widget.onBackToLanding,
                         icon: Icon(Icons.arrow_back, color: Colors.grey[600]),
                         tooltip: 'Back to Landing Page',
                       ),
@@ -90,59 +148,156 @@ class WebSidebar extends StatelessWidget {
 
           // Navigation Items
           Expanded(
-            child: ListView(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              children: [
-                WebNavigationItem(
-                  icon: WebUtils.getIconFromString('timer'),
-                  title: 'Reaction Time',
-                  subtitle: 'Test your reflexes',
-                  isSelected: selectedIndex == 0,
-                  onTap: () => onIndexChanged(0),
-                ),
-                WebNavigationItem(
-                  icon: WebUtils.getIconFromString('dashboard'),
-                  title: 'Global Dashboard',
-                  subtitle: 'View global statistics',
-                  isSelected: selectedIndex == 1,
-                  onTap: () => onIndexChanged(1),
-                ),
-                WebNavigationItem(
-                  icon: WebUtils.getIconFromString('psychology'),
-                  title: 'Personality Quiz',
-                  subtitle: 'Big Five assessment (Sign in required)',
-                  isSelected: selectedIndex == 2,
-                  onTap: () => onIndexChanged(2),
-                ),
-                WebNavigationItem(
-                  icon: WebUtils.getIconFromString('speed'),
-                  title: 'Decision Making',
-                  subtitle: 'Speed vs accuracy',
-                  isSelected: selectedIndex == 3,
-                  onTap: () => onIndexChanged(3),
-                ),
-                WebNavigationItem(
-                  icon: WebUtils.getIconFromString('memory'),
-                  title: 'Number Memory',
-                  subtitle: 'Test your memory (Sign in required)',
-                  isSelected: selectedIndex == 4,
-                  onTap: () => onIndexChanged(4),
-                ),
-                WebNavigationItem(
-                  icon: WebUtils.getIconFromString('settings'),
-                  title: 'Settings',
-                  subtitle: 'Customize your experience',
-                  isSelected: selectedIndex == 5,
-                  onTap: () => onIndexChanged(5),
-                ),
-                WebNavigationItem(
-                  icon: WebUtils.getIconFromString('person'),
-                  title: 'Profile',
-                  subtitle: 'View your statistics',
-                  isSelected: selectedIndex == 6,
-                  onTap: () => onIndexChanged(6),
-                ),
-              ],
+            child: StreamBuilder<List<GameManagement>>(
+              stream: GameManagementService.getEnabledGamesStream(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return ListView(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            SizedBox(width: 12),
+                            Text(
+                              'Loading games...',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return ListView(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Icon(Icons.error, color: Colors.red[400], size: 16),
+                            SizedBox(width: 12),
+                            Text(
+                              'Error loading games',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.red[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                final enabledGames = snapshot.data ?? [];
+
+                return ListView(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  children: [
+                    // Dashboard (always visible)
+                    WebNavigationItem(
+                      icon: WebUtils.getIconFromString('dashboard'),
+                      title: 'Global Dashboard',
+                      subtitle: 'View global statistics',
+                      isSelected: widget.selectedIndex == 1,
+                      onTap: () => widget.onIndexChanged(1),
+                    ),
+
+                    // Dynamic game items
+                    ...enabledGames
+                        .map((game) {
+                          final gameIndex = _getGameIndex(game.gameId);
+                          if (gameIndex == -1)
+                            return SizedBox.shrink(); // Skip if no index mapping
+
+                          return WebNavigationItem(
+                            icon: WebUtils.getIconFromString(game.icon),
+                            title: game.gameName,
+                            subtitle: _getGameSubtitle(game.gameId),
+                            isSelected: widget.selectedIndex == gameIndex,
+                            onTap: () => widget.onIndexChanged(gameIndex),
+                          );
+                        })
+                        .where((item) => item != SizedBox.shrink())
+                        .toList(),
+
+                    // Settings (always visible)
+                    WebNavigationItem(
+                      icon: WebUtils.getIconFromString('settings'),
+                      title: 'Settings',
+                      subtitle: 'Customize your experience',
+                      isSelected: widget.selectedIndex == 5,
+                      onTap: () => widget.onIndexChanged(5),
+                    ),
+
+                    // Profile (always visible)
+                    WebNavigationItem(
+                      icon: WebUtils.getIconFromString('person'),
+                      title: 'Profile',
+                      subtitle: 'View your statistics',
+                      isSelected: widget.selectedIndex == 6,
+                      onTap: () => widget.onIndexChanged(6),
+                    ),
+
+                    // Admin Users Link - Only show for admin users
+                    if (_isAdmin)
+                      WebNavigationItem(
+                        icon: WebUtils.getIconFromString('people'),
+                        title: 'Admin Users',
+                        subtitle: 'Manage all users',
+                        isSelected: widget.selectedIndex == 7,
+                        onTap: () => widget.onIndexChanged(7),
+                      ),
+
+                    // Game Management Link - Only show for admin users
+                    if (_isAdmin)
+                      WebNavigationItem(
+                        icon: WebUtils.getIconFromString('games'),
+                        title: 'Game Management',
+                        subtitle: 'Enable/disable games',
+                        isSelected: widget.selectedIndex == 8,
+                        onTap: () => widget.onIndexChanged(8),
+                      ),
+
+                    // Show loading indicator while checking admin status
+                    if (_isLoadingAdmin)
+                      Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            SizedBox(width: 12),
+                            Text(
+                              'Checking permissions...',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
           ),
 
@@ -157,9 +312,7 @@ class WebSidebar extends StatelessWidget {
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  border: Border(
-                    top: BorderSide(color: Colors.grey[300]!, width: 1),
-                  ),
+                  // Removed top border
                 ),
                 child: Row(
                   children: [
@@ -211,6 +364,27 @@ class WebSidebar extends StatelessWidget {
                                   : Colors.grey[600],
                             ),
                           ),
+                          // Show admin status if user is signed in
+                          if (isSignedIn && _isAdmin)
+                            Container(
+                              margin: EdgeInsets.only(top: 4),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green[100],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'ADMIN',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green[700],
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -220,6 +394,8 @@ class WebSidebar extends StatelessWidget {
                       IconButton(
                         onPressed: () async {
                           await AuthService.signOut();
+                          // Refresh admin status after logout
+                          _checkAdminStatus();
                         },
                         icon: Icon(
                           Icons.logout,
@@ -229,7 +405,6 @@ class WebSidebar extends StatelessWidget {
                         tooltip: 'Sign out',
                         style: IconButton.styleFrom(
                           backgroundColor: Colors.red[50],
-                          side: BorderSide(color: Colors.red[200]!),
                         ),
                       )
                     else
@@ -237,6 +412,8 @@ class WebSidebar extends StatelessWidget {
                       OutlinedButton.icon(
                         onPressed: () async {
                           await AuthService.signInWithGoogle();
+                          // Refresh admin status after sign in
+                          _checkAdminStatus();
                         },
                         icon: Icon(
                           Icons.login,
@@ -248,7 +425,6 @@ class WebSidebar extends StatelessWidget {
                           style: TextStyle(color: Colors.blue[700]),
                         ),
                         style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Colors.blue[200]!),
                           padding: EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 8,

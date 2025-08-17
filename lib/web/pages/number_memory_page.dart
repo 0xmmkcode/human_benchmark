@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
-import 'package:human_benchmark/web/utils/web_utils.dart';
 import 'package:human_benchmark/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:human_benchmark/services/score_service.dart';
-import 'package:human_benchmark/models/user_score.dart';
 import 'dart:math';
 
 class WebNumberMemoryPage extends StatefulWidget {
@@ -26,8 +24,7 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
   int _bestScore = 0;
   String _currentNumber = '';
   String _userInput = '';
-  List<int> _numberSequence = [];
-  int _currentIndex = 0;
+
   bool _isCorrect = false;
   String _message = '';
 
@@ -70,7 +67,6 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
       _gameState = GameState.showing;
       _currentLevel = 1;
       _currentScore = 0;
-      _currentIndex = 0;
       _message = '';
       _isCorrect = false;
     });
@@ -146,9 +142,9 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
       if (AuthService.currentUser != null) {
         try {
           await ScoreService.submitGameScore(
-            gameType: GameType.numberMemory,
+            gameType: 'number_memory',
             score: _bestScore,
-            gameData: {
+            additionalData: {
               'level': _currentLevel,
               'totalScore': _currentScore,
               'bestScore': _bestScore,
@@ -170,9 +166,9 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
       if (AuthService.currentUser != null) {
         try {
           await ScoreService.submitGameScore(
-            gameType: GameType.numberMemory,
+            gameType: 'number_memory',
             score: _currentScore,
-            gameData: {
+            additionalData: {
               'level': _currentLevel,
               'totalScore': _currentScore,
               'bestScore': _bestScore,
@@ -191,6 +187,7 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
 
   void _nextLevel() {
     setState(() {
+      _gameState = GameState.showing;
       _currentLevel++;
       _message = '';
       _isCorrect = false;
@@ -207,7 +204,6 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
       _gameState = GameState.ready;
       _currentLevel = 1;
       _currentScore = 0;
-      _currentIndex = 0;
       _message = '';
       _isCorrect = false;
       _userInput = '';
@@ -224,18 +220,6 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
         if (!isAuthenticated) {
           return Scaffold(
             backgroundColor: WebTheme.grey50,
-            appBar: AppBar(
-              title: const Text(
-                'Number Memory',
-                style: TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
-                ),
-              ),
-              backgroundColor: Colors.white,
-              elevation: 0,
-            ),
             body: Center(
               child: Container(
                 constraints: const BoxConstraints(maxWidth: 600),
@@ -245,7 +229,6 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.grey[200]!),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.05),
@@ -311,66 +294,45 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
         // Authenticated user - show the game
         return Scaffold(
           backgroundColor: WebTheme.grey50,
-          appBar: AppBar(
-            title: const Text(
-              'Number Memory',
-              style: TextStyle(
-                fontFamily: 'Montserrat',
-                fontWeight: FontWeight.bold,
-                fontSize: 24,
-              ),
-            ),
-            backgroundColor: Colors.white,
-            elevation: 0,
-          ),
-          body: Center(
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 600),
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Game Title
-                  Text(
-                    'Number Memory',
-                    style: TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                      color: WebTheme.primaryBlue,
+          body: Container(
+            constraints: const BoxConstraints(maxWidth: 600),
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Game Title
+                Text(
+                  'Number Memory Test',
+                  style: TextStyle(
+                    fontSize: 35,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Remember the number sequence and type it back',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                ),
+
+                // Score Display
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildScoreCard(
+                      'Level',
+                      '$_currentLevel',
+                      Icons.trending_up,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const Gap(16),
-                  Text(
-                    'Remember the number sequence and type it back',
-                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                    textAlign: TextAlign.center,
-                  ),
-                  const Gap(40),
+                    _buildScoreCard('Score', '$_currentScore', Icons.star),
+                    _buildScoreCard('Best', '$_bestScore', Icons.emoji_events),
+                  ],
+                ),
+                const Gap(40),
 
-                  // Score Display
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildScoreCard(
-                        'Level',
-                        '$_currentLevel',
-                        Icons.trending_up,
-                      ),
-                      _buildScoreCard('Score', '$_currentScore', Icons.star),
-                      _buildScoreCard(
-                        'Best',
-                        '$_bestScore',
-                        Icons.emoji_events,
-                      ),
-                    ],
-                  ),
-                  const Gap(40),
-
-                  // Game Area
-                  _buildGameArea(),
-                ],
-              ),
+                // Game Area
+                _buildGameArea(),
+              ],
             ),
           ),
         );
@@ -384,7 +346,6 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -432,7 +393,6 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -487,7 +447,6 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -543,7 +502,6 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -616,7 +574,6 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),

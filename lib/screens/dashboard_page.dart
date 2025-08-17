@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/user_score.dart';
 import '../models/game_score.dart';
 import '../services/dashboard_service.dart';
+import '../services/game_management_service.dart';
 import '../widgets/score_display.dart';
 
 class DashboardPage extends ConsumerStatefulWidget {
@@ -60,11 +61,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [
-          _buildOverviewTab(),
-          _buildPlayersTab(),
-          _buildGamesTab(),
-        ],
+        children: [_buildOverviewTab(), _buildPlayersTab(), _buildGamesTab()],
       ),
     );
   }
@@ -82,7 +79,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, size: 64, color: Colors.grey.shade400),
+                Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: Colors.grey.shade400,
+                ),
                 const SizedBox(height: 16),
                 Text(
                   'Failed to load dashboard',
@@ -137,7 +138,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                 ),
               ),
               const SizedBox(height: 16),
-              ...overview.topPerformers.take(5).map((player) => _buildPlayerCard(player)),
+              ...overview.topPerformers
+                  .take(5)
+                  .map((player) => _buildPlayerCard(player)),
               const SizedBox(height: 24),
 
               // Recent Activity
@@ -150,7 +153,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                 ),
               ),
               const SizedBox(height: 16),
-              ...overview.recentActivity.take(5).map((activity) => _buildActivityCard(activity)),
+              ...overview.recentActivity
+                  .take(5)
+                  .map((activity) => _buildActivityCard(activity)),
             ],
           ),
         );
@@ -186,7 +191,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // Sort Controls
               Row(
                 children: [
@@ -200,9 +205,18 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                         ),
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'overallScore', child: Text('Overall Score')),
-                        DropdownMenuItem(value: 'totalGames', child: Text('Total Games')),
-                        DropdownMenuItem(value: 'lastPlayed', child: Text('Last Played')),
+                        DropdownMenuItem(
+                          value: 'overallScore',
+                          child: Text('Overall Score'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'totalGames',
+                          child: Text('Total Games'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'lastPlayed',
+                          child: Text('Last Played'),
+                        ),
                       ],
                       onChanged: (value) {
                         setState(() {
@@ -219,7 +233,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                       });
                     },
                     icon: Icon(
-                      _sortDescending ? Icons.arrow_downward : Icons.arrow_upward,
+                      _sortDescending
+                          ? Icons.arrow_downward
+                          : Icons.arrow_upward,
                       color: Colors.blue.shade600,
                     ),
                   ),
@@ -248,7 +264,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error_outline, size: 64, color: Colors.grey.shade400),
+                      Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: Colors.grey.shade400,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         'Failed to load players',
@@ -269,10 +289,16 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.people_outline, size: 64, color: Colors.grey.shade400),
+                      Icon(
+                        Icons.people_outline,
+                        size: 64,
+                        color: Colors.grey.shade400,
+                      ),
                       const SizedBox(height: 16),
                       Text(
-                        _searchQuery.isNotEmpty ? 'No players found' : 'No players yet',
+                        _searchQuery.isNotEmpty
+                            ? 'No players found'
+                            : 'No players yet',
                         style: GoogleFonts.montserrat(
                           fontSize: 18,
                           color: Colors.grey.shade600,
@@ -314,7 +340,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.games_outlined, size: 64, color: Colors.grey.shade400),
+                Icon(
+                  Icons.games_outlined,
+                  size: 64,
+                  color: Colors.grey.shade400,
+                ),
                 const SizedBox(height: 16),
                 Text(
                   'No game statistics yet',
@@ -328,20 +358,78 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           );
         }
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: gameStats.length,
-          itemBuilder: (context, index) {
-            final gameType = gameStats.keys.elementAt(index);
-            final stats = gameStats[gameType]!;
-            return _buildGameStatsCard(stats);
+        // Filter enabled games using StreamBuilder
+        return StreamBuilder<List<String>>(
+          stream: _getEnabledGameTypesStream(),
+          builder: (context, enabledGamesSnapshot) {
+            if (enabledGamesSnapshot.connectionState ==
+                ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final enabledGameTypes = enabledGamesSnapshot.data ?? [];
+            final enabledGameStats = <GameType, GameStatistics>{};
+
+            for (final gameType in gameStats.keys) {
+              if (enabledGameTypes.contains(gameType.name)) {
+                enabledGameStats[gameType] = gameStats[gameType]!;
+              }
+            }
+
+            if (enabledGameStats.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.block, size: 64, color: Colors.grey.shade400),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No enabled games available',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 18,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'All games are currently disabled.',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 14,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: enabledGameStats.length,
+              itemBuilder: (context, index) {
+                final gameType = enabledGameStats.keys.elementAt(index);
+                final stats = enabledGameStats[gameType]!;
+                return _buildGameStatsCard(stats);
+              },
+            );
           },
         );
       },
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Stream<List<String>> _getEnabledGameTypesStream() {
+    return GameManagementService.getEnabledGamesStream().map(
+      (games) => games.map((game) => game.gameType).toList(),
+    );
+  }
+
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -466,7 +554,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: activity.isHighScore ? Colors.amber.shade300 : Colors.grey.shade200,
+          color: activity.isHighScore
+              ? Colors.amber.shade300
+              : Colors.grey.shade200,
         ),
       ),
       child: Row(
@@ -481,13 +571,13 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                                 Text(
-                   '${activity.displayName} scored ${GameScore.getScoreDisplay(activity.gameType, activity.score)}',
-                   style: GoogleFonts.montserrat(
-                     fontSize: 14,
-                     fontWeight: FontWeight.w500,
-                   ),
-                 ),
+                Text(
+                  '${activity.displayName} scored ${GameScore.getScoreDisplay(activity.gameType, activity.score)}',
+                  style: GoogleFonts.montserrat(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
                 Text(
                   'in ${GameScore.getDisplayName(activity.gameType)}',
                   style: GoogleFonts.montserrat(
@@ -708,7 +798,11 @@ class PlayerDetailPage extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.grey.shade400),
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.grey.shade400,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Failed to load player details',
@@ -749,11 +843,16 @@ class PlayerDetailPage extends StatelessWidget {
                       CircleAvatar(
                         radius: 40,
                         backgroundColor: Colors.blue.shade100,
-                        child: Icon(Icons.person, size: 40, color: Colors.blue.shade600),
+                        child: Icon(
+                          Icons.person,
+                          size: 40,
+                          color: Colors.blue.shade600,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        userScore.userName ?? 'Player ${userScore.userId.substring(0, 6)}',
+                        userScore.userName ??
+                            'Player ${userScore.userId.substring(0, 6)}',
                         style: GoogleFonts.montserrat(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -792,7 +891,9 @@ class PlayerDetailPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                ...playerData.recentScores.take(10).map((score) => _buildRecentScoreCard(score)),
+                ...playerData.recentScores
+                    .take(10)
+                    .map((score) => _buildRecentScoreCard(score)),
               ],
             ),
           );
@@ -809,7 +910,9 @@ class PlayerDetailPage extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: score.isHighScore ? Colors.amber.shade300 : Colors.grey.shade200,
+          color: score.isHighScore
+              ? Colors.amber.shade300
+              : Colors.grey.shade200,
         ),
       ),
       child: Row(

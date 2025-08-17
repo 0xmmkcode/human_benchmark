@@ -4,7 +4,6 @@ import 'package:gap/gap.dart';
 import 'package:human_benchmark/services/auth_service.dart';
 import 'package:human_benchmark/services/score_service.dart';
 import 'package:human_benchmark/services/local_storage_service.dart';
-import 'package:human_benchmark/services/settings_service.dart';
 import 'package:human_benchmark/models/user_score.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -99,10 +98,9 @@ class _ReactionTimeLeaderboardState extends State<ReactionTimeLeaderboard> {
 
               if (isLoggedIn) {
                 return FutureBuilder<List<UserScore>>(
-                  future: ScoreService.getGameLeaderboard(
-                    GameType.reactionTime,
+                  future: ScoreService.getReactionTimeLeaderboard(
                     limit: widget.maxItems,
-                  ).first,
+                  ),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(
@@ -131,12 +129,10 @@ class _ReactionTimeLeaderboardState extends State<ReactionTimeLeaderboard> {
                             GameType.reactionTime,
                           );
 
-                          // Get display name based on settings
+                          // Get display name with fallback
                           final displayName =
-                              await SettingsService.getLeaderboardDisplayName(
-                                firebaseUserName: score.userName,
-                                localUserName: null,
-                              );
+                              score.userName ??
+                              'Player ${score.userId.substring(0, 6)}';
 
                           return _buildLeaderboardRow(
                             rank: index + 1,

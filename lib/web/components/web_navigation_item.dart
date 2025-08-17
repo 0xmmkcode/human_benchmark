@@ -32,9 +32,7 @@ class WebNavigationItem extends StatelessWidget {
             decoration: BoxDecoration(
               color: isSelected ? Colors.blue[50] : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
-              border: isSelected
-                  ? Border.all(color: Colors.blue[200]!, width: 1)
-                  : null,
+              // Removed border for cleaner look
             ),
             child: Row(
               children: [
@@ -112,4 +110,3 @@ class WebNavigationItem extends StatelessWidget {
     );
   }
 }
-

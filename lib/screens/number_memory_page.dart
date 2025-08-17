@@ -150,9 +150,9 @@ class _NumberMemoryPageState extends State<NumberMemoryPage>
       if (AuthService.currentUser != null) {
         try {
           await ScoreService.submitGameScore(
-            gameType: GameType.numberMemory,
+            gameType: 'number_memory',
             score: _bestScore,
-            gameData: {
+            additionalData: {
               'level': _currentLevel,
               'totalScore': _currentScore,
               'bestScore': _bestScore,
@@ -174,9 +174,9 @@ class _NumberMemoryPageState extends State<NumberMemoryPage>
       if (AuthService.currentUser != null) {
         try {
           await ScoreService.submitGameScore(
-            gameType: GameType.numberMemory,
+            gameType: 'number_memory',
             score: _currentScore,
-            gameData: {
+            additionalData: {
               'level': _currentLevel,
               'totalScore': _currentScore,
               'bestScore': _bestScore,

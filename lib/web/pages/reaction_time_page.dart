@@ -22,6 +22,8 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
   int _reactionTime = 0;
   int _bestTime = 0;
   List<int> _times = [];
+  int _firebaseTotalTests = 0;
+  int _firebaseAverage = 0;
   DateTime? _startTime;
   late AnimationController _colorController;
   late AnimationController _scaleController;
@@ -56,6 +58,25 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
     setState(() {
       _bestTime = bestTime ?? 0;
     });
+    // Load previous local times to compute average/tests for the session
+    final localTimes = await LocalStorageService.getTimesList();
+    if (mounted) {
+      setState(() {
+        _times = List<int>.from(localTimes);
+      });
+    }
+    // If logged in, also fetch Firebase reaction stats
+    if (AuthService.currentUser != null) {
+      try {
+        final stats = await ScoreService.getReactionTimeStats();
+        if (mounted && stats.isNotEmpty) {
+          setState(() {
+            _firebaseTotalTests = (stats['totalGames'] as num?)?.toInt() ?? 0;
+            _firebaseAverage = (stats['averageScore'] as num?)?.round() ?? 0;
+          });
+        }
+      } catch (_) {}
+    }
   }
 
   void _startGame() {
@@ -103,7 +124,36 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
     // Always save to local storage
     await LocalStorageService.addTime(reactionTime);
 
-    // Update best time if this is better
+    // Always save score to Firebase if user is logged in - updates counter and average
+    if (AuthService.currentUser != null) {
+      try {
+        await ScoreService.submitGameScore(
+          gameType: 'reaction_time',
+          score: reactionTime,
+          additionalData: {
+            'times': _times,
+            'bestTime': _bestTime,
+            'timestamp': DateTime.now().millisecondsSinceEpoch,
+          },
+        );
+
+        // Refresh Firebase stats to show updated counter and average
+        final stats = await ScoreService.getReactionTimeStats();
+        if (mounted && stats.isNotEmpty) {
+          setState(() {
+            _firebaseTotalTests =
+                (stats['totalGames'] as num?)?.toInt() ?? _firebaseTotalTests;
+            _firebaseAverage =
+                (stats['averageScore'] as num?)?.round() ?? _firebaseAverage;
+          });
+        }
+      } catch (e) {
+        // Log error but don't break the game
+        print('Failed to save score to Firebase: $e');
+      }
+    }
+
+    // Update best time if this is better - only update best score when actually better
     if (_bestTime == 0 || reactionTime < _bestTime) {
       setState(() {
         _bestTime = reactionTime;
@@ -111,24 +161,6 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
 
       // Save best time to local storage
       await LocalStorageService.saveBestTime(reactionTime);
-
-      // Save score to Firebase if user is logged in
-      if (AuthService.currentUser != null) {
-        try {
-          await ScoreService.submitGameScore(
-            gameType: GameType.reactionTime,
-            score: reactionTime,
-            gameData: {
-              'times': _times,
-              'bestTime': _bestTime,
-              'timestamp': DateTime.now().millisecondsSinceEpoch,
-            },
-          );
-        } catch (e) {
-          // Log error but don't break the game
-          print('Failed to save score to Firebase: $e');
-        }
-      }
     }
   }
 
@@ -179,7 +211,6 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
                     decoration: BoxDecoration(
                       color: Colors.grey[50],
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey[200]!),
                     ),
                     child: Column(
                       children: [
@@ -248,7 +279,6 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
                       decoration: BoxDecoration(
                         color: Colors.orange[50],
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.orange[200]!),
                       ),
                       child: Column(
                         children: [
@@ -330,11 +360,9 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
                           ? Colors.red[50]
                           : Colors.blue[50],
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: _reactionTime == -1
-                            ? Colors.red[200]!
-                            : Colors.blue[200]!,
-                      ),
+                      border: _reactionTime == -1
+                          ? Border.all(color: Colors.red[200]!)
+                          : null,
                     ),
                     child: Column(
                       children: [
@@ -386,38 +414,39 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
                           ),
                           SizedBox(height: 16),
                           // Show user's score profile
-                          FutureBuilder<UserScore?>(
-                            future: ScoreService.getUserScoreProfile(),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return SizedBox(
-                                  height: 100,
-                                  child: Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                );
-                              }
+                          // TODO: Re-enable score display widget once ScoreDisplay is available
+                          // FutureBuilder<UserScore?>(
+                          //   future: ScoreService.getUserScoreProfile(),
+                          //   builder: (context, snapshot) {
+                          //     if (snapshot.connectionState ==
+                          //         ConnectionState.waiting) {
+                          //       return SizedBox(
+                          //         height: 100,
+                          //         child: Center(
+                          //           child: CircularProgressIndicator(),
+                          //         ),
+                          //       );
+                          //     }
 
-                              if (snapshot.hasData && snapshot.data != null) {
-                                return ScoreDisplay(
-                                  userScore: snapshot.data,
-                                  currentGame: GameType.reactionTime,
-                                  onViewLeaderboard: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const ComprehensiveLeaderboardPage(),
-                                      ),
-                                    );
-                                  },
-                                );
-                              }
+                          //     if (snapshot.hasData && snapshot.data != null) {
+                          //       return ScoreDisplay(
+                          //         userScore: snapshot.data,
+                          //         currentGame: GameType.reactionTime,
+                          //         onViewLeaderboard: () {
+                          //           Navigator.push(
+                          //             context,
+                          //             MaterialPageRoute(
+                          //               builder: (context) =>
+                          //                   const ComprehensiveLeaderboardPage(),
+                          //             ),
+                          //           );
+                          //         },
+                          //       );
+                          //     }
 
-                              return SizedBox.shrink();
-                            },
-                          ),
+                          //     return SizedBox.shrink();
+                          //   },
+                          // ),
                         ],
                         SizedBox(height: 24),
                         Row(
@@ -472,7 +501,6 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
             decoration: BoxDecoration(
               color: Colors.grey[50],
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey[200]!),
             ),
             child: Row(
               children: [
@@ -488,7 +516,11 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
                 Expanded(
                   child: _buildStatCard(
                     'Tests Taken',
-                    '${_times.length}',
+                    AuthService.currentUser != null
+                        ? (_firebaseTotalTests == 0
+                              ? '${_times.length}'
+                              : '$_firebaseTotalTests')
+                        : '${_times.length}',
                     Icons.analytics,
                     Colors.green[600]!,
                   ),
@@ -497,9 +529,15 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
                 Expanded(
                   child: _buildStatCard(
                     'Average',
-                    _times.isEmpty
-                        ? '--'
-                        : '${(_times.reduce((a, b) => a + b) / _times.length).round()}ms',
+                    AuthService.currentUser != null
+                        ? (_firebaseAverage == 0
+                              ? (_times.isEmpty
+                                    ? '--'
+                                    : '${(_times.reduce((a, b) => a + b) / _times.length).round()}ms')
+                              : '${_firebaseAverage}ms')
+                        : (_times.isEmpty
+                              ? '--'
+                              : '${(_times.reduce((a, b) => a + b) / _times.length).round()}ms'),
                     Icons.trending_up,
                     Colors.blue[600]!,
                   ),
@@ -531,7 +569,6 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
         children: [

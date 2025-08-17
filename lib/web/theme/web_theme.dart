@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class WebTheme {
   // Colors
@@ -20,32 +21,35 @@ class WebTheme {
   static const Color orange600 = Color(0xFFFF9800);
   static const Color green600 = Color(0xFF4CAF50);
 
-  // Text Styles
-  static const TextStyle headingLarge = TextStyle(
+  // Text Styles with Montserrat font
+  static TextStyle get headingLarge => GoogleFonts.montserrat(
     fontSize: 32,
     fontWeight: FontWeight.bold,
     color: grey800,
   );
 
-  static const TextStyle headingMedium = TextStyle(
+  static TextStyle get headingMedium => GoogleFonts.montserrat(
     fontSize: 24,
     fontWeight: FontWeight.w600,
     color: grey800,
   );
 
-  static const TextStyle headingSmall = TextStyle(
+  static TextStyle get headingSmall => GoogleFonts.montserrat(
     fontSize: 20,
     fontWeight: FontWeight.w600,
     color: grey800,
   );
 
-  static const TextStyle bodyLarge = TextStyle(fontSize: 16, color: grey600);
+  static TextStyle get bodyLarge =>
+      GoogleFonts.montserrat(fontSize: 16, color: grey600);
 
-  static const TextStyle bodyMedium = TextStyle(fontSize: 14, color: grey600);
+  static TextStyle get bodyMedium =>
+      GoogleFonts.montserrat(fontSize: 14, color: grey600);
 
-  static const TextStyle bodySmall = TextStyle(fontSize: 12, color: grey600);
+  static TextStyle get bodySmall =>
+      GoogleFonts.montserrat(fontSize: 12, color: grey600);
 
-  static const TextStyle caption = TextStyle(
+  static TextStyle get caption => GoogleFonts.montserrat(
     fontSize: 10,
     fontWeight: FontWeight.bold,
     color: orange600,

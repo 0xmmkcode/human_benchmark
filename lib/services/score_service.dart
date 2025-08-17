@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'app_logger.dart';
+import 'user_profile_service.dart';
 import '../models/user_score.dart';
 import '../models/game_score.dart';
-import 'app_logger.dart';
-import 'local_storage_service.dart';
 
 class ScoreService {
   ScoreService._();
@@ -13,100 +13,535 @@ class ScoreService {
   // Collections
   static CollectionReference<Map<String, dynamic>> get _userScoresCollection =>
       _firestore.collection('user_scores');
-
   static CollectionReference<Map<String, dynamic>> get _gameScoresCollection =>
       _firestore.collection('game_scores');
 
-  // Submit a game score and update user's high score
-  static Future<void> submitGameScore({
-    required GameType gameType,
+  // Submit a game score - now primarily uses UserProfileService
+  static Future<bool> submitGameScore({
+    required String gameType,
     required int score,
-    Map<String, dynamic>? gameData,
-    String? userName,
+    Map<String, dynamic>? additionalData,
   }) async {
     try {
       if (Firebase.apps.isEmpty) {
-        AppLogger.log('Firebase not initialized, skipping score submission');
-        return;
+        AppLogger.log('Firebase not initialized, using legacy method');
+        return await _submitGameScoreLegacy(
+          gameType: gameType,
+          score: score,
+          additionalData: additionalData,
+        );
       }
 
-      final String userId = await _getUserId();
-      if (userId.isEmpty) {
-        AppLogger.log('No user ID available, skipping score submission');
-        return;
-      }
-
-      // Check if user is authenticated
-      final currentUser = FirebaseAuth.instance.currentUser;
+      final User? currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
-        AppLogger.log('User not authenticated, using local storage only');
-        // Still save to local storage even if not authenticated
-        await LocalStorageService.addTime(score);
-        return;
+        AppLogger.log('No authenticated user, using legacy method');
+        return await _submitGameScoreLegacy(
+          gameType: gameType,
+          score: score,
+          additionalData: additionalData,
+        );
       }
 
-      // Check if this is a high score
-      final bool isHighScore = await _isHighScore(userId, gameType, score);
+      // Try to use new UserProfileService first
+      try {
+        // Convert string gameType to GameType enum
+        final GameType gameTypeEnum = _stringToGameType(gameType);
 
-      // Create game score record
-      final GameScore gameScore = GameScore.create(
-        userId: userId,
-        userName: userName,
+        await UserProfileService.submitGameScore(
+          gameType: gameTypeEnum,
+          score: score,
+          gameData: additionalData,
+        );
+
+        AppLogger.log('Score submitted successfully via UserProfileService');
+        return true;
+      } catch (e) {
+        AppLogger.log('UserProfileService failed, falling back to legacy: $e');
+      }
+
+      // Fallback to legacy method
+      return await _submitGameScoreLegacy(
         gameType: gameType,
         score: score,
-        gameData: gameData,
-        isHighScore: isHighScore,
+        additionalData: additionalData,
       );
-
-      // Save game score
-      try {
-        await _gameScoresCollection.doc(gameScore.id).set(gameScore.toMap());
-        AppLogger.log('Game score saved successfully');
-      } catch (e) {
-        AppLogger.error('score.submit.gameScore', e);
-        // Continue with user score update even if game score fails
-      }
-
-      // Update user's high score and stats
-      try {
-        await _updateUserScore(userId, userName, gameType, score, isHighScore);
-        AppLogger.log('User score updated successfully');
-      } catch (e) {
-        AppLogger.error('score.submit.userScore', e);
-        // Don't rethrow - we want to continue even if this fails
-      }
-
-      AppLogger.event('score.submitted', {
-        'userId': userId,
-        'gameType': gameType.name,
-        'score': score,
-        'isHighScore': isHighScore,
-      });
     } catch (e, st) {
-      AppLogger.error('score.submit', e, st);
-      // Don't rethrow - we want the app to continue working even if score submission fails
-      // The score is still saved locally
+      AppLogger.error('score.submitGameScore', e, st);
+      return false;
     }
   }
 
-  // Get user's current score for a specific game
-  static Future<int> getUserHighScore(GameType gameType) async {
+  // Helper method to convert string to GameType enum
+  static GameType _stringToGameType(String gameType) {
+    switch (gameType.toLowerCase()) {
+      case 'reaction_time':
+      case 'reactiontime':
+        return GameType.reactionTime;
+      case 'number_memory':
+      case 'numbermemory':
+        return GameType.numberMemory;
+      case 'decision_making':
+      case 'decision_making':
+      case 'decisionrisk':
+        return GameType.decisionRisk;
+      case 'personality':
+      case 'personalityquiz':
+        return GameType.personalityQuiz;
+      case 'aim_trainer':
+      case 'aimtrainer':
+        return GameType.aimTrainer;
+      case 'verbal_memory':
+      case 'verbalmemory':
+        return GameType.verbalMemory;
+      case 'visual_memory':
+      case 'visualmemory':
+        return GameType.visualMemory;
+      case 'typing_speed':
+      case 'typingspeed':
+        return GameType.typingSpeed;
+      case 'sequence_memory':
+      case 'sequencememory':
+        return GameType.sequenceMemory;
+      case 'chimp_test':
+      case 'chimptest':
+        return GameType.chimpTest;
+      default:
+        return GameType.reactionTime; // Default fallback
+    }
+  }
+
+  // Legacy method for submitting game scores
+  static Future<bool> _submitGameScoreLegacy({
+    required String gameType,
+    required int score,
+    Map<String, dynamic>? additionalData,
+  }) async {
     try {
-      if (Firebase.apps.isEmpty) return 0;
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return false;
 
-      final String userId = await _getUserId();
-      if (userId.isEmpty) return 0;
+      final now = FieldValue.serverTimestamp();
+      final gameScoreData = {
+        'userId': currentUser.uid,
+        'gameType': gameType,
+        'score': score,
+        'playedAt': now,
+        'additionalData': additionalData,
+      };
 
-      final DocumentSnapshot<Map<String, dynamic>> doc =
-          await _userScoresCollection.doc(userId).get();
+      // Save to game_scores collection
+      await _gameScoresCollection.add(gameScoreData);
 
-      if (!doc.exists) return 0;
+      // Update user_scores collection
+      final userScoreRef = _userScoresCollection.doc(currentUser.uid);
+      final userScoreDoc = await userScoreRef.get();
 
-      final UserScore userScore = UserScore.fromMap(doc.data()!);
-      return userScore.getHighScore(gameType);
+      if (userScoreDoc.exists) {
+        // Update existing user score
+        final currentData = userScoreDoc.data()!;
+        final currentScores = Map<String, dynamic>.from(
+          currentData['gameScores'] ?? {},
+        );
+
+        // Update game-specific stats
+        if (currentScores[gameType] == null) {
+          currentScores[gameType] = {
+            'highScore': score,
+            'totalGames': 1,
+            'averageScore': score.toDouble(),
+            'lastPlayed': now,
+            'firstPlayed': now,
+          };
+        } else {
+          final gameStats = Map<String, dynamic>.from(currentScores[gameType]);
+          final currentHighScore = gameStats['highScore'] ?? 0;
+          final currentTotalGames = gameStats['totalGames'] ?? 0;
+          final currentAverage = gameStats['averageScore'] ?? 0.0;
+
+          gameStats['highScore'] = score > currentHighScore
+              ? score
+              : currentHighScore;
+          gameStats['totalGames'] = currentTotalGames + 1;
+          gameStats['averageScore'] =
+              ((currentAverage * currentTotalGames) + score) /
+              (currentTotalGames + 1);
+          gameStats['lastPlayed'] = now;
+
+          currentScores[gameType] = gameStats;
+        }
+
+        // Update overall stats
+        final totalGames = (currentData['totalGames'] ?? 0) + 1;
+        final totalScore = (currentData['totalScore'] ?? 0) + score;
+        final averageScore = totalScore / totalGames;
+
+        await userScoreRef.update({
+          'gameScores': currentScores,
+          'totalGames': totalGames,
+          'totalScore': totalScore,
+          'averageScore': averageScore,
+          'lastActive': now,
+          'updatedAt': now,
+        });
+      } else {
+        // Create new user score document
+        final userScoreData = {
+          'userId': currentUser.uid,
+          'email': currentUser.email,
+          'displayName': currentUser.displayName,
+          'photoURL': currentUser.photoURL,
+          'gameScores': {
+            gameType: {
+              'highScore': score,
+              'totalGames': 1,
+              'averageScore': score.toDouble(),
+              'lastPlayed': now,
+              'firstPlayed': now,
+            },
+          },
+          'totalGames': 1,
+          'totalScore': score,
+          'averageScore': score.toDouble(),
+          'createdAt': now,
+          'lastActive': now,
+          'updatedAt': now,
+        };
+
+        await userScoreRef.set(userScoreData);
+      }
+
+      AppLogger.log('Score submitted successfully via legacy method');
+      return true;
+    } catch (e, st) {
+      AppLogger.error('score._submitGameScoreLegacy', e, st);
+      return false;
+    }
+  }
+
+  // Get user's high score for a specific game - now uses UserProfileService
+  static Future<int> getUserHighScore(String gameType) async {
+    try {
+      if (Firebase.apps.isEmpty) {
+        return await _getUserHighScoreLegacy(gameType);
+      }
+
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return 0;
+
+      // Try to use new UserProfileService first
+      try {
+        final gameTypeEnum = _stringToGameType(gameType);
+        final highScore = await UserProfileService.getUserHighScore(
+          gameTypeEnum,
+        );
+        return highScore;
+      } catch (e) {
+        AppLogger.log('UserProfileService failed, falling back to legacy: $e');
+      }
+
+      // Fallback to legacy method
+      return await _getUserHighScoreLegacy(gameType);
     } catch (e, st) {
       AppLogger.error('score.getUserHighScore', e, st);
       return 0;
+    }
+  }
+
+  // Legacy method for getting user high score
+  static Future<int> _getUserHighScoreLegacy(String gameType) async {
+    try {
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return 0;
+
+      final doc = await _userScoresCollection.doc(currentUser.uid).get();
+      if (!doc.exists) return 0;
+
+      final data = doc.data()!;
+      final gameScores = data['gameScores'] as Map<String, dynamic>?;
+      if (gameScores == null || gameScores[gameType] == null) return 0;
+
+      return gameScores[gameType]['highScore'] ?? 0;
+    } catch (e, st) {
+      AppLogger.error('score._getUserHighScoreLegacy', e, st);
+      return 0;
+    }
+  }
+
+  // Get reaction time statistics - now uses UserProfileService
+  static Future<Map<String, dynamic>> getReactionTimeStats() async {
+    try {
+      if (Firebase.apps.isEmpty) {
+        return await _getReactionTimeStatsLegacy();
+      }
+
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return {};
+
+      // Try to use new UserProfileService first
+      try {
+        final gameStats = await UserProfileService.getUserGameStats(
+          GameType.reactionTime,
+        );
+        return {
+          'highScore': gameStats.highScore,
+          'totalGames': gameStats.totalGames,
+          'averageScore': gameStats.averageScore,
+          'lastPlayed': gameStats.lastPlayed,
+          'firstPlayed': gameStats.firstPlayed,
+        };
+      } catch (e) {
+        AppLogger.log('UserProfileService failed, falling back to legacy: $e');
+      }
+
+      // Fallback to legacy method
+      return await _getReactionTimeStatsLegacy();
+    } catch (e, st) {
+      AppLogger.error('score.getReactionTimeStats', e, st);
+      return {};
+    }
+  }
+
+  // Legacy method for getting reaction time stats
+  static Future<Map<String, dynamic>> _getReactionTimeStatsLegacy() async {
+    try {
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return {};
+
+      final doc = await _userScoresCollection.doc(currentUser.uid).get();
+      if (!doc.exists) return {};
+
+      final data = doc.data()!;
+      final gameScores = data['gameScores'] as Map<String, dynamic>?;
+      if (gameScores == null || gameScores['reaction_time'] == null) return {};
+
+      return gameScores['reaction_time'];
+    } catch (e, st) {
+      AppLogger.error('score._getReactionTimeStatsLegacy', e, st);
+      return {};
+    }
+  }
+
+  // Update reaction time average - now uses UserProfileService
+  static Future<void> updateReactionTimeAverage(int newScore) async {
+    try {
+      if (Firebase.apps.isEmpty) {
+        await _updateReactionTimeAverageLegacy(newScore);
+        return;
+      }
+
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return;
+
+      // Try to use new UserProfileService first
+      try {
+        await UserProfileService.submitGameScore(
+          gameType: GameType.reactionTime,
+          score: newScore,
+        );
+        return;
+      } catch (e) {
+        AppLogger.log('UserProfileService failed, falling back to legacy: $e');
+      }
+
+      // Fallback to legacy method
+      await _updateReactionTimeAverageLegacy(newScore);
+    } catch (e, st) {
+      AppLogger.error('score.updateReactionTimeAverage', e, st);
+    }
+  }
+
+  // Legacy method for updating reaction time average
+  static Future<void> _updateReactionTimeAverageLegacy(int newScore) async {
+    try {
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return;
+
+      final userScoreRef = _userScoresCollection.doc(currentUser.uid);
+      final userScoreDoc = await userScoreRef.get();
+
+      if (userScoreDoc.exists) {
+        final currentData = userScoreDoc.data()!;
+        final gameScores = Map<String, dynamic>.from(
+          currentData['gameScores'] ?? {},
+        );
+
+        if (gameScores['reaction_time'] == null) {
+          gameScores['reaction_time'] = {
+            'highScore': newScore,
+            'totalGames': 1,
+            'averageScore': newScore.toDouble(),
+            'lastPlayed': FieldValue.serverTimestamp(),
+            'firstPlayed': FieldValue.serverTimestamp(),
+          };
+        } else {
+          final currentStats = Map<String, dynamic>.from(
+            gameScores['reaction_time'],
+          );
+          final currentHighScore = currentStats['highScore'] ?? 0;
+          final currentTotalGames = currentStats['totalGames'] ?? 0;
+          final currentAverage = currentStats['averageScore'] ?? 0.0;
+
+          currentStats['highScore'] = newScore > currentHighScore
+              ? newScore
+              : currentHighScore;
+          currentStats['totalGames'] = currentTotalGames + 1;
+          currentStats['averageScore'] =
+              ((currentAverage * currentTotalGames) + newScore) /
+              (currentTotalGames + 1);
+          currentStats['lastPlayed'] = FieldValue.serverTimestamp();
+
+          gameScores['reaction_time'] = currentStats;
+        }
+
+        await userScoreRef.update({
+          'gameScores': gameScores,
+          'lastActive': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (e, st) {
+      AppLogger.error('score._updateReactionTimeAverageLegacy', e, st);
+    }
+  }
+
+  // Initialize reaction time stats - now uses UserProfileService
+  static Future<void> initializeReactionTimeStats() async {
+    try {
+      if (Firebase.apps.isEmpty) {
+        await _initializeReactionTimeStatsLegacy();
+        return;
+      }
+
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return;
+
+      // Try to use new UserProfileService first
+      try {
+        await UserProfileService.getOrCreateUserProfile();
+        return;
+      } catch (e) {
+        AppLogger.log('UserProfileService failed, falling back to legacy: $e');
+      }
+
+      // Fallback to legacy method
+      await _initializeReactionTimeStatsLegacy();
+    } catch (e, st) {
+      AppLogger.error('score.initializeReactionTimeStats', e, st);
+    }
+  }
+
+  // Legacy method for initializing reaction time stats
+  static Future<void> _initializeReactionTimeStatsLegacy() async {
+    try {
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return;
+
+      final userScoreRef = _userScoresCollection.doc(currentUser.uid);
+      final userScoreDoc = await userScoreRef.get();
+
+      if (!userScoreDoc.exists) {
+        await userScoreRef.set({
+          'userId': currentUser.uid,
+          'email': currentUser.email,
+          'displayName': currentUser.displayName,
+          'photoURL': currentUser.photoURL,
+          'gameScores': {
+            'reaction_time': {
+              'highScore': 0,
+              'totalGames': 0,
+              'averageScore': 0.0,
+              'lastPlayed': null,
+              'firstPlayed': null,
+            },
+          },
+          'totalGames': 0,
+          'totalScore': 0,
+          'averageScore': 0.0,
+          'createdAt': FieldValue.serverTimestamp(),
+          'lastActive': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (e, st) {
+      AppLogger.error('score._initializeReactionTimeStatsLegacy', e, st);
+    }
+  }
+
+  // Get user's recent scores as a stream - kept for backward compatibility
+  static Stream<List<Map<String, dynamic>>> getUserRecentScoresStream(
+    String gameType, {
+    int limit = 10,
+  }) {
+    try {
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return Stream.value([]);
+
+      return _gameScoresCollection
+          .where('userId', isEqualTo: currentUser.uid)
+          .where('gameType', isEqualTo: gameType)
+          .orderBy('playedAt', descending: true)
+          .limit(limit)
+          .snapshots()
+          .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+    } catch (e, st) {
+      AppLogger.error('score.getUserRecentScoresStream', e, st);
+      return Stream.value([]);
+    }
+  }
+
+  // Get user's recent scores - now uses UserProfileService
+  static Future<List<Map<String, dynamic>>> getUserRecentScores(
+    String gameType, {
+    int limit = 10,
+  }) async {
+    try {
+      if (Firebase.apps.isEmpty) {
+        return await _getUserRecentScoresLegacy(gameType, limit);
+      }
+
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return [];
+
+      // Try to use new UserProfileService first
+      try {
+        final gameTypeEnum = _stringToGameType(gameType);
+        final recentScores = await UserProfileService.getUserRecentScores(
+          gameTypeEnum,
+          limit: limit,
+        );
+        return recentScores.map((score) => score.toMap()).toList();
+      } catch (e) {
+        AppLogger.log('UserProfileService failed, falling back to legacy: $e');
+      }
+
+      // Fallback to legacy method
+      return await _getUserRecentScoresLegacy(gameType, limit);
+    } catch (e, st) {
+      AppLogger.error('score.getUserRecentScores', e, st);
+      return [];
+    }
+  }
+
+  // Legacy method for getting user recent scores
+  static Future<List<Map<String, dynamic>>> _getUserRecentScoresLegacy(
+    String gameType,
+    int limit,
+  ) async {
+    try {
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return [];
+
+      final querySnapshot = await _gameScoresCollection
+          .where('userId', isEqualTo: currentUser.uid)
+          .where('gameType', isEqualTo: gameType)
+          .orderBy('playedAt', descending: true)
+          .limit(limit)
+          .get();
+
+      return querySnapshot.docs.map((doc) => doc.data()).toList();
+    } catch (e, st) {
+      AppLogger.error('score._getUserRecentScoresLegacy', e, st);
+      return [];
     }
   }
 
@@ -135,9 +570,7 @@ class ScoreService {
   }
 
   // Get recent game activities for a user
-  static Future<List<GameScore>> getRecentActivities({
-    int limit = 10,
-  }) async {
+  static Future<List<GameScore>> getRecentActivities({int limit = 10}) async {
     try {
       if (Firebase.apps.isEmpty) return [];
 
@@ -153,7 +586,7 @@ class ScoreService {
 
       return querySnapshot.docs
           .map((doc) => GameScore.fromMap(doc.data()))
-          .toList();
+          .toList(growable: false);
     } catch (e, st) {
       AppLogger.error('score.getRecentActivities', e, st);
       return [];
@@ -164,6 +597,36 @@ class ScoreService {
   static Future<UserScore?> getUserScoreProfile() async {
     try {
       if (Firebase.apps.isEmpty) return null;
+
+      // Prefer new UserProfileService source of truth
+      try {
+        final userProfile = await UserProfileService.getOrCreateUserProfile();
+        // Map UserProfile to UserScore for UI compatibility
+        final Map<GameType, int> highScores = {};
+        final Map<GameType, int> totalGamesPlayed = {};
+        final Map<GameType, DateTime> lastPlayedAt = {};
+
+        for (final gameType in GameType.values) {
+          final stats = userProfile.getGameStats(gameType);
+          highScores[gameType] = stats.highScore;
+          totalGamesPlayed[gameType] = stats.totalGames;
+          if (stats.lastPlayed != null) {
+            lastPlayedAt[gameType] = stats.lastPlayed!;
+          }
+        }
+
+        return UserScore(
+          userId: userProfile.uid,
+          userName: userProfile.displayName,
+          highScores: highScores,
+          totalGamesPlayed: totalGamesPlayed,
+          lastPlayedAt: lastPlayedAt,
+          createdAt: userProfile.createdAt,
+          updatedAt: userProfile.updatedAt,
+        );
+      } catch (_) {
+        // Fallback to legacy collection if mapping fails
+      }
 
       final String userId = await _getUserId();
       if (userId.isEmpty) return null;
@@ -180,104 +643,231 @@ class ScoreService {
     }
   }
 
-  // Get recent game scores for a user
-  static Stream<List<GameScore>> getUserRecentScores({
-    GameType? gameType,
-    int limit = 20,
-  }) {
-    if (Firebase.apps.isEmpty) {
-      return Stream<List<GameScore>>.value(const <GameScore>[]);
-    }
-
-    Query<Map<String, dynamic>> query = _gameScoresCollection
-        .where('userId', isEqualTo: _getUserId())
-        .orderBy('playedAt', descending: true)
-        .limit(limit);
-
-    if (gameType != null) {
-      query = query.where('gameType', isEqualTo: gameType.name);
-    }
-
-    return query.snapshots().map((
-      QuerySnapshot<Map<String, dynamic>> snapshot,
-    ) {
-      return snapshot.docs
-          .map((doc) => GameScore.fromMap(doc.data()))
-          .toList(growable: false);
-    });
-  }
-
-  // Get leaderboard for a specific game
-  static Stream<List<UserScore>> getGameLeaderboard(
-    GameType gameType, {
-    int limit = 10,
-  }) {
-    if (Firebase.apps.isEmpty) {
-      return Stream<List<UserScore>>.value(const <UserScore>[]);
-    }
-
-    AppLogger.event('leaderboard.game', {
-      'gameType': gameType.name,
-      'limit': limit,
-    });
-
-    return _userScoresCollection
-        .orderBy('highScores.${gameType.name}', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map((QuerySnapshot<Map<String, dynamic>> snapshot) {
-          return snapshot.docs
-              .map((doc) => UserScore.fromMap(doc.data()))
-              .toList(growable: false);
-        });
-  }
-
-  // Get overall leaderboard (sum of all scores)
-  static Stream<List<UserScore>> getOverallLeaderboard({int limit = 10}) {
-    if (Firebase.apps.isEmpty) {
-      return Stream<List<UserScore>>.value(const <UserScore>[]);
-    }
-
-    AppLogger.event('leaderboard.overall', {'limit': limit});
-
-    // Note: This is a simplified approach. For production, consider using
-    // a computed field or Cloud Functions for better performance
-    return _userScoresCollection
-        .orderBy('updatedAt', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map((QuerySnapshot<Map<String, dynamic>> snapshot) {
-          final List<UserScore> scores = snapshot.docs
-              .map((doc) => UserScore.fromMap(doc.data()))
-              .toList(growable: false);
-
-          // Sort by overall score
-          scores.sort((a, b) => b.overallScore.compareTo(a.overallScore));
-          return scores.take(limit).toList(growable: false);
-        });
-  }
-
-  // Get user's ranking in a specific game
-  static Future<int> getUserRanking(GameType gameType) async {
+  // Get leaderboard for a specific game - now uses UserProfileService
+  static Future<List<UserScore>> getGameLeaderboard(
+    String gameType, {
+    int limit = 100,
+  }) async {
     try {
-      if (Firebase.apps.isEmpty) return 0;
+      if (Firebase.apps.isEmpty) {
+        return await _getGameLeaderboardLegacy(gameType, limit);
+      }
 
-      final String userId = await _getUserId();
-      if (userId.isEmpty) return 0;
+      // Try to use new UserProfileService first
+      try {
+        final gameTypeEnum = _stringToGameType(gameType);
+        final leaderboardStream = UserProfileService.getGameLeaderboard(
+          gameTypeEnum,
+          limit: limit,
+        );
+        final leaderboard = await leaderboardStream.first;
 
-      final QuerySnapshot<Map<String, dynamic>> snapshot =
-          await _userScoresCollection
-              .orderBy('highScores.${gameType.name}', descending: true)
-              .get();
+        // Sort by best score (for reaction time, lower is better)
+        final sortedLeaderboard = leaderboard.toList()
+          ..sort((a, b) {
+            final aStats = a.getGameStats(gameTypeEnum);
+            final bStats = b.getGameStats(gameTypeEnum);
 
-      final int userIndex = snapshot.docs.indexWhere(
-        (doc) => doc.data()['userId'] == userId,
-      );
+            if (gameTypeEnum == GameType.reactionTime) {
+              // For reaction time, lower scores are better
+              return aStats.highScore.compareTo(bStats.highScore);
+            } else {
+              // For other games, higher scores are better
+              return bStats.highScore.compareTo(aStats.highScore);
+            }
+          });
 
-      return userIndex >= 0 ? userIndex + 1 : 0;
+        return sortedLeaderboard.map((profile) {
+          final gameStats = profile.getGameStats(gameTypeEnum);
+          return UserScore(
+            userId: profile.uid,
+            userName: profile.displayName,
+            highScores: {gameTypeEnum: gameStats.highScore},
+            totalGamesPlayed: {gameTypeEnum: gameStats.totalGames},
+            lastPlayedAt: {
+              gameTypeEnum: gameStats.lastPlayed ?? DateTime.now(),
+            },
+            createdAt: profile.createdAt ?? DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+        }).toList();
+      } catch (e) {
+        AppLogger.log('UserProfileService failed, falling back to legacy: $e');
+      }
+
+      // Fallback to legacy method
+      return await _getGameLeaderboardLegacy(gameType, limit);
     } catch (e, st) {
-      AppLogger.error('score.getUserRanking', e, st);
-      return 0;
+      AppLogger.error('score.getGameLeaderboard', e, st);
+      return [];
+    }
+  }
+
+  // Legacy method for getting game leaderboard
+  static Future<List<UserScore>> _getGameLeaderboardLegacy(
+    String gameType,
+    int limit,
+  ) async {
+    try {
+      final querySnapshot = await _userScoresCollection
+          .where('gameScores.$gameType.highScore', isGreaterThan: 0)
+          .orderBy(
+            'gameScores.$gameType.highScore',
+            descending: false,
+          ) // Always ascending for consistent sorting
+          .limit(limit)
+          .get();
+
+      final List<UserScore> leaderboard = querySnapshot.docs.map((doc) {
+        final data = doc.data();
+        final gameStats = data['gameScores']?[gameType];
+        final gameTypeEnum = _stringToGameType(gameType);
+        return UserScore(
+          userId: doc.id,
+          userName: data['displayName'] ?? 'Player',
+          highScores: {gameTypeEnum: gameStats?['highScore'] ?? 0},
+          totalGamesPlayed: {gameTypeEnum: gameStats?['totalGames'] ?? 0},
+          lastPlayedAt: {gameTypeEnum: DateTime.now()},
+          createdAt: data['createdAt']?.toDate() ?? DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      }).toList();
+
+      // Sort by best score (for reaction time, lower is better)
+      leaderboard.sort((a, b) {
+        final aScore = a.getHighScore(_stringToGameType(gameType));
+        final bScore = b.getHighScore(_stringToGameType(gameType));
+
+        if (gameType == 'reaction_time') {
+          // For reaction time, lower scores are better
+          return aScore.compareTo(bScore);
+        } else {
+          // For other games, higher scores are better
+          return bScore.compareTo(aScore);
+        }
+      });
+
+      return leaderboard;
+    } catch (e, st) {
+      AppLogger.error('score._getGameLeaderboardLegacy', e, st);
+      return [];
+    }
+  }
+
+  // Get overall leaderboard across all games
+  static Stream<List<UserScore>> getOverallLeaderboard({int limit = 100}) {
+    try {
+      if (Firebase.apps.isEmpty) {
+        return Stream.value([]);
+      }
+
+      return _userScoresCollection
+          .orderBy('totalScore', descending: true)
+          .limit(limit)
+          .snapshots()
+          .map(
+            (snapshot) => snapshot.docs
+                .map((doc) => UserScore.fromMap(doc.data()))
+                .toList(),
+          );
+    } catch (e, st) {
+      AppLogger.error('score.getOverallLeaderboard', e, st);
+      return Stream.value([]);
+    }
+  }
+
+  // Get reaction time leaderboard specifically (lower scores are better)
+  static Future<List<UserScore>> getReactionTimeLeaderboard({
+    int limit = 100,
+  }) async {
+    try {
+      if (Firebase.apps.isEmpty) {
+        return await _getReactionTimeLeaderboardLegacy(limit);
+      }
+
+      // Try to use new UserProfileService first
+      try {
+        final leaderboardStream = UserProfileService.getGameLeaderboard(
+          GameType.reactionTime,
+          limit: limit,
+        );
+        final leaderboard = await leaderboardStream.first;
+
+        // Sort by best reaction time (lower is better)
+        final sortedLeaderboard = leaderboard.toList()
+          ..sort((a, b) {
+            final aStats = a.getGameStats(GameType.reactionTime);
+            final bStats = b.getGameStats(GameType.reactionTime);
+            return aStats.highScore.compareTo(bStats.highScore);
+          });
+
+        return sortedLeaderboard.map((profile) {
+          final gameStats = profile.getGameStats(GameType.reactionTime);
+          return UserScore(
+            userId: profile.uid,
+            userName: profile.displayName,
+            highScores: {GameType.reactionTime: gameStats.highScore},
+            totalGamesPlayed: {GameType.reactionTime: gameStats.totalGames},
+            lastPlayedAt: {
+              GameType.reactionTime: gameStats.lastPlayed ?? DateTime.now(),
+            },
+            createdAt: profile.createdAt ?? DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+        }).toList();
+      } catch (e) {
+        AppLogger.log('UserProfileService failed, falling back to legacy: $e');
+      }
+
+      // Fallback to legacy method
+      return await _getReactionTimeLeaderboardLegacy(limit);
+    } catch (e, st) {
+      AppLogger.error('score.getReactionTimeLeaderboard', e, st);
+      return [];
+    }
+  }
+
+  // Legacy method for getting reaction time leaderboard
+  static Future<List<UserScore>> _getReactionTimeLeaderboardLegacy(
+    int limit,
+  ) async {
+    try {
+      final querySnapshot = await _userScoresCollection
+          .where('gameScores.reaction_time.highScore', isGreaterThan: 0)
+          .orderBy(
+            'gameScores.reaction_time.highScore',
+            descending: false,
+          ) // Ascending for reaction time (lower is better)
+          .limit(limit)
+          .get();
+
+      final List<UserScore> leaderboard = querySnapshot.docs.map((doc) {
+        final data = doc.data();
+        final gameStats = data['gameScores']?['reaction_time'];
+        return UserScore(
+          userId: doc.id,
+          userName: data['displayName'] ?? 'Player',
+          highScores: {GameType.reactionTime: gameStats?['highScore'] ?? 0},
+          totalGamesPlayed: {
+            GameType.reactionTime: gameStats?['totalGames'] ?? 0,
+          },
+          lastPlayedAt: {GameType.reactionTime: DateTime.now()},
+          createdAt: data['createdAt']?.toDate() ?? DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      }).toList();
+
+      // Sort by best reaction time (lower is better)
+      leaderboard.sort((a, b) {
+        final aScore = a.getHighScore(GameType.reactionTime);
+        final bScore = b.getHighScore(GameType.reactionTime);
+        return aScore.compareTo(bScore);
+      });
+
+      return leaderboard;
+    } catch (e, st) {
+      AppLogger.error('score._getReactionTimeLeaderboardLegacy', e, st);
+      return [];
     }
   }
 
@@ -286,105 +876,6 @@ class ScoreService {
     if (Firebase.apps.isNotEmpty && FirebaseAuth.instance.currentUser != null) {
       return FirebaseAuth.instance.currentUser!.uid;
     }
-
-    // Fallback to local storage user ID
-    try {
-      return await LocalStorageService.getLocalUserId();
-    } catch (e) {
-      return '';
-    }
-  }
-
-  static Future<bool> _isHighScore(
-    String userId,
-    GameType gameType,
-    int score,
-  ) async {
-    try {
-      final DocumentSnapshot<Map<String, dynamic>> doc =
-          await _userScoresCollection.doc(userId).get();
-
-      if (!doc.exists) return true; // First score is always a high score
-
-      final UserScore userScore = UserScore.fromMap(doc.data()!);
-      final int currentHighScore = userScore.getHighScore(gameType);
-
-      return score > currentHighScore;
-    } catch (e, st) {
-      AppLogger.error('score.isHighScore', e, st);
-      return false;
-    }
-  }
-
-  static Future<void> _updateUserScore(
-    String userId,
-    String? userName,
-    GameType gameType,
-    int score,
-    bool isHighScore,
-  ) async {
-    try {
-      final DocumentSnapshot<Map<String, dynamic>> doc =
-          await _userScoresCollection.doc(userId).get();
-
-      UserScore userScore;
-
-      if (!doc.exists) {
-        // Create new user score profile
-        userScore = UserScore(
-          userId: userId,
-          userName: userName,
-          highScores: {gameType: score},
-          totalGamesPlayed: {gameType: 1},
-          lastPlayedAt: {gameType: DateTime.now()},
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
-      } else {
-        // Update existing user score profile
-        userScore = UserScore.fromMap(doc.data()!);
-
-        final Map<GameType, int> newHighScores = Map.from(userScore.highScores);
-        final Map<GameType, int> newTotalGames = Map.from(
-          userScore.totalGamesPlayed,
-        );
-        final Map<GameType, DateTime> newLastPlayed = Map.from(
-          userScore.lastPlayedAt,
-        );
-
-        // Update high score if this is better
-        if (isHighScore) {
-          newHighScores[gameType] = score;
-        }
-
-        // Increment total games played
-        newTotalGames[gameType] = (newTotalGames[gameType] ?? 0) + 1;
-
-        // Update last played date
-        newLastPlayed[gameType] = DateTime.now();
-
-        userScore = userScore.copyWith(
-          userName: userName ?? userScore.userName,
-          highScores: newHighScores,
-          totalGamesPlayed: newTotalGames,
-          lastPlayedAt: newLastPlayed,
-          updatedAt: DateTime.now(),
-        );
-      }
-
-      // Calculate and store overall score
-      final overallScore = userScore.overallScore;
-      final totalGamesPlayedOverall = userScore.totalGamesPlayedOverall;
-
-      // Update with calculated fields
-      final updatedData = userScore.toMap();
-      updatedData['overallScore'] = overallScore;
-      updatedData['totalGamesPlayedOverall'] = totalGamesPlayedOverall;
-
-      await _userScoresCollection.doc(userId).set(updatedData);
-    } catch (e, st) {
-      AppLogger.error('score.updateUserScore', e, st);
-      rethrow;
-    }
+    return '';
   }
 }

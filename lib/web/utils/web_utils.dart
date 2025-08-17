@@ -38,6 +38,22 @@ class WebUtils {
         return Icons.speed;
       case 'refresh':
         return Icons.refresh;
+      case 'games':
+        return Icons.games;
+      case 'gps_fixed':
+        return Icons.gps_fixed;
+      case 'record_voice_over':
+        return Icons.record_voice_over;
+      case 'visibility':
+        return Icons.visibility;
+      case 'keyboard':
+        return Icons.keyboard;
+      case 'format_list_numbered':
+        return Icons.format_list_numbered;
+      case 'pets':
+        return Icons.pets;
+      case 'people':
+        return Icons.people;
       default:
         return Icons.help_outline;
     }
@@ -150,6 +166,44 @@ class WebUtils {
             subtitle,
             style: TextStyle(fontSize: 16, color: Colors.grey[500]),
           ),
+        ],
+      ),
+    );
+  }
+
+  static Widget buildInfoCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: Colors.blue[600], size: 20),
+              ),
+              SizedBox(width: 12),
+              Text(
+                title,
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Text(subtitle, style: TextStyle(color: Colors.grey[600])),
         ],
       ),
     );

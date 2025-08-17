@@ -23,6 +23,56 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
+    // NEW: Users collection - consolidated user profiles
+    match /users/{userId} {
+      // Users can read and write their own profile
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow reading other users' profiles for leaderboards (limited data)
+      allow read: if request.auth != null && 
+        // Only allow reading specific fields needed for leaderboards
+        request.query.limit <= 100; // Prevent abuse
+        
+      // Allow admins to read and write all user profiles
+      allow read, write: if request.auth != null && 
+        exists(/databases/$(database)/documents/admin_roles/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/admin_roles/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // Admin access to user subcollections
+    match /users/{userId}/personalityResults/{resultId} {
+      // Users can access their own results
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Admins can access all results
+      allow read, write: if request.auth != null && 
+        exists(/databases/$(database)/documents/admin_roles/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/admin_roles/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // NEW: Admin roles collection - simple admin access
+    match /admin_roles/{userId} {
+      // Users can read their own admin role
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow creating admin roles (for development/testing)
+      allow create: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow updating own admin role
+      allow update: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // NEW: Game management collection - only admins can modify
+    match /game_management/{gameId} {
+      // Anyone can read game status (needed for route protection)
+      allow read: if true;
+      
+      // Only admins can create, update, or delete game settings
+      allow create, update, delete: if request.auth != null && 
+        exists(/databases/$(database)/documents/admin_roles/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/admin_roles/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
     // Game scores - allow authenticated users to read all scores, write their own
     match /game_scores/{scoreId} {
       allow read: if true; // Anyone can view leaderboards
@@ -30,6 +80,7 @@ service cloud.firestore {
     }
     
     // User scores - allow authenticated users to read all scores, write their own
+    // Note: This collection is being migrated to users collection
     match /user_scores/{scoreId} {
       allow read: if true; // Anyone can view leaderboards
       allow write: if request.auth != null; // Only authenticated users can submit scores
@@ -45,6 +96,11 @@ service cloud.firestore {
     match /decision_sessions/{sessionId} {
       allow read: if true; // Anyone can view
       allow write: if request.auth != null; // Only authenticated users can submit
+    }
+    
+    // User settings collection
+    match /user_settings/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
     // Default rule - deny all other access

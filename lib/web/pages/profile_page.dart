@@ -3,8 +3,10 @@ import 'package:gap/gap.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
 import 'package:human_benchmark/services/auth_service.dart';
 import 'package:human_benchmark/services/score_service.dart';
+import 'package:human_benchmark/services/user_profile_service.dart';
 import 'package:human_benchmark/models/user_score.dart';
 import 'package:human_benchmark/models/game_score.dart';
+import 'package:human_benchmark/models/user_profile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class WebProfilePage extends StatefulWidget {
@@ -16,9 +18,11 @@ class WebProfilePage extends StatefulWidget {
 
 class _WebProfilePageState extends State<WebProfilePage> {
   UserScore? _userScore;
+  UserProfile? _userProfile;
   List<GameScore> _recentActivities = [];
   bool _isLoading = true;
   bool _isLoadingActivities = true;
+  bool _isLoadingProfile = true;
   String? _error;
 
   @override
@@ -26,6 +30,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
     super.initState();
     _loadUserProfile();
     _loadRecentActivities();
+    _loadUserProfileData();
   }
 
   Future<void> _loadUserProfile() async {
@@ -50,6 +55,133 @@ class _WebProfilePageState extends State<WebProfilePage> {
         });
       }
     }
+  }
+
+  Future<void> _loadUserProfileData() async {
+    try {
+      setState(() {
+        _isLoadingProfile = true;
+      });
+
+      final userProfile = await UserProfileService.getOrCreateUserProfile();
+      if (mounted) {
+        setState(() {
+          _userProfile = userProfile;
+          _isLoadingProfile = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingProfile = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _showEditProfileDialog() async {
+    if (_userProfile == null) return;
+
+    final TextEditingController displayNameController = TextEditingController(
+      text: _userProfile!.displayName ?? '',
+    );
+    final TextEditingController countryController = TextEditingController(
+      text: _userProfile!.country ?? '',
+    );
+    DateTime? selectedBirthday = _userProfile!.birthday;
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Edit Profile'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: displayNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Display Name',
+                    hintText: 'Enter your display name',
+                  ),
+                ),
+                const Gap(16),
+                TextField(
+                  controller: countryController,
+                  decoration: const InputDecoration(
+                    labelText: 'Country',
+                    hintText: 'Enter your country',
+                  ),
+                ),
+                const Gap(16),
+                ListTile(
+                  title: const Text('Birthday'),
+                  subtitle: Text(
+                    selectedBirthday != null
+                        ? '${selectedBirthday!.day}/${selectedBirthday!.month}/${selectedBirthday!.year}'
+                        : 'Select your birthday',
+                  ),
+                  trailing: const Icon(Icons.calendar_today),
+                  onTap: () async {
+                    final DateTime? picked = await showDatePicker(
+                      context: context,
+                      initialDate: selectedBirthday ?? DateTime.now(),
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        selectedBirthday = picked;
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  await UserProfileService.updateProfileFields(
+                    uid: _userProfile!.uid,
+                    displayName: displayNameController.text.isNotEmpty
+                        ? displayNameController.text
+                        : null,
+                    birthday: selectedBirthday,
+                    country: countryController.text.isNotEmpty
+                        ? countryController.text
+                        : null,
+                  );
+
+                  if (mounted) {
+                    Navigator.of(context).pop();
+                    _loadUserProfileData();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Profile updated successfully!'),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to update profile: $e')),
+                    );
+                  }
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _loadRecentActivities() async {
@@ -223,6 +355,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
         await Future.wait([
           _loadUserProfile(),
           _loadRecentActivities(),
+          _loadUserProfileData(),
         ]);
       },
       child: SingleChildScrollView(
@@ -286,19 +419,44 @@ class _WebProfilePageState extends State<WebProfilePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  user.displayName ?? 'User',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _userProfile?.displayName ?? user.displayName ?? 'User',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: _showEditProfileDialog,
+                      icon: const Icon(Icons.edit, color: Colors.blue),
+                      tooltip: 'Edit Profile',
+                    ),
+                  ],
                 ),
                 const Gap(8),
                 Text(
                   user.email ?? 'No email',
                   style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                 ),
+                if (_userProfile?.country != null) ...[
+                  const Gap(4),
+                  Text(
+                    'Country: ${_userProfile!.country}',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                  ),
+                ],
+                if (_userProfile?.birthday != null) ...[
+                  const Gap(4),
+                  Text(
+                    'Birthday: ${_formatDate(_userProfile!.birthday!)}',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                  ),
+                ],
                 if (_userScore != null) ...[
                   const Gap(12),
                   Text(
@@ -582,7 +740,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
                               ),
                               const Gap(4),
                               Text(
-                                                                 'Date: ${_formatDate(activity.playedAt)}',
+                                'Date: ${_formatDateTime(activity.playedAt)}',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey[500],
@@ -648,5 +806,10 @@ class _WebProfilePageState extends State<WebProfilePage> {
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }
+  }
+
+  String _formatDateTime(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} '
+        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 }

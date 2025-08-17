@@ -39,6 +39,7 @@ dependencies:
   gap: ^3.0.1
   google_mobile_ads: ^6.0.0
   firebase_core: ^4.0.0
+  share_plus: ^7.2.1
   cloud_firestore: ^6.0.0
   firebase_auth: ^6.0.1
   google_sign_in: ^6.2.1

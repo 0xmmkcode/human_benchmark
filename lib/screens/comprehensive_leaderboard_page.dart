@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:human_benchmark/models/user_score.dart';
 import 'package:human_benchmark/models/game_score.dart';
+import 'package:human_benchmark/models/user_profile.dart';
 import 'package:human_benchmark/services/score_service.dart';
+import 'package:human_benchmark/services/user_profile_service.dart';
 
 class ComprehensiveLeaderboardPage extends ConsumerStatefulWidget {
   const ComprehensiveLeaderboardPage({super.key});
@@ -71,8 +73,8 @@ class _ComprehensiveLeaderboardPageState
   }
 
   Widget _buildOverallLeaderboard() {
-    return StreamBuilder<List<UserScore>>(
-      stream: ScoreService.getOverallLeaderboard(limit: 50),
+    return StreamBuilder<List<UserProfile>>(
+      stream: UserProfileService.getOverallLeaderboard(limit: 50),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -102,9 +104,9 @@ class _ComprehensiveLeaderboardPageState
           );
         }
 
-        final scores = snapshot.data ?? [];
+        final profiles = snapshot.data ?? [];
 
-        if (scores.isEmpty) {
+        if (profiles.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -135,14 +137,14 @@ class _ComprehensiveLeaderboardPageState
 
         return ListView.builder(
           padding: const EdgeInsets.all(16),
-          itemCount: scores.length,
+          itemCount: profiles.length,
           itemBuilder: (context, index) {
-            final score = scores[index];
+            final profile = profiles[index];
             final rank = index + 1;
 
             return _buildLeaderboardItem(
               rank: rank,
-              userScore: score,
+              userProfile: profile,
               showOverallScore: true,
             );
           },
@@ -152,8 +154,8 @@ class _ComprehensiveLeaderboardPageState
   }
 
   Widget _buildGameLeaderboard(GameType gameType) {
-    return StreamBuilder<List<UserScore>>(
-      stream: ScoreService.getGameLeaderboard(gameType, limit: 50),
+    return StreamBuilder<List<UserProfile>>(
+      stream: UserProfileService.getGameLeaderboard(gameType, limit: 50),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -183,9 +185,9 @@ class _ComprehensiveLeaderboardPageState
           );
         }
 
-        final scores = snapshot.data ?? [];
+        final profiles = snapshot.data ?? [];
 
-        if (scores.isEmpty) {
+        if (profiles.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -220,14 +222,14 @@ class _ComprehensiveLeaderboardPageState
 
         return ListView.builder(
           padding: const EdgeInsets.all(16),
-          itemCount: scores.length,
+          itemCount: profiles.length,
           itemBuilder: (context, index) {
-            final score = scores[index];
+            final profile = profiles[index];
             final rank = index + 1;
 
             return _buildLeaderboardItem(
               rank: rank,
-              userScore: score,
+              userProfile: profile,
               gameType: gameType,
             );
           },
@@ -238,17 +240,34 @@ class _ComprehensiveLeaderboardPageState
 
   Widget _buildLeaderboardItem({
     required int rank,
-    required UserScore userScore,
+    UserScore? userScore,
+    UserProfile? userProfile,
     GameType? gameType,
     bool showOverallScore = false,
   }) {
-    final score = gameType != null
-        ? userScore.getHighScore(gameType)
-        : userScore.overallScore;
+    // Determine which data source to use
+    final bool useProfile = userProfile != null;
+    final String displayName = useProfile
+        ? (userProfile!.displayName ?? 'Anonymous Player')
+        : (userScore?.userName ?? 'Anonymous Player');
+
+    final int score = gameType != null
+        ? (useProfile
+              ? userProfile!.getHighScore(gameType)
+              : userScore!.getHighScore(gameType))
+        : (useProfile ? userProfile!.overallScore : userScore!.overallScore);
 
     final scoreDisplay = gameType != null
         ? GameScore.getScoreDisplay(gameType, score)
         : score.toString();
+
+    final int totalGames = gameType != null
+        ? (useProfile
+              ? userProfile!.getTotalGames(gameType)
+              : userScore!.getTotalGames(gameType))
+        : (useProfile
+              ? userProfile!.totalGamesPlayed
+              : userScore!.totalGamesPlayedOverall);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -283,7 +302,7 @@ class _ComprehensiveLeaderboardPageState
           ),
         ),
         title: Text(
-          userScore.userName ?? 'Anonymous Player',
+          displayName,
           style: const TextStyle(
             fontFamily: 'Montserrat',
             fontWeight: FontWeight.w600,
@@ -292,8 +311,8 @@ class _ComprehensiveLeaderboardPageState
         ),
         subtitle: Text(
           gameType != null
-              ? '${GameScore.getDisplayName(gameType)} • ${userScore.getTotalGames(gameType)} games'
-              : '${userScore.totalGamesPlayedOverall} total games',
+              ? '${GameScore.getDisplayName(gameType)} • $totalGames games'
+              : '$totalGames total games',
           style: TextStyle(
             fontFamily: 'Montserrat',
             color: Colors.grey.shade600,
@@ -315,7 +334,7 @@ class _ComprehensiveLeaderboardPageState
             ),
             if (showOverallScore && gameType != null)
               Text(
-                'Overall: ${userScore.overallScore}',
+                'Overall: ${useProfile ? userProfile!.overallScore : userScore!.overallScore}',
                 style: TextStyle(
                   fontFamily: 'Montserrat',
                   fontSize: 12,

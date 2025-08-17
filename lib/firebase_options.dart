@@ -57,6 +57,7 @@ class DefaultFirebaseOptions {
     authDomain: 'human-benchmark-80a9a.firebaseapp.com',
     storageBucket: 'human-benchmark-80a9a.firebasestorage.app',
     measurementId: 'G-MNC3056BN5',
+    databaseURL: 'https://human-benchmark-80a9a-default-rtdb.firebaseio.com',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -65,5 +66,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1043791053268',
     projectId: 'human-benchmark-80a9a',
     storageBucket: 'human-benchmark-80a9a.firebasestorage.app',
+    databaseURL: 'https://human-benchmark-80a9a-default-rtdb.firebaseio.com',
   );
 }

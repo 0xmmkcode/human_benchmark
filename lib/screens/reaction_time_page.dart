@@ -13,8 +13,6 @@ import 'package:human_benchmark/services/score_service.dart';
 import 'package:human_benchmark/services/local_storage_service.dart';
 import 'package:human_benchmark/services/auth_service.dart';
 
-import 'package:shared_preferences/shared_preferences.dart';
-
 class ReactionTimePage extends StatefulWidget {
   @override
   _ReactionTimePageState createState() => _ReactionTimePageState();
@@ -34,6 +32,9 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
   DateTime? _startTime;
   int? _reactionTime;
   int? _highScore;
+  int _totalTests = 0;
+  int _averageTime = 0;
+  bool _isLoadingStats = true;
   final Random _random = Random();
   final Color backgroundColor = Color(0xFF0074EB);
 
@@ -41,6 +42,7 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
   void initState() {
     super.initState();
     _loadHighScore();
+    _loadReactionTimeStats();
     if (kReleaseMode) {
       _loadInterstitialAd();
       _bannerAd = BannerAd(
@@ -129,26 +131,45 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
       // Always save to local storage
       await LocalStorageService.addTime(_reactionTime!);
 
-      if (_reactionTime == null || _reactionTime! < (_highScore ?? 999999)) {
+      // Update local stats
+      _totalTests++;
+      _averageTime =
+          (((_averageTime * (_totalTests - 1)) + _reactionTime!) / _totalTests)
+              .round();
+
+      // Save to Firebase if user is logged in - ALWAYS update counter and average
+      if (AuthService.currentUser != null) {
+        try {
+          // Submit the game score - this updates totalGames and averageScore
+          await ScoreService.submitGameScore(
+            gameType: 'reaction_time',
+            score: _reactionTime!,
+            additionalData: {
+              'roundCounter': _roundCounter,
+              'timestamp': DateTime.now().millisecondsSinceEpoch,
+            },
+          );
+
+          // Note: submitGameScore already handles updating totalGames and averageScore
+          // No need to call updateReactionTimeAverage separately
+        } catch (e) {
+          // Log error but don't break the game
+          print('Failed to save score to Firebase: $e');
+        }
+      }
+
+      // Check if this is a new high score - only update best score when better
+      if (_reactionTime! < (_highScore ?? 999999)) {
         _highScore = _reactionTime;
         await LocalStorageService.saveBestTime(_reactionTime!);
+      }
 
-        // Save to Firebase if user is logged in
-        if (AuthService.currentUser != null) {
-          try {
-            await ScoreService.submitGameScore(
-              gameType: GameType.reactionTime,
-              score: _reactionTime!,
-              gameData: {
-                'roundCounter': _roundCounter,
-                'timestamp': DateTime.now().millisecondsSinceEpoch,
-              },
-            );
-          } catch (e) {
-            // Log error but don't break the game
-            print('Failed to save score to Firebase: $e');
-          }
-        }
+      // Update the UI and refresh stats
+      setState(() {});
+
+      // Refresh stats from Firebase to ensure consistency
+      if (AuthService.currentUser != null) {
+        _refreshStatsFromFirebase();
       }
     } else if (_state == GameState.result) {
       setState(() {
@@ -158,10 +179,112 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
   }
 
   Future<void> _loadHighScore() async {
-    final bestTime = await LocalStorageService.getBestTime();
-    setState(() {
-      _highScore = bestTime;
-    });
+    try {
+      // Try to get high score from Firebase first if user is logged in
+      if (AuthService.currentUser != null) {
+        try {
+          final userScore = await ScoreService.getUserScoreProfile();
+          if (userScore != null) {
+            final firebaseBestTime = userScore.getHighScore(
+              GameType.reactionTime,
+            );
+            if (firebaseBestTime > 0) {
+              setState(() {
+                _highScore = firebaseBestTime;
+              });
+              return;
+            }
+          }
+        } catch (e) {
+          print('Failed to load Firebase high score: $e');
+          // Continue to local fallback
+        }
+      }
+
+      // Fallback to local storage
+      final bestTime = await LocalStorageService.getBestTime();
+      setState(() {
+        _highScore = bestTime;
+      });
+    } catch (e) {
+      print('Error loading high score: $e');
+      setState(() {
+        _highScore = null;
+      });
+    }
+  }
+
+  Future<void> _refreshStatsFromFirebase() async {
+    try {
+      if (AuthService.currentUser == null) return;
+
+      final firebaseStats = await ScoreService.getReactionTimeStats();
+      if (firebaseStats.isNotEmpty && firebaseStats['totalGames'] != null) {
+        setState(() {
+          _totalTests =
+              (firebaseStats['totalGames'] as num?)?.toInt() ?? _totalTests;
+          _averageTime =
+              (firebaseStats['averageScore'] as num?)?.round() ?? _averageTime;
+        });
+      }
+    } catch (e) {
+      print('Failed to refresh stats from Firebase: $e');
+    }
+  }
+
+  Future<void> _loadReactionTimeStats() async {
+    try {
+      setState(() {
+        _isLoadingStats = true;
+      });
+
+      // Always load local stats first as fallback
+      final localTimes = await LocalStorageService.getTimesList();
+      int localTotalTests = localTimes.length;
+      int localAverageTime = 0;
+
+      if (localTimes.isNotEmpty) {
+        localAverageTime =
+            (localTimes.reduce((a, b) => a + b) / localTimes.length).round();
+      }
+
+      // Try to get stats from Firebase if user is logged in
+      if (AuthService.currentUser != null) {
+        try {
+          // First try to initialize stats if they don't exist
+          await ScoreService.initializeReactionTimeStats();
+
+          final firebaseStats = await ScoreService.getReactionTimeStats();
+          if (firebaseStats.isNotEmpty && firebaseStats['totalTests'] != null) {
+            // Use Firebase stats if available
+            setState(() {
+              _totalTests = firebaseStats['totalTests'] ?? localTotalTests;
+              _averageTime = firebaseStats['averageTime'] ?? localAverageTime;
+              _isLoadingStats = false;
+            });
+            return;
+          }
+        } catch (e) {
+          print('Failed to load Firebase stats: $e');
+          // Continue to local fallback
+        }
+      }
+
+      // Use local storage stats
+      setState(() {
+        _totalTests = localTotalTests;
+        _averageTime = localAverageTime;
+        _isLoadingStats = false;
+      });
+    } catch (e) {
+      print('Error loading reaction time stats: $e');
+      // Set default values on error
+      setState(() {
+        _totalTests = 0;
+        _averageTime = 0;
+        _isLoadingStats = false;
+      });
+    }
   }
 
   @override
@@ -234,38 +357,109 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
                   alignment: Alignment.topLeft,
                   child: Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Image.asset(
-                          "assets/images/human_logo_white.png",
-                          height: 40,
-                        ),
-                        Spacer(),
-                        Container(
-                          padding: EdgeInsets.all(5),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Image.asset(
-                                "assets/images/trophy-star.png",
-                                height: 30,
+                        Row(
+                          children: [
+                            Image.asset(
+                              "assets/images/human_logo_white.png",
+                              height: 40,
+                            ),
+                            Spacer(),
+                            Container(
+                              padding: EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(30),
                               ),
-                              Gap(10),
-                              Text(
-                                '${_highScore ?? "--"} ms',
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 12,
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Image.asset(
+                                    "assets/images/trophy-star.png",
+                                    height: 30,
+                                  ),
+                                  Gap(10),
+                                  Text(
+                                    '${_highScore ?? "--"} ms',
+                                    style: GoogleFonts.montserrat(
+                                      fontSize: 12,
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (!_isLoadingStats) ...[
+                          Gap(10),
+                          Row(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.9),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.play_arrow,
+                                      size: 16,
+                                      color: Colors.blue.shade600,
+                                    ),
+                                    Gap(4),
+                                    Text(
+                                      'Tests: $_totalTests',
+                                      style: GoogleFonts.montserrat(
+                                        fontSize: 11,
+                                        color: Colors.blue.shade600,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Gap(8),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.9),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.trending_up,
+                                      size: 16,
+                                      color: Colors.green.shade600,
+                                    ),
+                                    Gap(4),
+                                    Text(
+                                      'Avg: ${_averageTime}ms',
+                                      style: GoogleFonts.montserrat(
+                                        fontSize: 11,
+                                        color: Colors.green.shade600,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),

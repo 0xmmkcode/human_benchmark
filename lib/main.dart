@@ -3,9 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:human_benchmark/firebase_options.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:human_benchmark/home_shell.dart';
 import 'package:go_router/go_router.dart';
-import 'package:human_benchmark/screens/reaction_time_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() async {
@@ -25,10 +25,7 @@ void main() async {
 
   final GoRouter router = GoRouter(
     routes: <GoRoute>[
-      GoRoute(
-        path: '/',
-        builder: (context, state) => HomeShell(playPage: ReactionTimePage()),
-      ),
+      GoRoute(path: '/', builder: (context, state) => const HomeShell()),
     ],
   );
 
@@ -37,6 +34,7 @@ void main() async {
       child: MaterialApp.router(
         routerConfig: router,
         debugShowCheckedModeBanner: false,
+        theme: ThemeData(fontFamily: GoogleFonts.montserrat().fontFamily),
       ),
     ),
   );

@@ -65,9 +65,9 @@ class ReactionStatsService {
         if (user != null) {
           // Use the new ScoreService to submit the game score
           await ScoreService.submitGameScore(
-            gameType: GameType.reactionTime,
+            gameType: 'reaction_time',
             score: newBest,
-            gameData: {
+            additionalData: {
               'testsTaken': newTests,
               'averageMs': newAvg,
               'timestamp': DateTime.now().millisecondsSinceEpoch,

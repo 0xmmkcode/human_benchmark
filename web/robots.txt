@@ -1,0 +1,24 @@
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://humanbenchmark.xyz/sitemap.xml
+
+# Crawl delay (optional - helps with server load)
+Crawl-delay: 1
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /private/
+Disallow: /api/
+Disallow: /_/
+
+# Allow important pages
+Allow: /reaction-time/
+Allow: /number-memory/
+Allow: /decision-making/
+Allow: /personality-quiz/
+Allow: /leaderboard/
+Allow: /profile/
+Allow: /about/
+Allow: /features/

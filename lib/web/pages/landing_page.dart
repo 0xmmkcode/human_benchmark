@@ -4,7 +4,6 @@ import 'package:gap/gap.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
 import 'package:human_benchmark/web/constants/web_constants.dart';
 import 'dart:html' as html;
-import 'dart:ui' as ui;
 
 class LandingPage extends StatefulWidget {
   final VoidCallback onStartApp;
@@ -33,6 +32,16 @@ class _LandingPageState extends State<LandingPage>
   late Animation<Offset> _slideAnimation;
   late Animation<double> _scaleAnimation;
   late Animation<double> _rotateAnimation;
+
+  // GlobalKeys for scrolling to sections
+  final GlobalKey _heroKey = GlobalKey();
+  final GlobalKey _featuresKey = GlobalKey();
+  final GlobalKey _personalityKey = GlobalKey();
+  final GlobalKey _aboutKey = GlobalKey();
+  final GlobalKey _mobileKey = GlobalKey();
+
+  // ScrollController for smooth scrolling
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -95,44 +104,241 @@ class _LandingPageState extends State<LandingPage>
     _slideController.dispose();
     _scaleController.dispose();
     _rotateController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  // Method to scroll to a specific section
+  void _scrollToSection(GlobalKey key) {
+    final RenderBox? renderBox =
+        key.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox != null) {
+      final position = renderBox.localToGlobal(Offset.zero).dy;
+      final offset =
+          _scrollController.offset + position - 100; // Offset for header
+      _scrollController.animateTo(
+        offset,
+        duration: Duration(milliseconds: 800),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  // Method to show mobile menu
+  void _showMobileMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              offset: Offset(0, -5),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // Drag handle
+            Container(
+              margin: EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            SizedBox(height: 24),
+
+            // Header
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          WebTheme.primaryBlue,
+                          WebTheme.primaryBlueLight,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.menu, color: Colors.white, size: 18),
+                  ),
+                  SizedBox(width: 12),
+                  Text(
+                    'Menu',
+                    style: WebTheme.headingMedium.copyWith(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 24),
+
+            // Menu items
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.symmetric(horizontal: 24),
+                children: [
+                  _buildMobileMenuItem('Home', Icons.home_outlined, () {
+                    Navigator.pop(context);
+                    _scrollToSection(_heroKey);
+                  }),
+                  _buildMobileMenuItem('Features', Icons.star_outline, () {
+                    Navigator.pop(context);
+                    _scrollToSection(_featuresKey);
+                  }),
+                  _buildMobileMenuItem(
+                    'Personality',
+                    Icons.psychology_outlined,
+                    () {
+                      Navigator.pop(context);
+                      _scrollToSection(_personalityKey);
+                    },
+                  ),
+                  _buildMobileMenuItem('About', Icons.info_outline, () {
+                    Navigator.pop(context);
+                    _scrollToSection(_aboutKey);
+                  }),
+                  _buildMobileMenuItem(
+                    'Mobile App',
+                    Icons.phone_android_outlined,
+                    () {
+                      Navigator.pop(context);
+                      _scrollToSection(_mobileKey);
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            // Bottom section with Get Started button
+            Container(
+              padding: EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: WebTheme.grey50,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Ready to test your limits?',
+                    style: WebTheme.bodyLarge.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        widget.onStartApp();
+                      },
+                      style: WebTheme.largePrimaryButton.copyWith(
+                        elevation: MaterialStateProperty.all(8),
+                        shadowColor: MaterialStateProperty.all(
+                          WebTheme.primaryBlue.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Text(
+                        'Get Started Now',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileMenuItem(String title, IconData icon, VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon, color: WebTheme.primaryBlue),
+      title: Text(
+        title,
+        style: WebTheme.bodyLarge.copyWith(
+          fontWeight: FontWeight.w600,
+          color: WebTheme.primaryBlue,
+        ),
+      ),
+      onTap: onTap,
+      trailing: Icon(
+        Icons.arrow_forward_ios,
+        size: 16,
+        color: WebTheme.primaryBlue,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: WebTheme.grey50,
-      body: Stack(
-        children: [
-          // Decorative animated background
-          // Content
-          SingleChildScrollView(
-            child: Column(
-              children: [
-                _buildAnimatedHeader(context),
-                _buildHeroSection(context),
-                _buildFeaturesSection(context),
-                _buildPersonalityTestSection(context),
-                const Gap(80),
-                _buildNumberMemorySection(context),
-                const Gap(80),
-                _buildAboutSection(context),
-                _buildMobileShowcase(context),
-                _buildFooter(context),
-              ],
-            ),
-          ),
-        ],
+      backgroundColor: Colors.white,
+      body: SingleChildScrollView(
+        controller: _scrollController,
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          children: [
+            _buildAnimatedHeader(context),
+            _buildHeroSection(context),
+            _buildFeaturesSection(context),
+            _buildPersonalityTestSection(context),
+            _buildAboutSection(context),
+            _buildMobileShowcase(context),
+            _buildFooter(context),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildAnimatedHeader(BuildContext context) {
+    final double width = MediaQuery.of(context).size.width;
+    final bool isSmall = width < 900;
+    final bool isMobile = width < 600;
+
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 23),
-        decoration: BoxDecoration(color: Colors.white),
+        padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 16 : (isSmall ? 20 : 24),
+          vertical: isMobile ? 16 : 23,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
         child: Row(
           children: [
             // Animated Logo
@@ -142,8 +348,8 @@ class _LandingPageState extends State<LandingPage>
                 return Transform.rotate(
                   angle: _rotateAnimation.value * 0.1,
                   child: Container(
-                    width: 40,
-                    height: 40,
+                    width: isMobile ? 36 : 40,
+                    height: isMobile ? 36 : 40,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -153,7 +359,7 @@ class _LandingPageState extends State<LandingPage>
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
                       boxShadow: [
                         BoxShadow(
                           color: WebTheme.primaryBlue.withOpacity(0.3),
@@ -163,21 +369,21 @@ class _LandingPageState extends State<LandingPage>
                       ],
                     ),
                     child: Padding(
-                      padding: EdgeInsetsGeometry.all(8),
+                      padding: EdgeInsetsGeometry.all(isMobile ? 6 : 8),
                       child: Image.asset(
                         "assets/images/human_benchmark_onlylogo_white.png",
-                        height: 18,
+                        height: isMobile ? 16 : 18,
                       ),
                     ),
                   ),
                 );
               },
             ),
-            SizedBox(width: 12),
+            SizedBox(width: isMobile ? 10 : 12),
             Text(
               WebConstants.appName,
               style: WebTheme.headingMedium.copyWith(
-                fontSize: 24,
+                fontSize: isMobile ? 18 : (isSmall ? 20 : 24),
                 fontWeight: FontWeight.bold,
                 foreground: Paint()
                   ..shader = LinearGradient(
@@ -191,21 +397,67 @@ class _LandingPageState extends State<LandingPage>
             // Navigation
             Row(
               children: [
-                _buildAnimatedButton(
-                  onPressed: () {},
-                  child: Text('About', style: WebTheme.bodyLarge),
-                  delay: 400,
-                ),
-                SizedBox(width: 16),
-                _buildAnimatedButton(
-                  onPressed: () {},
-                  child: Text('Features', style: WebTheme.bodyLarge),
-                  delay: 600,
-                ),
-                SizedBox(width: 16),
+                if (!isSmall) ...[
+                  _buildAnimatedButton(
+                    onPressed: () => _scrollToSection(_heroKey),
+                    child: Text('Home', style: WebTheme.bodyLarge),
+                    delay: 200,
+                  ),
+                  SizedBox(width: 16),
+                  _buildAnimatedButton(
+                    onPressed: () => _scrollToSection(_featuresKey),
+                    child: Text('Features', style: WebTheme.bodyLarge),
+                    delay: 300,
+                  ),
+                  SizedBox(width: 16),
+                  _buildAnimatedButton(
+                    onPressed: () => _scrollToSection(_personalityKey),
+                    child: Text('Personality', style: WebTheme.bodyLarge),
+                    delay: 400,
+                  ),
+                  SizedBox(width: 16),
+                  _buildAnimatedButton(
+                    onPressed: () => _scrollToSection(_aboutKey),
+                    child: Text('About', style: WebTheme.bodyLarge),
+                    delay: 500,
+                  ),
+                  SizedBox(width: 16),
+                  _buildAnimatedButton(
+                    onPressed: () => _scrollToSection(_mobileKey),
+                    child: Text('Mobile', style: WebTheme.bodyLarge),
+                    delay: 600,
+                  ),
+                  SizedBox(width: 16),
+                ] else ...[
+                  // Mobile menu button
+                  _buildAnimatedButton(
+                    onPressed: () => _showMobileMenu(context),
+                    child: Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: WebTheme.primaryBlue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.menu,
+                        color: WebTheme.primaryBlue,
+                        size: isMobile ? 20 : 24,
+                      ),
+                    ),
+                    delay: 400,
+                  ),
+                  SizedBox(width: isMobile ? 12 : 16),
+                ],
                 _buildAnimatedButton(
                   onPressed: widget.onStartApp,
-                  child: Text('Get Started'),
+                  child: Text(
+                    isMobile ? 'Start' : 'Get Started',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: isMobile ? 14 : 16,
+                    ),
+                  ),
                   isPrimary: true,
                   delay: 800,
                 ),
@@ -248,16 +500,23 @@ class _LandingPageState extends State<LandingPage>
   }
 
   Widget _buildHeroSection(BuildContext context) {
+    final double width = MediaQuery.of(context).size.width;
+    final bool isSmall = width < 900;
+    final bool isMobile = width < 600;
+    final bool isTiny = width < 400;
+
     return SlideTransition(
       position: _slideAnimation,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 100, vertical: 100),
-        child: Row(
-          children: [
-            Expanded(
-              flex: 1,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        key: _heroKey,
+        decoration: BoxDecoration(color: WebTheme.grey50),
+        padding: EdgeInsets.symmetric(
+          horizontal: isTiny ? 16 : (isMobile ? 20 : (isSmall ? 24 : 100)),
+          vertical: isTiny ? 30 : (isMobile ? 40 : (isSmall ? 60 : 100)),
+        ),
+        child: isSmall
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // Animated Title
                   TweenAnimationBuilder<double>(
@@ -272,7 +531,7 @@ class _LandingPageState extends State<LandingPage>
                           child: Text(
                             'Test Your Cognitive Limits',
                             style: WebTheme.headingLarge.copyWith(
-                              fontSize: 56,
+                              fontSize: isTiny ? 24 : (isMobile ? 28 : 32),
                               fontWeight: FontWeight.bold,
                               foreground: Paint()
                                 ..shader =
@@ -285,13 +544,13 @@ class _LandingPageState extends State<LandingPage>
                                       const Rect.fromLTWH(0, 0, 600, 70),
                                     ),
                             ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       );
                     },
                   ),
-                  SizedBox(height: 30),
-
+                  SizedBox(height: isTiny ? 16 : (isMobile ? 20 : 24)),
                   // Animated Description
                   TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0.0, end: 1.0),
@@ -305,54 +564,166 @@ class _LandingPageState extends State<LandingPage>
                           child: Text(
                             'Challenge your reaction time, memory, and cognitive abilities with our scientifically-designed brain training games. Available on mobile and web.',
                             style: WebTheme.bodyLarge.copyWith(
-                              fontSize: 20,
+                              fontSize: isTiny ? 14 : (isMobile ? 16 : 18),
                               height: 1.6,
                               color: Colors.grey[700],
                             ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       );
                     },
                   ),
-                  SizedBox(height: 40),
+                  SizedBox(height: isTiny ? 20 : (isMobile ? 24 : 40)),
 
                   // Animated Buttons
-                  Row(
-                    children: [
-                      _buildHeroButton(
-                        onPressed: widget.onStartApp,
-                        text: 'Start Testing Now',
-                        isPrimary: true,
-                        delay: 400,
+                  isTiny
+                      ? Column(
+                          children: [
+                            _buildHeroButton(
+                              onPressed: widget.onStartApp,
+                              text: 'Start Testing Now',
+                              isPrimary: true,
+                              delay: 400,
+                            ),
+                            SizedBox(height: 16),
+                            _buildHeroButton(
+                              onPressed: () {},
+                              text: 'Learn More',
+                              isPrimary: false,
+                              delay: 600,
+                            ),
+                          ],
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _buildHeroButton(
+                              onPressed: widget.onStartApp,
+                              text: 'Start Testing Now',
+                              isPrimary: true,
+                              delay: 400,
+                            ),
+                            SizedBox(width: isMobile ? 12 : 20),
+                            _buildHeroButton(
+                              onPressed: () {},
+                              text: 'Learn More',
+                              isPrimary: false,
+                              delay: 600,
+                            ),
+                          ],
+                        ),
+                  SizedBox(height: isTiny ? 20 : 24),
+                  Center(
+                    child: ScaleTransition(
+                      scale: _scaleAnimation,
+                      child: Image.asset(
+                        'assets/images/frame_phone.jpg',
+                        fit: BoxFit.fitHeight,
+                        height: isTiny ? 280 : (isMobile ? 380 : 500),
                       ),
-                      SizedBox(width: 20),
-                      _buildHeroButton(
-                        onPressed: () {},
-                        text: 'Learn More',
-                        isPrimary: false,
-                        delay: 600,
+                    ),
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // (same content as above for large screens)
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.0, end: 1.0),
+                          duration: Duration(milliseconds: 1200),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, child) {
+                            return Transform.translate(
+                              offset: Offset(-50 * (1 - value), 0),
+                              child: Opacity(
+                                opacity: value,
+                                child: Text(
+                                  'Test Your Cognitive Limits',
+                                  style: WebTheme.headingLarge.copyWith(
+                                    fontSize: 56,
+                                    fontWeight: FontWeight.bold,
+                                    foreground: Paint()
+                                      ..shader =
+                                          LinearGradient(
+                                            colors: [
+                                              WebTheme.primaryBlue,
+                                              WebTheme.primaryBlueLight,
+                                            ],
+                                          ).createShader(
+                                            const Rect.fromLTWH(0, 0, 600, 70),
+                                          ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        SizedBox(height: 30),
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.0, end: 1.0),
+                          duration: Duration(milliseconds: 1200),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, child) {
+                            return Transform.translate(
+                              offset: Offset(-30 * (1 - value), 0),
+                              child: Opacity(
+                                opacity: value,
+                                child: Text(
+                                  'Challenge your reaction time, memory, and cognitive abilities with our scientifically-designed brain training games. Available on mobile and web.',
+                                  style: WebTheme.bodyLarge.copyWith(
+                                    fontSize: 20,
+                                    height: 1.6,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        SizedBox(height: 40),
+
+                        // Animated Buttons
+                        Row(
+                          children: [
+                            _buildHeroButton(
+                              onPressed: widget.onStartApp,
+                              text: 'Start Testing Now',
+                              isPrimary: true,
+                              delay: 400,
+                            ),
+                            SizedBox(width: 20),
+                            _buildHeroButton(
+                              onPressed: () {},
+                              text: 'Learn More',
+                              isPrimary: false,
+                              delay: 600,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Center(
+                      child: ScaleTransition(
+                        scale: _scaleAnimation,
+                        child: Image.asset(
+                          'assets/images/frame_phone.jpg',
+                          fit: BoxFit.fitHeight,
+                          height: 700,
+                        ),
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),
-            ),
-            Gap(100),
-            Expanded(
-              flex: 1,
-              child: ScaleTransition(
-                scale: _scaleAnimation,
-                child: Container(
-                  child: Image.asset(
-                    'assets/images/frame_phone.jpg',
-                    fit: BoxFit.fitHeight,
-                    height: 700,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -363,6 +734,10 @@ class _LandingPageState extends State<LandingPage>
     required bool isPrimary,
     required int delay,
   }) {
+    final double width = MediaQuery.of(context).size.width;
+    final bool isMobile = width < 600;
+    final bool isTiny = width < 400;
+
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 800),
@@ -381,17 +756,30 @@ class _LandingPageState extends State<LandingPage>
                     backgroundColor: MaterialStateProperty.all(
                       WebTheme.primaryBlue,
                     ),
+                    padding: MaterialStateProperty.all(
+                      EdgeInsets.symmetric(
+                        horizontal: isTiny ? 20 : (isMobile ? 24 : 32),
+                        vertical: isTiny ? 14 : (isMobile ? 16 : 20),
+                      ),
+                    ),
                   ),
                   child: Text(
                     text,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: WebTheme.bodyLarge.copyWith(
+                      fontSize: isTiny ? 16 : (isMobile ? 18 : 20),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 )
               : OutlinedButton(
                   onPressed: onPressed,
                   style: WebTheme.secondaryButton.copyWith(
                     padding: MaterialStateProperty.all(
-                      EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      EdgeInsets.symmetric(
+                        horizontal: isTiny ? 20 : (isMobile ? 24 : 32),
+                        vertical: isTiny ? 14 : (isMobile ? 16 : 20),
+                      ),
                     ),
                     side: MaterialStateProperty.all(
                       BorderSide(color: WebTheme.primaryBlue, width: 2),
@@ -399,8 +787,8 @@ class _LandingPageState extends State<LandingPage>
                   ),
                   child: Text(
                     text,
-                    style: TextStyle(
-                      fontSize: 18,
+                    style: WebTheme.bodyLarge.copyWith(
+                      fontSize: isTiny ? 16 : (isMobile ? 18 : 20),
                       fontWeight: FontWeight.bold,
                       color: WebTheme.primaryBlue,
                     ),
@@ -412,9 +800,18 @@ class _LandingPageState extends State<LandingPage>
   }
 
   Widget _buildFeaturesSection(BuildContext context) {
+    final double width = MediaQuery.of(context).size.width;
+    final bool isSmall = width < 900;
+    final bool isMobile = width < 600;
+    final bool isTiny = width < 400;
+
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 100, vertical: 100),
-      color: Colors.white,
+      key: _featuresKey,
+      padding: EdgeInsets.symmetric(
+        horizontal: isTiny ? 16 : (isMobile ? 20 : (isSmall ? 24 : 100)),
+        vertical: isTiny ? 40 : (isMobile ? 60 : (isSmall ? 80 : 100)),
+      ),
+      decoration: BoxDecoration(color: Colors.white),
       child: Column(
         children: [
           // Animated Section Title
@@ -430,7 +827,9 @@ class _LandingPageState extends State<LandingPage>
                   child: Text(
                     'Why Choose Human Benchmark?',
                     style: WebTheme.headingLarge.copyWith(
-                      fontSize: 42,
+                      fontSize: isTiny
+                          ? 28
+                          : (isMobile ? 32 : (isSmall ? 36 : 42)),
                       fontWeight: FontWeight.bold,
                     ),
                     textAlign: TextAlign.center,
@@ -439,48 +838,80 @@ class _LandingPageState extends State<LandingPage>
               );
             },
           ),
-          SizedBox(height: 80),
+          SizedBox(height: isTiny ? 30 : (isMobile ? 40 : (isSmall ? 60 : 80))),
 
           // Animated Feature Cards
-          Row(
-            children: [
-              _buildAnimatedFeatureCard(
-                icon: Icons.timer,
-                title: 'Reaction Time',
-                description:
-                    'Test your reflexes with our precise reaction time game. Challenge yourself to beat your best score.',
-                delay: 200,
-              ),
-              SizedBox(width: 24),
-              _buildAnimatedFeatureCard(
-                icon: Icons.leaderboard,
-                title: 'Global Leaderboard',
-                description:
-                    'Compete with players worldwide and see how you rank among the fastest minds.',
-                delay: 400,
-              ),
-              SizedBox(width: 24),
-              _buildAnimatedFeatureCard(
-                icon: Icons.devices,
-                title: 'Cross-Platform',
-                description:
-                    'Play on mobile, tablet, or desktop. Your progress syncs across all devices.',
-                delay: 600,
-              ),
-            ],
-          ),
-          SizedBox(height: 24),
-          /*Row(
-            children: [
-              _buildAnimatedFeatureCard(
-                icon: Icons.psychology,
-                title: 'Personality Quiz',
-                description:
-                    'Take our research-grade Big Five personality assessment with 50 certified questions from validated psychological instruments.',
-                delay: 800,
-              ),
-            ],
-          ),*/
+          isSmall
+              ? Column(
+                  children: [
+                    _buildAnimatedFeatureCard(
+                      icon: Icons.timer,
+                      title: 'Reaction Time',
+                      description:
+                          'Test your reflexes with our precise reaction time game. Challenge yourself to beat your best score.',
+                      delay: 200,
+                      isMobile: isMobile,
+                      isTiny: isTiny,
+                      expand: false,
+                    ),
+                    SizedBox(height: isTiny ? 20 : 24),
+                    _buildAnimatedFeatureCard(
+                      icon: Icons.leaderboard,
+                      title: 'Global Leaderboard',
+                      description:
+                          'Compete with players worldwide and see how you rank among the fastest minds.',
+                      delay: 400,
+                      isMobile: isMobile,
+                      isTiny: isTiny,
+                      expand: false,
+                    ),
+                    SizedBox(height: isTiny ? 20 : 24),
+                    _buildAnimatedFeatureCard(
+                      icon: Icons.devices,
+                      title: 'Cross-Platform',
+                      description:
+                          'Play on mobile, tablet, or desktop. Your progress syncs across all devices.',
+                      delay: 600,
+                      isMobile: isMobile,
+                      isTiny: isTiny,
+                      expand: false,
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    _buildAnimatedFeatureCard(
+                      icon: Icons.timer,
+                      title: 'Reaction Time',
+                      description:
+                          'Test your reflexes with our precise reaction time game. Challenge yourself to beat your best score.',
+                      delay: 200,
+                      isMobile: false,
+                      isTiny: false,
+                    ),
+                    SizedBox(width: 24),
+                    _buildAnimatedFeatureCard(
+                      icon: Icons.leaderboard,
+                      title: 'Global Leaderboard',
+                      description:
+                          'Compete with players worldwide and see how you rank among the fastest minds.',
+                      delay: 400,
+                      isMobile: false,
+                      isTiny: false,
+                    ),
+                    SizedBox(width: 24),
+                    _buildAnimatedFeatureCard(
+                      icon: Icons.devices,
+                      title: 'Cross-Platform',
+                      description:
+                          'Play on mobile, tablet, or desktop. Your progress syncs across all devices.',
+                      delay: 600,
+                      isMobile: false,
+                      isTiny: false,
+                    ),
+                  ],
+                ),
+          SizedBox(height: isTiny ? 20 : 24),
         ],
       ),
     );
@@ -491,81 +922,98 @@ class _LandingPageState extends State<LandingPage>
     required String title,
     required String description,
     required int delay,
+    bool isMobile = false,
+    bool isTiny = false,
+    bool expand = true,
   }) {
-    return Expanded(
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0.0, end: 1.0),
-        duration: Duration(milliseconds: 800),
-        curve: Curves.easeOutCubic,
-        builder: (context, value, child) {
-          return Transform.translate(
-            offset: Offset(0, 50 * (1 - value)),
-            child: Opacity(
-              opacity: value,
-              child: Container(
-                padding: EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 20,
-                      offset: Offset(0, 10),
-                    ),
-                  ],
+    final Widget cardContent = TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 800),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 50 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: Container(
+              padding: EdgeInsets.all(isTiny ? 20 : (isMobile ? 24 : 32)),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(
+                  isTiny ? 16 : (isMobile ? 20 : 24),
                 ),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            WebTheme.primaryBlue.withOpacity(0.1),
-                            WebTheme.primaryBlueLight.withOpacity(0.05),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(25),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 20,
+                    offset: Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: isTiny ? 80 : (isMobile ? 90 : 100),
+                    height: isTiny ? 80 : (isMobile ? 90 : 100),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          WebTheme.primaryBlue.withOpacity(0.1),
+                          WebTheme.primaryBlueLight.withOpacity(0.05),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      child: Icon(icon, size: 50, color: WebTheme.primaryBlue),
-                    ),
-                    SizedBox(height: 28),
-                    Text(
-                      title,
-                      style: WebTheme.headingMedium.copyWith(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: WebTheme.primaryBlue,
+                      borderRadius: BorderRadius.circular(
+                        isTiny ? 20 : (isMobile ? 22 : 25),
                       ),
-                      textAlign: TextAlign.center,
                     ),
-                    SizedBox(height: 20),
-                    Text(
-                      description,
-                      style: WebTheme.bodyLarge.copyWith(
-                        height: 1.6,
-                        color: Colors.grey[700],
-                      ),
-                      textAlign: TextAlign.center,
+                    child: Icon(
+                      icon,
+                      size: isTiny ? 40 : (isMobile ? 45 : 50),
+                      color: WebTheme.primaryBlue,
                     ),
-                  ],
-                ),
+                  ),
+                  SizedBox(height: isTiny ? 20 : (isMobile ? 24 : 28)),
+                  Text(
+                    title,
+                    style: WebTheme.headingMedium.copyWith(
+                      fontSize: isTiny ? 20 : (isMobile ? 22 : 26),
+                      fontWeight: FontWeight.bold,
+                      color: WebTheme.primaryBlue,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: isTiny ? 16 : 20),
+                  Text(
+                    description,
+                    style: WebTheme.bodyLarge.copyWith(
+                      fontSize: isTiny ? 13 : (isMobile ? 14 : 16),
+                      height: 1.6,
+                      color: Colors.grey[700],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
+    return expand ? Expanded(child: cardContent) : cardContent;
   }
 
   Widget _buildPersonalityTestSection(BuildContext context) {
+    final double width = MediaQuery.of(context).size.width;
+    final bool isSmall = width < 900;
+    final bool isMobile = width < 600;
+    final bool isTiny = width < 400;
+
     return Container(
+      key: _personalityKey,
       padding: EdgeInsets.symmetric(horizontal: 100, vertical: 100),
-      color: WebTheme.grey50,
+      decoration: BoxDecoration(color: WebTheme.grey50),
       child: Column(
         children: [
           // Animated Section Title
@@ -625,33 +1073,76 @@ class _LandingPageState extends State<LandingPage>
           SizedBox(height: 60),
 
           // Personality Test Cards
-          Row(
-            children: [
-              _buildPersonalityTestCard(
-                icon: Icons.psychology,
-                title: 'Big Five Assessment',
-                description:
-                    '50 research-grade questions measuring Openness, Conscientiousness, Extraversion, Agreeableness, and Neuroticism.',
-                delay: 200,
-              ),
-              SizedBox(width: 24),
-              _buildPersonalityTestCard(
-                icon: Icons.analytics,
-                title: 'Detailed Results',
-                description:
-                    'Get comprehensive insights into your personality traits with percentile rankings and detailed explanations.',
-                delay: 400,
-              ),
-              SizedBox(width: 24),
-              _buildPersonalityTestCard(
-                icon: Icons.leaderboard,
-                title: 'Global Comparison',
-                description:
-                    'See how your personality traits compare to people worldwide and discover what makes you unique.',
-                delay: 600,
-              ),
-            ],
-          ),
+          isSmall
+              ? Column(
+                  children: [
+                    _buildPersonalityTestCard(
+                      icon: Icons.psychology,
+                      title: 'Big Five Assessment',
+                      description:
+                          '50 research-grade questions measuring Openness, Conscientiousness, Extraversion, Agreeableness, and Neuroticism.',
+                      delay: 200,
+                      isMobile: isMobile,
+                      isTiny: isTiny,
+                      expand: false,
+                    ),
+                    SizedBox(height: isTiny ? 20 : 24),
+                    _buildPersonalityTestCard(
+                      icon: Icons.analytics,
+                      title: 'Detailed Results',
+                      description:
+                          'Get comprehensive insights into your personality traits with percentile rankings and detailed explanations.',
+                      delay: 400,
+                      isMobile: isMobile,
+                      isTiny: isTiny,
+                      expand: false,
+                    ),
+                    SizedBox(height: isTiny ? 20 : 24),
+                    _buildPersonalityTestCard(
+                      icon: Icons.leaderboard,
+                      title: 'Global Comparison',
+                      description:
+                          'See how your personality traits compare to people worldwide and discover what makes you unique.',
+                      delay: 600,
+                      isMobile: isMobile,
+                      isTiny: isTiny,
+                      expand: false,
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    _buildPersonalityTestCard(
+                      icon: Icons.psychology,
+                      title: 'Big Five Assessment',
+                      description:
+                          '50 research-grade questions measuring Openness, Conscientiousness, Extraversion, Agreeableness, and Neuroticism.',
+                      delay: 200,
+                      isMobile: false,
+                      isTiny: false,
+                    ),
+                    SizedBox(width: 24),
+                    _buildPersonalityTestCard(
+                      icon: Icons.analytics,
+                      title: 'Detailed Results',
+                      description:
+                          'Get comprehensive insights into your personality traits with percentile rankings and detailed explanations.',
+                      delay: 400,
+                      isMobile: false,
+                      isTiny: false,
+                    ),
+                    SizedBox(width: 24),
+                    _buildPersonalityTestCard(
+                      icon: Icons.leaderboard,
+                      title: 'Global Comparison',
+                      description:
+                          'See how your personality traits compare to people worldwide and discover what makes you unique.',
+                      delay: 600,
+                      isMobile: false,
+                      isTiny: false,
+                    ),
+                  ],
+                ),
           SizedBox(height: 60),
 
           // Call to Action Button
@@ -681,7 +1172,7 @@ class _LandingPageState extends State<LandingPage>
                   ),
                   child: Text(
                     'Take Personality Test Now',
-                    style: TextStyle(
+                    style: WebTheme.bodyLarge.copyWith(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -701,78 +1192,94 @@ class _LandingPageState extends State<LandingPage>
     required String title,
     required String description,
     required int delay,
+    bool isMobile = false,
+    bool isTiny = false,
+    bool expand = true,
   }) {
-    return Expanded(
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0.0, end: 1.0),
-        duration: Duration(milliseconds: 800),
-        curve: Curves.easeOutCubic,
-        builder: (context, value, child) {
-          return Transform.translate(
-            offset: Offset(0, 50 * (1 - value)),
-            child: Opacity(
-              opacity: value,
-              child: Container(
-                padding: EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 20,
-                      offset: Offset(0, 10),
-                    ),
-                  ],
+    final Widget cardContent = TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 800),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 50 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: Container(
+              padding: EdgeInsets.all(isTiny ? 20 : (isMobile ? 24 : 32)),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(
+                  isTiny ? 16 : (isMobile ? 20 : 24),
                 ),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            WebTheme.primaryBlue.withOpacity(0.1),
-                            WebTheme.primaryBlueLight.withOpacity(0.05),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(25),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 20,
+                    offset: Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: isTiny ? 80 : (isMobile ? 90 : 100),
+                    height: isTiny ? 80 : (isMobile ? 90 : 100),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          WebTheme.primaryBlue.withOpacity(0.1),
+                          WebTheme.primaryBlueLight.withOpacity(0.05),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      child: Icon(icon, size: 50, color: WebTheme.primaryBlue),
-                    ),
-                    SizedBox(height: 28),
-                    Text(
-                      title,
-                      style: WebTheme.headingMedium.copyWith(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: WebTheme.primaryBlue,
+                      borderRadius: BorderRadius.circular(
+                        isTiny ? 20 : (isMobile ? 22 : 25),
                       ),
-                      textAlign: TextAlign.center,
                     ),
-                    SizedBox(height: 20),
-                    Text(
-                      description,
-                      style: WebTheme.bodyLarge.copyWith(
-                        height: 1.6,
-                        color: Colors.grey[700],
-                      ),
-                      textAlign: TextAlign.center,
+                    child: Icon(
+                      icon,
+                      size: isTiny ? 40 : (isMobile ? 45 : 50),
+                      color: WebTheme.primaryBlue,
                     ),
-                  ],
-                ),
+                  ),
+                  SizedBox(height: isTiny ? 20 : (isMobile ? 24 : 28)),
+                  Text(
+                    title,
+                    style: WebTheme.headingMedium.copyWith(
+                      fontSize: isTiny ? 20 : (isMobile ? 22 : 26),
+                      fontWeight: FontWeight.bold,
+                      color: WebTheme.primaryBlue,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: isTiny ? 16 : 20),
+                  Text(
+                    description,
+                    style: WebTheme.bodyLarge.copyWith(
+                      fontSize: isTiny ? 13 : (isMobile ? 14 : 16),
+                      height: 1.6,
+                      color: Colors.grey[700],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
+    return expand ? Expanded(child: cardContent) : cardContent;
   }
 
   Widget _buildNumberMemorySection(BuildContext context) {
+    final double width = MediaQuery.of(context).size.width;
+    final bool isSmall = width < 900;
+    final bool isMobile = width < 600;
+    final bool isTiny = width < 400;
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 100, vertical: 100),
       color: Colors.white,
@@ -835,33 +1342,76 @@ class _LandingPageState extends State<LandingPage>
           SizedBox(height: 60),
 
           // Number Memory Cards
-          Row(
-            children: [
-              _buildNumberMemoryCard(
-                icon: Icons.memory,
-                title: 'Number Recall',
-                description:
-                    'Test your ability to recall numbers from a sequence. Challenge your memory and concentration.',
-                delay: 200,
-              ),
-              SizedBox(width: 24),
-              _buildNumberMemoryCard(
-                icon: Icons.numbers,
-                title: 'Sequence Memory',
-                description:
-                    'Test your ability to remember and repeat a sequence of numbers. Challenge your memory and concentration.',
-                delay: 400,
-              ),
-              SizedBox(width: 24),
-              _buildNumberMemoryCard(
-                icon: Icons.leaderboard,
-                title: 'Global Leaderboard',
-                description:
-                    'Compete with players worldwide and see how you rank among the fastest minds.',
-                delay: 600,
-              ),
-            ],
-          ),
+          isSmall
+              ? Column(
+                  children: [
+                    _buildNumberMemoryCard(
+                      icon: Icons.memory,
+                      title: 'Number Recall',
+                      description:
+                          'Test your ability to recall numbers from a sequence. Challenge your memory and concentration.',
+                      delay: 200,
+                      isMobile: isMobile,
+                      isTiny: isTiny,
+                      expand: false,
+                    ),
+                    SizedBox(height: isTiny ? 20 : 24),
+                    _buildNumberMemoryCard(
+                      icon: Icons.numbers,
+                      title: 'Sequence Memory',
+                      description:
+                          'Test your ability to remember and repeat a sequence of numbers. Challenge your memory and concentration.',
+                      delay: 400,
+                      isMobile: isMobile,
+                      isTiny: isTiny,
+                      expand: false,
+                    ),
+                    SizedBox(height: isTiny ? 20 : 24),
+                    _buildNumberMemoryCard(
+                      icon: Icons.leaderboard,
+                      title: 'Global Leaderboard',
+                      description:
+                          'Compete with players worldwide and see how you rank among the fastest minds.',
+                      delay: 600,
+                      isMobile: isMobile,
+                      isTiny: isTiny,
+                      expand: false,
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    _buildNumberMemoryCard(
+                      icon: Icons.memory,
+                      title: 'Number Recall',
+                      description:
+                          'Test your ability to recall numbers from a sequence. Challenge your memory and concentration.',
+                      delay: 200,
+                      isMobile: false,
+                      isTiny: false,
+                    ),
+                    SizedBox(width: 24),
+                    _buildNumberMemoryCard(
+                      icon: Icons.numbers,
+                      title: 'Sequence Memory',
+                      description:
+                          'Test your ability to remember and repeat a sequence of numbers. Challenge your memory and concentration.',
+                      delay: 400,
+                      isMobile: false,
+                      isTiny: false,
+                    ),
+                    SizedBox(width: 24),
+                    _buildNumberMemoryCard(
+                      icon: Icons.leaderboard,
+                      title: 'Global Leaderboard',
+                      description:
+                          'Compete with players worldwide and see how you rank among the fastest minds.',
+                      delay: 600,
+                      isMobile: false,
+                      isTiny: false,
+                    ),
+                  ],
+                ),
           SizedBox(height: 60),
 
           // Call to Action Button
@@ -891,7 +1441,7 @@ class _LandingPageState extends State<LandingPage>
                   ),
                   child: Text(
                     'Take Personality Test Now',
-                    style: TextStyle(
+                    style: WebTheme.bodyLarge.copyWith(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -911,81 +1461,98 @@ class _LandingPageState extends State<LandingPage>
     required String title,
     required String description,
     required int delay,
+    bool isMobile = false,
+    bool isTiny = false,
+    bool expand = true,
   }) {
-    return Expanded(
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0.0, end: 1.0),
-        duration: Duration(milliseconds: 800),
-        curve: Curves.easeOutCubic,
-        builder: (context, value, child) {
-          return Transform.translate(
-            offset: Offset(0, 50 * (1 - value)),
-            child: Opacity(
-              opacity: value,
-              child: Container(
-                padding: EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 20,
-                      offset: Offset(0, 10),
-                    ),
-                  ],
+    final Widget cardContent = TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 800),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 50 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: Container(
+              padding: EdgeInsets.all(isTiny ? 20 : (isMobile ? 24 : 32)),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(
+                  isTiny ? 16 : (isMobile ? 20 : 24),
                 ),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            WebTheme.primaryBlue.withOpacity(0.1),
-                            WebTheme.primaryBlueLight.withOpacity(0.05),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(25),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 20,
+                    offset: Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: isTiny ? 80 : (isMobile ? 90 : 100),
+                    height: isTiny ? 80 : (isMobile ? 90 : 100),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          WebTheme.primaryBlue.withOpacity(0.1),
+                          WebTheme.primaryBlueLight.withOpacity(0.05),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      child: Icon(icon, size: 50, color: WebTheme.primaryBlue),
-                    ),
-                    SizedBox(height: 28),
-                    Text(
-                      title,
-                      style: WebTheme.headingMedium.copyWith(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: WebTheme.primaryBlue,
+                      borderRadius: BorderRadius.circular(
+                        isTiny ? 20 : (isMobile ? 22 : 25),
                       ),
-                      textAlign: TextAlign.center,
                     ),
-                    SizedBox(height: 20),
-                    Text(
-                      description,
-                      style: WebTheme.bodyLarge.copyWith(
-                        height: 1.6,
-                        color: Colors.grey[700],
-                      ),
-                      textAlign: TextAlign.center,
+                    child: Icon(
+                      icon,
+                      size: isTiny ? 40 : (isMobile ? 45 : 50),
+                      color: WebTheme.primaryBlue,
                     ),
-                  ],
-                ),
+                  ),
+                  SizedBox(height: isTiny ? 20 : (isMobile ? 24 : 28)),
+                  Text(
+                    title,
+                    style: WebTheme.headingMedium.copyWith(
+                      fontSize: isTiny ? 20 : (isMobile ? 22 : 26),
+                      fontWeight: FontWeight.bold,
+                      color: WebTheme.primaryBlue,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: isTiny ? 16 : 20),
+                  Text(
+                    description,
+                    style: WebTheme.bodyLarge.copyWith(
+                      fontSize: isTiny ? 13 : (isMobile ? 14 : 16),
+                      height: 1.6,
+                      color: Colors.grey[700],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
+    return expand ? Expanded(child: cardContent) : cardContent;
   }
 
   Widget _buildAboutSection(BuildContext context) {
+    final double width = MediaQuery.of(context).size.width;
+    final bool isSmall = width < 900;
+    final bool isMobile = width < 600;
+    final bool isTiny = width < 400;
+
     return Container(
-      color: Colors.white,
-      padding: EdgeInsets.symmetric(horizontal: 100, vertical: 60),
+      key: _aboutKey,
+      padding: EdgeInsets.symmetric(horizontal: 100, vertical: 100),
+      decoration: BoxDecoration(color: WebTheme.grey50),
       child: Column(
         children: [
           // Animated Section Title
@@ -1020,25 +1587,55 @@ class _LandingPageState extends State<LandingPage>
           SizedBox(height: 80),
 
           // Animated About Cards
-          Row(
-            children: [
-              _buildAnimatedAboutCard(
-                icon: Icons.psychology,
-                title: 'Advancing Cognitive Science',
-                description:
-                    'We believe that understanding our cognitive abilities is the first step to improving them. Our platform provides scientifically-validated tests that help users measure and track their mental performance.',
-                delay: 200,
-              ),
-              SizedBox(width: 24),
-              _buildAnimatedAboutCard(
-                icon: Icons.accessibility_new,
-                title: 'Accessible to Everyone',
-                description:
-                    'Cognitive testing shouldn\'t be limited to research labs. We\'ve made these valuable tools available to everyone through intuitive, engaging, and scientifically-accurate applications.',
-                delay: 400,
-              ),
-            ],
-          ),
+          isSmall
+              ? Column(
+                  children: [
+                    _buildAnimatedAboutCard(
+                      icon: Icons.psychology,
+                      title: 'Advancing Cognitive Science',
+                      description:
+                          'We believe that understanding our cognitive abilities is the first step to improving them. Our platform provides scientifically-validated tests that help users measure and track their mental performance.',
+                      delay: 200,
+                      isMobile: isMobile,
+                      isTiny: isTiny,
+                      expand: false,
+                    ),
+                    SizedBox(height: isTiny ? 20 : 24),
+                    _buildAnimatedAboutCard(
+                      icon: Icons.accessibility_new,
+                      title: 'Accessible to Everyone',
+                      description:
+                          'Cognitive testing shouldn\'t be limited to research labs. We\'ve made these valuable tools available to everyone through intuitive, engaging, and scientifically-accurate applications.',
+                      delay: 400,
+                      isMobile: isMobile,
+                      isTiny: isTiny,
+                      expand: false,
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    _buildAnimatedAboutCard(
+                      icon: Icons.psychology,
+                      title: 'Advancing Cognitive Science',
+                      description:
+                          'We believe that understanding our cognitive abilities is the first step to improving them. Our platform provides scientifically-validated tests that help users measure and track their mental performance.',
+                      delay: 200,
+                      isMobile: false,
+                      isTiny: false,
+                    ),
+                    SizedBox(width: 24),
+                    _buildAnimatedAboutCard(
+                      icon: Icons.accessibility_new,
+                      title: 'Accessible to Everyone',
+                      description:
+                          'Cognitive testing shouldn\'t be limited to research labs. We\'ve made these valuable tools available to everyone through intuitive, engaging, and scientifically-accurate applications.',
+                      delay: 400,
+                      isMobile: false,
+                      isTiny: false,
+                    ),
+                  ],
+                ),
 
           SizedBox(height: 60),
         ],
@@ -1051,76 +1648,100 @@ class _LandingPageState extends State<LandingPage>
     required String title,
     required String description,
     required int delay,
+    bool isMobile = false,
+    bool isTiny = false,
+    bool expand = true,
   }) {
-    return Expanded(
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0.0, end: 1.0),
-        duration: Duration(milliseconds: 800),
-        curve: Curves.easeOutCubic,
-        builder: (context, value, child) {
-          return Transform.translate(
-            offset: Offset(0, 50 * (1 - value)),
-            child: Opacity(
-              opacity: value,
-              child: Container(
-                padding: EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  color: WebTheme.grey50,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: WebTheme.primaryBlue.withOpacity(0.1),
-                    width: 2,
-                  ),
+    final Widget cardContent = TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 800),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 50 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: Container(
+              padding: EdgeInsets.all(isTiny ? 20 : (isMobile ? 24 : 32)),
+              decoration: BoxDecoration(
+                color: WebTheme.primaryBlue.withOpacity(0.02),
+                borderRadius: BorderRadius.circular(
+                  isTiny ? 16 : (isMobile ? 20 : 24),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            WebTheme.primaryBlue.withOpacity(0.1),
-                            WebTheme.primaryBlueLight.withOpacity(0.05),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Icon(icon, size: 40, color: WebTheme.primaryBlue),
-                    ),
-                    SizedBox(height: 24),
-                    Text(
-                      title,
-                      style: WebTheme.headingMedium.copyWith(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: WebTheme.primaryBlue,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      description,
-                      style: WebTheme.bodyLarge.copyWith(
-                        height: 1.6,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                  ],
+                border: Border.all(
+                  color: WebTheme.primaryBlue.withOpacity(0.1),
+                  width: 2,
                 ),
               ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: isTiny ? 80 : (isMobile ? 90 : 100),
+                    height: isTiny ? 80 : (isMobile ? 90 : 100),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          WebTheme.primaryBlue.withOpacity(0.1),
+                          WebTheme.primaryBlueLight.withOpacity(0.05),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(
+                        isTiny ? 20 : (isMobile ? 22 : 25),
+                      ),
+                    ),
+                    child: Icon(
+                      icon,
+                      size: isTiny ? 40 : (isMobile ? 45 : 50),
+                      color: WebTheme.primaryBlue,
+                    ),
+                  ),
+                  SizedBox(height: isTiny ? 20 : (isMobile ? 24 : 28)),
+                  Text(
+                    title,
+                    style: WebTheme.headingMedium.copyWith(
+                      fontSize: isTiny ? 20 : (isMobile ? 22 : 26),
+                      fontWeight: FontWeight.bold,
+                      color: WebTheme.primaryBlue,
+                    ),
+                  ),
+                  SizedBox(height: isTiny ? 16 : 20),
+                  Text(
+                    description,
+                    style: WebTheme.bodyLarge.copyWith(
+                      fontSize: isTiny ? 13 : (isMobile ? 14 : 16),
+                      height: 1.6,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
+    return expand ? Expanded(child: cardContent) : cardContent;
   }
 
   Widget _buildMobileShowcase(BuildContext context) {
+    final double width = MediaQuery.of(context).size.width;
+    final bool isSmall = width < 900;
+    final bool isMobile = width < 600;
+    final bool isTiny = width < 400;
+
     return Container(
-      padding: EdgeInsets.only(top: 40, left: 60, right: 60, bottom: 100),
+      key: _mobileKey,
+      width: double.infinity,
+      decoration: BoxDecoration(color: WebTheme.grey50),
+      padding: EdgeInsets.only(
+        top: isTiny ? 30 : (isMobile ? 40 : 60),
+        left: isTiny ? 16 : (isMobile ? 20 : 60),
+        right: isTiny ? 16 : (isMobile ? 20 : 60),
+        bottom: isTiny ? 60 : (isMobile ? 80 : 100),
+      ),
       child: Column(
         children: [
           // Animated Section Title
@@ -1136,7 +1757,7 @@ class _LandingPageState extends State<LandingPage>
                   child: Text(
                     'Available on Mobile',
                     style: WebTheme.headingLarge.copyWith(
-                      fontSize: 42,
+                      fontSize: isTiny ? 28 : (isMobile ? 32 : 42),
                       fontWeight: FontWeight.bold,
                       foreground: Paint()
                         ..shader = LinearGradient(
@@ -1152,7 +1773,7 @@ class _LandingPageState extends State<LandingPage>
               );
             },
           ),
-          SizedBox(height: 24),
+          SizedBox(height: isTiny ? 16 : 24),
 
           TweenAnimationBuilder<double>(
             tween: Tween(begin: 0.0, end: 1.0),
@@ -1166,7 +1787,7 @@ class _LandingPageState extends State<LandingPage>
                   child: Text(
                     'Download our mobile app for the best experience',
                     style: WebTheme.bodyLarge.copyWith(
-                      fontSize: 20,
+                      fontSize: isTiny ? 16 : (isMobile ? 18 : 20),
                       color: Colors.grey[600],
                     ),
                     textAlign: TextAlign.center,
@@ -1175,7 +1796,7 @@ class _LandingPageState extends State<LandingPage>
               );
             },
           ),
-          SizedBox(height: 60),
+          SizedBox(height: isTiny ? 40 : (isMobile ? 50 : 60)),
 
           // Simplified centered download CTA (no phone mockup)
           TweenAnimationBuilder<double>(
@@ -1188,10 +1809,12 @@ class _LandingPageState extends State<LandingPage>
                 child: Opacity(
                   opacity: value,
                   child: Container(
-                    padding: EdgeInsets.all(40),
+                    padding: EdgeInsets.all(isTiny ? 24 : (isMobile ? 32 : 40)),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(
+                        isTiny ? 16 : (isMobile ? 20 : 24),
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: WebTheme.primaryBlue.withOpacity(0.12),
@@ -1208,76 +1831,132 @@ class _LandingPageState extends State<LandingPage>
                           'Download Now',
                           textAlign: TextAlign.center,
                           style: WebTheme.headingMedium.copyWith(
-                            fontSize: 32,
+                            fontSize: isTiny ? 24 : (isMobile ? 28 : 32),
                             fontWeight: FontWeight.bold,
                             color: WebTheme.primaryBlue,
                           ),
                         ),
-                        SizedBox(height: 16),
+                        SizedBox(height: isTiny ? 12 : 16),
                         Text(
                           'Free to play • Track progress • Compete globally • Cross‑platform sync',
                           textAlign: TextAlign.center,
                           style: WebTheme.bodyLarge.copyWith(
-                            fontSize: 18,
+                            fontSize: isTiny ? 14 : (isMobile ? 16 : 18),
                             color: Colors.grey[700],
                           ),
                         ),
-                        SizedBox(height: 28),
-                        Wrap(
-                          alignment: WrapAlignment.center,
-                          spacing: 16,
-                          runSpacing: 12,
-                          children: [
-                            ElevatedButton(
-                              onPressed: () {
-                                final url =
-                                    'https://play.google.com/store/apps/details?id=xyz.mmkcode.focusflow';
-                                html.window.open(url, '_blank');
-                              },
-                              style: WebTheme.primaryButton.copyWith(
-                                padding: MaterialStateProperty.all(
-                                  EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 16,
+                        SizedBox(height: isTiny ? 20 : 28),
+                        isSmall
+                            ? Column(
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      final url =
+                                          'https://play.google.com/store/apps/details?id=xyz.mmkcode.focusflow';
+                                      html.window.open(url, '_blank');
+                                    },
+                                    style: WebTheme.primaryButton.copyWith(
+                                      padding: MaterialStateProperty.all(
+                                        EdgeInsets.symmetric(
+                                          horizontal: isTiny ? 20 : 24,
+                                          vertical: isTiny ? 14 : 16,
+                                        ),
+                                      ),
+                                      elevation: MaterialStateProperty.all(8),
+                                    ),
+                                    child: Text(
+                                      'Get Mobile App',
+                                      style: WebTheme.bodyLarge.copyWith(
+                                        fontSize: isTiny ? 14 : 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                                elevation: MaterialStateProperty.all(8),
-                              ),
-                              child: Text(
-                                'Get Mobile App',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            OutlinedButton(
-                              onPressed: widget.onStartApp,
-                              style: WebTheme.secondaryButton.copyWith(
-                                padding: MaterialStateProperty.all(
-                                  EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 16,
+                                  SizedBox(height: isTiny ? 12 : 16),
+                                  OutlinedButton(
+                                    onPressed: widget.onStartApp,
+                                    style: WebTheme.secondaryButton.copyWith(
+                                      padding: MaterialStateProperty.all(
+                                        EdgeInsets.symmetric(
+                                          horizontal: isTiny ? 20 : 24,
+                                          vertical: isTiny ? 14 : 16,
+                                        ),
+                                      ),
+                                      side: MaterialStateProperty.all(
+                                        BorderSide(
+                                          color: WebTheme.primaryBlue,
+                                          width: 2,
+                                        ),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Play on Web',
+                                      style: WebTheme.bodyLarge.copyWith(
+                                        fontSize: isTiny ? 14 : 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: WebTheme.primaryBlue,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                                side: MaterialStateProperty.all(
-                                  BorderSide(
-                                    color: WebTheme.primaryBlue,
-                                    width: 2,
+                                ],
+                              )
+                            : Wrap(
+                                alignment: WrapAlignment.center,
+                                spacing: 16,
+                                runSpacing: 12,
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      final url =
+                                          'https://play.google.com/store/apps/details?id=xyz.mmkcode.focusflow';
+                                      html.window.open(url, '_blank');
+                                    },
+                                    style: WebTheme.primaryButton.copyWith(
+                                      padding: MaterialStateProperty.all(
+                                        EdgeInsets.symmetric(
+                                          horizontal: 24,
+                                          vertical: 16,
+                                        ),
+                                      ),
+                                      elevation: MaterialStateProperty.all(8),
+                                    ),
+                                    child: Text(
+                                      'Get Mobile App',
+                                      style: WebTheme.bodyLarge.copyWith(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                  OutlinedButton(
+                                    onPressed: widget.onStartApp,
+                                    style: WebTheme.secondaryButton.copyWith(
+                                      padding: MaterialStateProperty.all(
+                                        EdgeInsets.symmetric(
+                                          horizontal: 24,
+                                          vertical: 16,
+                                        ),
+                                      ),
+                                      side: MaterialStateProperty.all(
+                                        BorderSide(
+                                          color: WebTheme.primaryBlue,
+                                          width: 2,
+                                        ),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Play on Web',
+                                      style: WebTheme.bodyLarge.copyWith(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: WebTheme.primaryBlue,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              child: Text(
-                                'Play on Web',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: WebTheme.primaryBlue,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   ),
@@ -1291,6 +1970,11 @@ class _LandingPageState extends State<LandingPage>
   }
 
   Widget _buildFooter(BuildContext context) {
+    final double width = MediaQuery.of(context).size.width;
+    final bool isSmall = width < 900;
+    final bool isMobile = width < 600;
+    final bool isTiny = width < 400;
+
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 1000),
@@ -1301,125 +1985,152 @@ class _LandingPageState extends State<LandingPage>
           child: Opacity(
             opacity: value,
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 50),
+              padding: EdgeInsets.symmetric(
+                horizontal: isTiny ? 16 : (isMobile ? 20 : 24),
+                vertical: isTiny ? 30 : (isMobile ? 40 : 50),
+              ),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [WebTheme.grey100, WebTheme.grey50],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+                color: Colors.white,
+                border: Border(
+                  top: BorderSide(color: Colors.grey[200]!, width: 1),
                 ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '© 2024 Human Benchmark. All rights reserved.',
-                    style: WebTheme.bodyLarge.copyWith(
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
+              child: isSmall
+                  ? Column(
+                      children: [
+                        // Copyright and powered by
+                        Column(
+                          children: [
+                            Text(
+                              '© 2025 Human Benchmark. All rights reserved.',
+                              style: WebTheme.bodyLarge.copyWith(
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                                fontSize: isTiny ? 14 : 16,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            SizedBox(height: 8),
+                            MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                onTap: () {
+                                  html.window.open(
+                                    'https://mmkcode.xyz',
+                                    '_blank',
+                                  );
+                                },
+                                child: Text(
+                                  'Powered by MMKCode',
+                                  style: WebTheme.bodyLarge.copyWith(
+                                    color: WebTheme.primaryBlue,
+                                    fontWeight: FontWeight.w500,
+                                    decoration: TextDecoration.underline,
+                                    fontSize: isTiny ? 14 : 16,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: isTiny ? 20 : 24),
+
+                        // Links
+                        Column(
+                          children: [
+                            TextButton(
+                              onPressed: () => context.go('/privacy'),
+                              child: Text(
+                                'Privacy Policy',
+                                style: WebTheme.bodyLarge.copyWith(
+                                  color: WebTheme.primaryBlue,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: isTiny ? 14 : 16,
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            TextButton(
+                              onPressed: () => context.go('/terms'),
+                              child: Text(
+                                'Terms of Service',
+                                style: WebTheme.bodyLarge.copyWith(
+                                  color: WebTheme.primaryBlue,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: isTiny ? 14 : 16,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              '© 2025 Human Benchmark. All rights reserved.',
+                              style: WebTheme.bodyLarge.copyWith(
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Gap(10),
+                            MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                onTap: () {
+                                  html.window.open(
+                                    'https://mmkcode.xyz',
+                                    '_blank',
+                                  );
+                                },
+                                child: Text(
+                                  'Powered by MMKCode',
+                                  style: WebTheme.bodyLarge.copyWith(
+                                    color: WebTheme.primaryBlue,
+                                    fontWeight: FontWeight.w500,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            TextButton(
+                              onPressed: () => context.go('/privacy'),
+                              child: Text(
+                                'Privacy Policy',
+                                style: WebTheme.bodyLarge.copyWith(
+                                  color: WebTheme.primaryBlue,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            Gap(10),
+                            TextButton(
+                              onPressed: () => context.go('/terms'),
+                              child: Text(
+                                'Terms of Service',
+                                style: WebTheme.bodyLarge.copyWith(
+                                  color: WebTheme.primaryBlue,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ),
-                  Row(
-                    children: [
-                      TextButton(
-                        onPressed: () => context.go('/privacy'),
-                        child: Text(
-                          'Privacy Policy',
-                          style: TextStyle(
-                            color: WebTheme.primaryBlue,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 20),
-                      TextButton(
-                        onPressed: () => context.go('/terms'),
-                        child: Text(
-                          'Terms of Service',
-                          style: TextStyle(
-                            color: WebTheme.primaryBlue,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
             ),
           ),
         );
       },
-    );
-  }
-}
-
-class _DecorBackground extends StatelessWidget {
-  const _DecorBackground();
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: SizedBox.expand(
-        child: Stack(
-          children: [
-            // Subtle radial glow top-left
-            Positioned(
-              left: -80,
-              top: -80,
-              child: _glowCircle(300, WebTheme.primaryBlue, 0.12),
-            ),
-            // Subtle radial glow bottom-right
-            Positioned(
-              right: -100,
-              bottom: -100,
-              child: _glowCircle(360, WebTheme.primaryBlueLight, 0.10),
-            ),
-            // Soft blurred band across center
-            Positioned.fill(
-              top: 220,
-              bottom: 420,
-              child: Center(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: BackdropFilter(
-                    filter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-                    child: Container(
-                      height: 160,
-                      width: MediaQuery.of(context).size.width * 0.8,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            WebTheme.primaryBlue.withOpacity(0.06),
-                            Colors.white.withOpacity(0.0),
-                            WebTheme.primaryBlueLight.withOpacity(0.06),
-                          ],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _glowCircle(double size, Color color, double opacity) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [color.withOpacity(opacity), Colors.transparent],
-          stops: const [0.0, 1.0],
-        ),
-      ),
     );
   }
 }

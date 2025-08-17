@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:google_fonts/google_fonts.dart';
 import 'package:human_benchmark/firebase_options.dart';
 import 'package:human_benchmark/web/pages/landing_page.dart';
 import 'package:human_benchmark/web/pages/about_page.dart';
@@ -20,6 +21,9 @@ import 'package:human_benchmark/services/auth_service.dart';
 import 'package:human_benchmark/web/pages/global_dashboard_page.dart';
 import 'package:human_benchmark/web/pages/number_memory_page.dart';
 import 'package:human_benchmark/web/pages/profile_page.dart';
+import 'package:human_benchmark/web/pages/admin_users_page.dart';
+import 'package:human_benchmark/web/pages/admin_game_management_page.dart';
+import 'package:human_benchmark/web/components/protected_game_route.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -114,6 +118,12 @@ void main() async {
                       case 6:
                         context.go('/app/profile');
                         break;
+                      case 7:
+                        context.go('/app/admin-users');
+                        break;
+                      case 8:
+                        context.go('/app/admin-game-management');
+                        break;
                     }
                   },
                   onBackToLanding: () => context.go('/'),
@@ -128,7 +138,10 @@ void main() async {
         routes: <RouteBase>[
           GoRoute(
             path: '/app/reaction',
-            builder: (context, state) => WebReactionTimePage(),
+            builder: (context, state) => ProtectedGameRoute(
+              gameId: 'reaction_time',
+              child: WebReactionTimePage(),
+            ),
           ),
           GoRoute(
             path: '/app/dashboard',
@@ -136,15 +149,24 @@ void main() async {
           ),
           GoRoute(
             path: '/app/personality',
-            builder: (context, state) => const PersonalityQuizPage(),
+            builder: (context, state) => ProtectedGameRoute(
+              gameId: 'personality_quiz',
+              child: const PersonalityQuizPage(),
+            ),
           ),
           GoRoute(
             path: '/app/decision',
-            builder: (context, state) => const WebDecisionMakingPage(),
+            builder: (context, state) => ProtectedGameRoute(
+              gameId: 'decision_making',
+              child: const WebDecisionMakingPage(),
+            ),
           ),
           GoRoute(
             path: '/app/number-memory',
-            builder: (context, state) => const WebNumberMemoryPage(),
+            builder: (context, state) => ProtectedGameRoute(
+              gameId: 'number_memory',
+              child: const WebNumberMemoryPage(),
+            ),
           ),
           GoRoute(
             path: '/app/settings',
@@ -153,6 +175,14 @@ void main() async {
           GoRoute(
             path: '/app/profile',
             builder: (context, state) => const WebProfilePage(),
+          ),
+          GoRoute(
+            path: '/app/admin-users',
+            builder: (context, state) => const AdminUsersPage(),
+          ),
+          GoRoute(
+            path: '/app/admin-game-management',
+            builder: (context, state) => const AdminGameManagementPage(),
           ),
         ],
       ),
@@ -168,6 +198,7 @@ void main() async {
           primarySwatch: Colors.blue,
           useMaterial3: true,
           brightness: Brightness.light,
+          fontFamily: GoogleFonts.montserrat().fontFamily,
         ),
         routerConfig: router,
       ),
@@ -190,6 +221,10 @@ int _getSelectedIndex(String location) {
     return 5;
   } else if (location.endsWith('/profile')) {
     return 6;
+  } else if (location.endsWith('/admin-users')) {
+    return 7;
+  } else if (location.endsWith('/admin-game-management')) {
+    return 8;
   }
   return 0; // Default to reaction time
 }

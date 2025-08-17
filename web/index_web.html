@@ -1,12 +1,54 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="Human Benchmark - Test your reaction time and cognitive abilities in this web-optimized version">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Primary Meta Tags -->
+  <title>Human Benchmark - Test Your Cognitive Limits & Reaction Time</title>
+  <meta name="title" content="Human Benchmark - Test Your Cognitive Limits & Reaction Time">
+  <meta name="description" content="Challenge your mind with Human Benchmark's cognitive tests. Measure reaction time, memory, decision-making, and personality traits. Compare scores globally and track your progress.">
+  <meta name="keywords" content="human benchmark, cognitive test, reaction time test, memory test, decision making, personality quiz, brain training, cognitive assessment, mental speed, attention test">
+  <meta name="author" content="Human Benchmark">
+  <meta name="robots" content="index, follow">
+  <meta name="language" content="English">
+  <meta name="revisit-after" content="7 days">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://humanbenchmark.xyz/">
+  <meta property="og:title" content="Human Benchmark - Test Your Cognitive Limits & Reaction Time">
+  <meta property="og:description" content="Challenge your mind with Human Benchmark's cognitive tests. Measure reaction time, memory, decision-making, and personality traits. Compare scores globally and track your progress.">
+  <meta property="og:image" content="https://humanbenchmark.xyz/icons/Icon-512.png">
+  <meta property="og:site_name" content="Human Benchmark">
+  <meta property="og:locale" content="en_US">
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://humanbenchmark.xyz/">
+  <meta property="twitter:title" content="Human Benchmark - Test Your Cognitive Limits & Reaction Time">
+  <meta property="twitter:description" content="Challenge your mind with Human Benchmark's cognitive tests. Measure reaction time, memory, decision-making, and personality traits. Compare scores globally and track your progress.">
+  <meta property="twitter:image" content="https://humanbenchmark.xyz/icons/Icon-512.png">
+  
+  <!-- Additional SEO Meta Tags -->
+  <meta name="theme-color" content="#0175C2">
+  <meta name="msapplication-TileColor" content="#0175C2">
+  <meta name="msapplication-config" content="/browserconfig.xml">
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://humanbenchmark.xyz/">
+  
+  <!-- DNS Prefetch for performance -->
+  <link rel="dns-prefetch" href="//www.google-analytics.com">
+  <link rel="dns-prefetch" href="//www.googletagmanager.com">
+  
+  <!-- Preconnect for critical resources -->
+  <link rel="preconnect" href="https://www.gstatic.com">
+  <link rel="preconnect" href="https://humanbenchmark.xyz">
+  
   <!-- Web app meta tags -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -15,11 +57,64 @@
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 
-  <title>Human Benchmark l Test your limits</title>
+  <title>Human Benchmark - Test Your Cognitive Limits & Reaction Time</title>
   <link rel="manifest" href="manifest.json">
+  
+  <!-- Structured Data for Rich Snippets -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Human Benchmark",
+    "description": "Challenge your mind with Human Benchmark's cognitive tests. Measure reaction time, memory, decision-making, and personality traits.",
+    "url": "https://humanbenchmark.xyz/",
+    "applicationCategory": "Game",
+    "operatingSystem": "Web Browser",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "author": {
+      "@type": "Organization",
+      "name": "Human Benchmark"
+    },
+    "screenshot": "https://humanbenchmark.xyz/icons/Icon-512.png",
+    "featureList": [
+      "Reaction Time Test",
+      "Number Memory Test", 
+      "Decision Making Test",
+      "Personality Quiz",
+      "Global Leaderboards",
+      "Progress Tracking"
+    ]
+  }
+  </script>
 </head>
 <body>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  
+  <!-- Firebase Configuration -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCgdtzv9Spn2E9u3tb8gYp4UK-l-Uvy_dY",
+      authDomain: "human-benchmark-80a9a.firebaseapp.com",
+      projectId: "human-benchmark-80a9a",
+      storageBucket: "human-benchmark-80a9a.firebasestorage.app",
+      messagingSenderId: "1043791053268",
+      appId: "1:1043791053268:web:d744974d531271ca7b5641",
+      measurementId: "G-MNC3056BN5"
+    };
+    
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+  </script>
+  
   <script src="flutter_bootstrap.js" async></script>
   <script>
     // Override the default main entry point for web
@@ -28,5 +123,8 @@
       mainEntrypoint: "web_main.dart.js"
     };
   </script>
+  
+  <!-- SEO Configuration -->
+  <script src="seo-config.js"></script>
 </body>
 </html>
