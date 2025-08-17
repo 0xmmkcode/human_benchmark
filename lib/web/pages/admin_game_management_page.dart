@@ -6,6 +6,7 @@ import 'package:human_benchmark/models/game_management.dart';
 import 'package:human_benchmark/services/auth_service.dart';
 // import 'package:human_benchmark/services/admin_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:human_benchmark/services/app_logger.dart';
 
 class AdminGameManagementPage extends StatefulWidget {
   const AdminGameManagementPage({super.key});
@@ -55,19 +56,40 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
         _error = null;
       });
 
+      // First, try to get existing games
       var games = await GameManagementService.getAllGameManagement();
+      
+      // If no games exist, try to initialize them
       if (games.isEmpty) {
-        // Bootstrap default records if none exist yet
-        await GameManagementService.initializeDefaultGames();
-        games = await GameManagementService.getAllGameManagement();
+        try {
+          // Try to initialize default games
+          await GameManagementService.initializeDefaultGames();
+          // Try to get games again
+          games = await GameManagementService.getAllGameManagement();
+        } catch (initError) {
+          AppLogger.error('Failed to initialize default games', initError);
+          // If initialization fails, create a basic set manually
+          games = await _createBasicGames();
+        }
       }
+      
+      // If still no games, create them manually
+      if (games.isEmpty) {
+        games = await _createBasicGames();
+      }
+      
       if (mounted) {
         setState(() {
           _games = games;
           _isLoading = false;
         });
       }
+      
+      // Log the results for debugging
+      print('Loaded ${games.length} games: ${games.map((g) => '${g.gameName} (${g.status.name})').join(', ')}');
+      
     } catch (e) {
+      AppLogger.error('Failed to load games', e);
       if (mounted) {
         setState(() {
           _error = 'Failed to load games: $e';
@@ -75,6 +97,56 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
         });
       }
     }
+  }
+
+  // Fallback method to create basic games if Firebase initialization fails
+  Future<List<GameManagement>> _createBasicGames() async {
+    final basicGames = [
+      GameManagement(
+        gameId: 'reaction_time',
+        gameName: 'Reaction Time',
+        status: GameStatus.active,
+        updatedAt: DateTime.now(),
+        updatedBy: 'system',
+      ),
+      GameManagement(
+        gameId: 'number_memory',
+        gameName: 'Number Memory',
+        status: GameStatus.active,
+        updatedAt: DateTime.now(),
+        updatedBy: 'system',
+      ),
+      GameManagement(
+        gameId: 'decision_making',
+        gameName: 'Decision Making',
+        status: GameStatus.active,
+        updatedAt: DateTime.now(),
+        updatedBy: 'system',
+      ),
+      GameManagement(
+        gameId: 'personality_quiz',
+        gameName: 'Personality Quiz',
+        status: GameStatus.active,
+        updatedAt: DateTime.now(),
+        updatedBy: 'system',
+      ),
+    ];
+    
+    // Try to save these to Firebase
+    try {
+      for (final game in basicGames) {
+        await GameManagementService.updateGameStatus(
+          gameId: game.gameId,
+          status: game.status,
+          reason: null,
+          blockedUntil: null,
+        );
+      }
+    } catch (e) {
+      AppLogger.error('Failed to save basic games to Firebase', e);
+    }
+    
+    return basicGames;
   }
 
   Future<void> _updateGameStatus(
@@ -512,13 +584,19 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                         const Gap(8),
                         Text(
                           'Manage which games are visible and accessible to users in real-time',
-                          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
                         ),
                       ],
                     ),
                     // Real-time status indicator
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
@@ -557,15 +635,19 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                   ],
                 ),
                 const Gap(32),
-                
+
                 // Quick stats
                 _buildQuickStats(),
                 const Gap(24),
                 
+                // Debug section for troubleshooting
+                if (_games.isEmpty) _buildDebugSection(),
+                if (_games.isEmpty) const Gap(24),
+                
                 // Quick action bar
                 _buildQuickActionBar(),
                 const Gap(24),
-                
+
                 if (_games.isEmpty) _buildEmptyState() else _buildGamesGrid(),
               ],
             ),
@@ -580,7 +662,7 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
     final blockedGames = _games.where((g) => g.isBlocked).length;
     final maintenanceGames = _games.where((g) => g.isMaintenance).length;
     final hiddenGames = _games.where((g) => g.isHidden).length;
-    
+
     return Row(
       children: [
         Expanded(
@@ -626,7 +708,13 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color, String subtitle) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+    String subtitle,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -666,10 +754,7 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
           const Gap(4),
           Text(
             subtitle,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey[500],
-            ),
+            style: TextStyle(fontSize: 11, color: Colors.grey[500]),
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -813,7 +898,7 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
               ],
             ),
           ),
-          
+
           // Main content area
           Expanded(
             child: Padding(
@@ -825,15 +910,15 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                   Text(
                     _getStatusDescription(game.status),
                     style: TextStyle(
-                      fontSize: 13, 
+                      fontSize: 13,
                       color: Colors.grey[600],
                       height: 1.4,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  
+
                   const Gap(16),
-                  
+
                   // Game Access Switch
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -858,11 +943,14 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                             Switch(
                               value: game.isAccessible,
                               onChanged: (value) {
-                                final newStatus = value ? GameStatus.active : GameStatus.blocked;
+                                final newStatus = value
+                                    ? GameStatus.active
+                                    : GameStatus.blocked;
                                 _updateGameStatus(game, newStatus);
                               },
                               activeColor: WebTheme.primaryBlue,
-                              activeTrackColor: WebTheme.primaryBlue.withOpacity(0.3),
+                              activeTrackColor: WebTheme.primaryBlue
+                                  .withOpacity(0.3),
                             ),
                           ],
                         ),
@@ -873,16 +961,22 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                               width: 8,
                               height: 8,
                               decoration: BoxDecoration(
-                                color: game.isAccessible ? Colors.green : Colors.red,
+                                color: game.isAccessible
+                                    ? Colors.green
+                                    : Colors.red,
                                 shape: BoxShape.circle,
                               ),
                             ),
                             const Gap(8),
                             Text(
-                              game.isAccessible ? 'Accessible to users' : 'Blocked from users',
+                              game.isAccessible
+                                  ? 'Accessible to users'
+                                  : 'Blocked from users',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: game.isAccessible ? Colors.green[700] : Colors.red[700],
+                                color: game.isAccessible
+                                    ? Colors.green[700]
+                                    : Colors.red[700],
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -891,9 +985,9 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                       ],
                     ),
                   ),
-                  
+
                   const Gap(16),
-                  
+
                   // Status Management Section
                   Container(
                     width: double.infinity,
@@ -908,7 +1002,11 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.tune, size: 16, color: Colors.green[600]),
+                            Icon(
+                              Icons.tune,
+                              size: 16,
+                              color: Colors.green[600],
+                            ),
                             const Gap(8),
                             Text(
                               'Status Management',
@@ -921,7 +1019,7 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                           ],
                         ),
                         const Gap(12),
-                        
+
                         // Current Status
                         Container(
                           width: double.infinity,
@@ -967,9 +1065,9 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                             ],
                           ),
                         ),
-                        
+
                         const Gap(12),
-                        
+
                         // Status Options
                         Text(
                           'Available Statuses:',
@@ -980,28 +1078,33 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                           ),
                         ),
                         const Gap(8),
-                        
+
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
                           children: GameStatus.values.map((status) {
                             final isCurrentStatus = status == game.status;
-                            final isAccessible = status == GameStatus.active || status == GameStatus.hidden;
-                            
+                            final isAccessible =
+                                status == GameStatus.active ||
+                                status == GameStatus.hidden;
+
                             return InkWell(
                               onTap: () => _updateGameStatus(game, status),
                               borderRadius: BorderRadius.circular(20),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: isCurrentStatus 
+                                  color: isCurrentStatus
                                       ? _getStatusColor(status)
-                                      : isAccessible 
-                                          ? Colors.green[100] 
-                                          : Colors.red[100],
+                                      : isAccessible
+                                      ? Colors.green[100]
+                                      : Colors.red[100],
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
-                                    color: isCurrentStatus 
+                                    color: isCurrentStatus
                                         ? _getStatusColor(status)
                                         : Colors.grey[300]!,
                                     width: isCurrentStatus ? 2 : 1,
@@ -1012,20 +1115,20 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
-                                    color: isCurrentStatus 
+                                    color: isCurrentStatus
                                         ? Colors.white
-                                        : isAccessible 
-                                            ? Colors.green[700] 
-                                            : Colors.red[700],
+                                        : isAccessible
+                                        ? Colors.green[700]
+                                        : Colors.red[700],
                                   ),
                                 ),
                               ),
                             );
                           }).toList(),
                         ),
-                        
+
                         const Gap(8),
-                        
+
                         // Status Legend
                         Row(
                           children: [
@@ -1040,7 +1143,10 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                             const Gap(4),
                             Text(
                               'Accessible',
-                              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey[600],
+                              ),
                             ),
                             const Gap(16),
                             Container(
@@ -1054,16 +1160,19 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                             const Gap(4),
                             Text(
                               'Blocked',
-                              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey[600],
+                              ),
                             ),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  
+
                   const Gap(16),
-                  
+
                   // Game Details Section
                   Container(
                     width: double.infinity,
@@ -1078,7 +1187,11 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.info_outline, size: 16, color: Colors.blue[600]),
+                            Icon(
+                              Icons.info_outline,
+                              size: 16,
+                              color: Colors.blue[600],
+                            ),
                             const Gap(8),
                             Text(
                               'Game Details',
@@ -1091,7 +1204,7 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                           ],
                         ),
                         const Gap(12),
-                        
+
                         // Game ID
                         Row(
                           children: [
@@ -1113,9 +1226,9 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                             ),
                           ],
                         ),
-                        
+
                         const Gap(4),
-                        
+
                         // Updated At
                         Row(
                           children: [
@@ -1136,9 +1249,9 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                             ),
                           ],
                         ),
-                        
+
                         const Gap(4),
-                        
+
                         // Updated By
                         Row(
                           children: [
@@ -1162,9 +1275,9 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                       ],
                     ),
                   ),
-                  
+
                   const Spacer(),
-                  
+
                   // Reason display
                   if (game.reason != null) ...[
                     Container(
@@ -1180,7 +1293,11 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.note, size: 16, color: Colors.grey[600]),
+                              Icon(
+                                Icons.note,
+                                size: 16,
+                                color: Colors.grey[600],
+                              ),
                               const Gap(8),
                               Text(
                                 'Reason:',
@@ -1208,7 +1325,7 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                     ),
                     const Gap(12),
                   ],
-                  
+
                   // Blocked until display
                   if (game.blockedUntil != null) ...[
                     Container(
@@ -1242,7 +1359,7 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                     ),
                     const Gap(12),
                   ],
-                  
+
                   // Action buttons
                   Row(
                     children: [
@@ -1290,54 +1407,59 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-                     _buildQuickActionButton(
-             'Add New Game',
-             Icons.add_circle_outline,
-             Colors.green,
-             () async {
-               // TODO: Implement add new game functionality
-               ScaffoldMessenger.of(context).showSnackBar(
-                 const SnackBar(
-                   content: Text('Add new game functionality coming soon!'),
-                   backgroundColor: Colors.blue,
-                 ),
-               );
-             },
-           ),
-                     _buildQuickActionButton(
-             'Bulk Update',
-             Icons.download_done,
-             Colors.blue,
-             () async {
-               // TODO: Implement bulk update functionality
-               ScaffoldMessenger.of(context).showSnackBar(
-                 const SnackBar(
-                   content: Text('Bulk update functionality coming soon!'),
-                   backgroundColor: Colors.blue,
-                 ),
-               );
-             },
-           ),
-                     _buildQuickActionButton(
-             'Export Data',
-             Icons.download,
-             Colors.purple,
-             () async {
-               // TODO: Implement export functionality
-               ScaffoldMessenger.of(context).showSnackBar(
-                 const SnackBar(
-                   content: Text('Export functionality coming soon!'),
-                   backgroundColor: Colors.blue,
-                 ),
-               );
-             },
-           ),
+          _buildQuickActionButton(
+            'Add New Game',
+            Icons.add_circle_outline,
+            Colors.green,
+            () async {
+              // TODO: Implement add new game functionality
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Add new game functionality coming soon!'),
+                  backgroundColor: Colors.blue,
+                ),
+              );
+            },
+          ),
+          _buildQuickActionButton(
+            'Bulk Update',
+            Icons.download_done,
+            Colors.blue,
+            () async {
+              // TODO: Implement bulk update functionality
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Bulk update functionality coming soon!'),
+                  backgroundColor: Colors.blue,
+                ),
+              );
+            },
+          ),
+          _buildQuickActionButton(
+            'Export Data',
+            Icons.download,
+            Colors.purple,
+            () async {
+              // TODO: Implement export functionality
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Export functionality coming soon!'),
+                  backgroundColor: Colors.blue,
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildQuickActionButton(String label, IconData icon, Color color, VoidCallback onPressed) {
+  Widget _buildQuickActionButton(
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onPressed,
+  ) {
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -1358,7 +1480,106 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
     );
   }
 
-
+  Widget _buildDebugSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.bug_report, size: 24, color: Colors.red[400]),
+              const Gap(12),
+              Text(
+                'Debug Section',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ],
+          ),
+          const Gap(16),
+          Text(
+            'Current Game List (from Firebase):',
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          ),
+          const Gap(8),
+          ..._games.map((game) => Text(
+                '${game.gameId}: ${game.gameName} (${game.status.name})',
+                style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+              )),
+          const Gap(16),
+                     Text(
+             'Firebase Status:',
+             style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+           ),
+           const Gap(8),
+          Text(
+            'Is User Admin: $_isAdmin',
+            style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+          ),
+          const Gap(8),
+          Text(
+            'Current User ID: ${AuthService.currentUser?.uid ?? 'N/A'}',
+            style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+          ),
+          const Gap(16),
+           Row(
+             children: [
+               Expanded(
+                 child: ElevatedButton.icon(
+                   onPressed: () async {
+                     print('Manual refresh triggered');
+                     await _loadGames();
+                   },
+                   style: ElevatedButton.styleFrom(
+                     backgroundColor: WebTheme.primaryBlue,
+                     foregroundColor: Colors.white,
+                   ),
+                   icon: const Icon(Icons.refresh),
+                   label: const Text('Manual Refresh'),
+                 ),
+               ),
+               const Gap(16),
+               Expanded(
+                 child: ElevatedButton.icon(
+                   onPressed: () async {
+                     print('Force initialize games');
+                     try {
+                       await GameManagementService.initializeDefaultGames();
+                       await _loadGames();
+                     } catch (e) {
+                       print('Force init failed: $e');
+                     }
+                   },
+                   style: ElevatedButton.styleFrom(
+                     backgroundColor: Colors.orange,
+                     foregroundColor: Colors.white,
+                   ),
+                   icon: const Icon(Icons.playlist_add),
+                   label: const Text('Force Init'),
+                 ),
+               ),
+             ],
+           ),
+        ],
+      ),
+    );
+  }
 
   IconData _getGameIcon(String gameId) {
     switch (gameId) {
@@ -1375,4 +1596,3 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
     }
   }
 }
-
