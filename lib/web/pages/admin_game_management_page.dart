@@ -579,6 +579,7 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
     final activeGames = _games.where((g) => g.isActive).length;
     final blockedGames = _games.where((g) => g.isBlocked).length;
     final maintenanceGames = _games.where((g) => g.isMaintenance).length;
+    final hiddenGames = _games.where((g) => g.isHidden).length;
     
     return Row(
       children: [
@@ -588,6 +589,17 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
             activeGames.toString(),
             Icons.check_circle,
             Colors.green,
+            'Visible and playable',
+          ),
+        ),
+        const Gap(16),
+        Expanded(
+          child: _buildStatCard(
+            'Hidden Games',
+            hiddenGames.toString(),
+            Icons.visibility_off,
+            Colors.orange,
+            'Hidden from menu',
           ),
         ),
         const Gap(16),
@@ -597,6 +609,7 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
             blockedGames.toString(),
             Icons.block,
             Colors.red,
+            'Completely blocked',
           ),
         ),
         const Gap(16),
@@ -605,14 +618,15 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
             'Maintenance',
             maintenanceGames.toString(),
             Icons.build,
-            Colors.orange,
+            Colors.purple,
+            'Temporarily unavailable',
           ),
         ),
       ],
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(String title, String value, IconData icon, Color color, String subtitle) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -648,6 +662,17 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
               fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.center,
+          ),
+          const Gap(4),
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey[500],
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -809,53 +834,333 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                   
                   const Gap(16),
                   
-                  // Quick toggle switch for active/blocked
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Game Access:',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[700],
+                  // Game Access Switch
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[200]!),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Game Access:',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            Switch(
+                              value: game.isAccessible,
+                              onChanged: (value) {
+                                final newStatus = value ? GameStatus.active : GameStatus.blocked;
+                                _updateGameStatus(game, newStatus);
+                              },
+                              activeColor: WebTheme.primaryBlue,
+                              activeTrackColor: WebTheme.primaryBlue.withOpacity(0.3),
+                            ),
+                          ],
                         ),
-                      ),
-                      Switch(
-                        value: game.isAccessible,
-                        onChanged: (value) {
-                          final newStatus = value ? GameStatus.active : GameStatus.blocked;
-                          _updateGameStatus(game, newStatus);
-                        },
-                        activeColor: WebTheme.primaryBlue,
-                        activeTrackColor: WebTheme.primaryBlue.withOpacity(0.3),
-                      ),
-                    ],
+                        const Gap(8),
+                        Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: game.isAccessible ? Colors.green : Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const Gap(8),
+                            Text(
+                              game.isAccessible ? 'Accessible to users' : 'Blocked from users',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: game.isAccessible ? Colors.green[700] : Colors.red[700],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                   
-                  const Gap(12),
+                  const Gap(16),
                   
-                  // Status indicator
-                  Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: game.isAccessible ? Colors.green : Colors.red,
-                          shape: BoxShape.circle,
+                  // Status Management Section
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.green[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green[200]!),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.tune, size: 16, color: Colors.green[600]),
+                            const Gap(8),
+                            Text(
+                              'Status Management',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.green[700],
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      const Gap(8),
-                      Text(
-                        game.isAccessible ? 'Accessible' : 'Blocked',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: game.isAccessible ? Colors.green[700] : Colors.red[700],
-                          fontWeight: FontWeight.w500,
+                        const Gap(12),
+                        
+                        // Current Status
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Current Status:',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              const Gap(4),
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 12,
+                                    height: 12,
+                                    decoration: BoxDecoration(
+                                      color: _getStatusColor(game.status),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const Gap(8),
+                                  Text(
+                                    game.status.name.toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: _getStatusColor(game.status),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                        
+                        const Gap(12),
+                        
+                        // Status Options
+                        Text(
+                          'Available Statuses:',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const Gap(8),
+                        
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: GameStatus.values.map((status) {
+                            final isCurrentStatus = status == game.status;
+                            final isAccessible = status == GameStatus.active || status == GameStatus.hidden;
+                            
+                            return InkWell(
+                              onTap: () => _updateGameStatus(game, status),
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: isCurrentStatus 
+                                      ? _getStatusColor(status)
+                                      : isAccessible 
+                                          ? Colors.green[100] 
+                                          : Colors.red[100],
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isCurrentStatus 
+                                        ? _getStatusColor(status)
+                                        : Colors.grey[300]!,
+                                    width: isCurrentStatus ? 2 : 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  status.name.toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: isCurrentStatus 
+                                        ? Colors.white
+                                        : isAccessible 
+                                            ? Colors.green[700] 
+                                            : Colors.red[700],
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        
+                        const Gap(8),
+                        
+                        // Status Legend
+                        Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const Gap(4),
+                            Text(
+                              'Accessible',
+                              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                            ),
+                            const Gap(16),
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const Gap(4),
+                            Text(
+                              'Blocked',
+                              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const Gap(16),
+                  
+                  // Game Details Section
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blue[200]!),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.info_outline, size: 16, color: Colors.blue[600]),
+                            const Gap(8),
+                            Text(
+                              'Game Details',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.blue[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Gap(12),
+                        
+                        // Game ID
+                        Row(
+                          children: [
+                            Text(
+                              'ID: ',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            Text(
+                              game.gameId,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[700],
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        const Gap(4),
+                        
+                        // Updated At
+                        Row(
+                          children: [
+                            Text(
+                              'Updated: ',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            Text(
+                              '${game.updatedAt.day}/${game.updatedAt.month}/${game.updatedAt.year}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        const Gap(4),
+                        
+                        // Updated By
+                        Row(
+                          children: [
+                            Text(
+                              'By: ',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            Text(
+                              game.updatedBy,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                   
                   const Spacer(),
@@ -873,13 +1178,19 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Reason:',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[600],
-                            ),
+                          Row(
+                            children: [
+                              Icon(Icons.note, size: 16, color: Colors.grey[600]),
+                              const Gap(8),
+                              Text(
+                                'Reason:',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
                           ),
                           const Gap(4),
                           Text(
@@ -947,7 +1258,7 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                             ),
                           ),
                           icon: const Icon(Icons.settings, size: 18),
-                          label: const Text('Advanced'),
+                          label: const Text('Advanced Settings'),
                         ),
                       ),
                     ],
