@@ -490,29 +490,166 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
         padding: const EdgeInsets.all(24),
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 1000),
+            constraints: const BoxConstraints(maxWidth: 1200),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Game Access Control',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                  ),
-                ),
-                const Gap(8),
-                Text(
-                  'Manage which games are visible and accessible to users',
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                // Header with real-time status
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Game Access Control',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                        const Gap(8),
+                        Text(
+                          'Manage which games are visible and accessible to users in real-time',
+                          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                    // Real-time status indicator
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.grey[200]!),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const Gap(8),
+                          Text(
+                            'Live Updates',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
                 const Gap(32),
+                
+                // Quick stats
+                _buildQuickStats(),
+                const Gap(24),
+                
+                // Quick action bar
+                _buildQuickActionBar(),
+                const Gap(24),
+                
                 if (_games.isEmpty) _buildEmptyState() else _buildGamesGrid(),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildQuickStats() {
+    final activeGames = _games.where((g) => g.isActive).length;
+    final blockedGames = _games.where((g) => g.isBlocked).length;
+    final maintenanceGames = _games.where((g) => g.isMaintenance).length;
+    
+    return Row(
+      children: [
+        Expanded(
+          child: _buildStatCard(
+            'Active Games',
+            activeGames.toString(),
+            Icons.check_circle,
+            Colors.green,
+          ),
+        ),
+        const Gap(16),
+        Expanded(
+          child: _buildStatCard(
+            'Blocked Games',
+            blockedGames.toString(),
+            Icons.block,
+            Colors.red,
+          ),
+        ),
+        const Gap(16),
+        Expanded(
+          child: _buildStatCard(
+            'Maintenance',
+            maintenanceGames.toString(),
+            Icons.build,
+            Colors.orange,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 32, color: color),
+          const Gap(12),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const Gap(4),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -569,9 +706,9 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 1.2,
+        crossAxisSpacing: 20,
+        mainAxisSpacing: 20,
+        childAspectRatio: 1.1,
       ),
       itemCount: _games.length,
       itemBuilder: (context, index) {
@@ -585,33 +722,41 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: _getStatusColor(game.status).withOpacity(0.3),
-          width: 2,
+          color: _getStatusColor(game.status).withOpacity(0.2),
+          width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Column(
         children: [
+          // Header with game name and status
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: _getStatusColor(game.status).withOpacity(0.1),
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(14),
-                topRight: Radius.circular(14),
+                topLeft: Radius.circular(19),
+                topRight: Radius.circular(19),
               ),
             ),
             child: Column(
               children: [
+                // Game icon based on type
+                Icon(
+                  _getGameIcon(game.gameId),
+                  size: 32,
+                  color: _getStatusColor(game.status),
+                ),
+                const Gap(12),
                 Text(
                   game.gameName,
                   style: TextStyle(
@@ -621,15 +766,15 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const Gap(4),
+                const Gap(8),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+                    horizontal: 12,
+                    vertical: 6,
                   ),
                   decoration: BoxDecoration(
                     color: _getStatusColor(game.status),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     game.status.name.toUpperCase(),
@@ -643,52 +788,166 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
               ],
             ),
           ),
+          
+          // Main content area
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Status description
                   Text(
                     _getStatusDescription(game.status),
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 13, 
+                      color: Colors.grey[600],
+                      height: 1.4,
+                    ),
                     textAlign: TextAlign.center,
                   ),
-                  if (game.reason != null) ...[
-                    const Gap(8),
-                    Text(
-                      'Reason: ${game.reason}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey[500],
-                        fontStyle: FontStyle.italic,
+                  
+                  const Gap(16),
+                  
+                  // Quick toggle switch for active/blocked
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Game Access:',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[700],
+                        ),
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                  if (game.blockedUntil != null) ...[
-                    const Gap(8),
-                    Text(
-                      'Until: ${game.blockedUntil!.day}/${game.blockedUntil!.month}/${game.blockedUntil!.year}',
-                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-                    ),
-                  ],
+                      Switch(
+                        value: game.isAccessible,
+                        onChanged: (value) {
+                          final newStatus = value ? GameStatus.active : GameStatus.blocked;
+                          _updateGameStatus(game, newStatus);
+                        },
+                        activeColor: WebTheme.primaryBlue,
+                        activeTrackColor: WebTheme.primaryBlue.withOpacity(0.3),
+                      ),
+                    ],
+                  ),
+                  
+                  const Gap(12),
+                  
+                  // Status indicator
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: game.isAccessible ? Colors.green : Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const Gap(8),
+                      Text(
+                        game.isAccessible ? 'Accessible' : 'Blocked',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: game.isAccessible ? Colors.green[700] : Colors.red[700],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  
                   const Spacer(),
+                  
+                  // Reason display
+                  if (game.reason != null) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Reason:',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const Gap(4),
+                          Text(
+                            game.reason!,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[600],
+                              fontStyle: FontStyle.italic,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Gap(12),
+                  ],
+                  
+                  // Blocked until display
+                  if (game.blockedUntil != null) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.orange[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.schedule,
+                            size: 16,
+                            color: Colors.orange[600],
+                          ),
+                          const Gap(8),
+                          Expanded(
+                            child: Text(
+                              'Blocked until: ${game.blockedUntil!.day}/${game.blockedUntil!.month}/${game.blockedUntil!.year}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.orange[700],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Gap(12),
+                  ],
+                  
+                  // Action buttons
                   Row(
                     children: [
                       Expanded(
-                        child: ElevatedButton(
+                        child: ElevatedButton.icon(
                           onPressed: () => _showGameDetailsDialog(game),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: WebTheme.primaryBlue,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          child: const Text('Manage'),
+                          icon: const Icon(Icons.settings, size: 18),
+                          label: const Text('Advanced'),
                         ),
                       ),
                     ],
@@ -701,4 +960,108 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
       ),
     );
   }
+
+  Widget _buildQuickActionBar() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+                     _buildQuickActionButton(
+             'Add New Game',
+             Icons.add_circle_outline,
+             Colors.green,
+             () async {
+               // TODO: Implement add new game functionality
+               ScaffoldMessenger.of(context).showSnackBar(
+                 const SnackBar(
+                   content: Text('Add new game functionality coming soon!'),
+                   backgroundColor: Colors.blue,
+                 ),
+               );
+             },
+           ),
+                     _buildQuickActionButton(
+             'Bulk Update',
+             Icons.download_done,
+             Colors.blue,
+             () async {
+               // TODO: Implement bulk update functionality
+               ScaffoldMessenger.of(context).showSnackBar(
+                 const SnackBar(
+                   content: Text('Bulk update functionality coming soon!'),
+                   backgroundColor: Colors.blue,
+                 ),
+               );
+             },
+           ),
+                     _buildQuickActionButton(
+             'Export Data',
+             Icons.download,
+             Colors.purple,
+             () async {
+               // TODO: Implement export functionality
+               ScaffoldMessenger.of(context).showSnackBar(
+                 const SnackBar(
+                   content: Text('Export functionality coming soon!'),
+                   backgroundColor: Colors.blue,
+                 ),
+               );
+             },
+           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActionButton(String label, IconData icon, Color color, VoidCallback onPressed) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: ElevatedButton.icon(
+          onPressed: onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          icon: Icon(icon, size: 24),
+          label: Text(label),
+        ),
+      ),
+    );
+  }
+
+
+
+  IconData _getGameIcon(String gameId) {
+    switch (gameId) {
+      case 'reaction_time':
+        return Icons.timer;
+      case 'number_memory':
+        return Icons.numbers;
+      case 'decision_making':
+        return Icons.psychology;
+      case 'personality_quiz':
+        return Icons.quiz;
+      default:
+        return Icons.games;
+    }
+  }
 }
+
