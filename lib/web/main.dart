@@ -24,6 +24,7 @@ import 'package:human_benchmark/web/pages/profile_page.dart';
 import 'package:human_benchmark/web/pages/admin_users_page.dart';
 import 'package:human_benchmark/web/pages/admin_game_management_page.dart';
 import 'package:human_benchmark/web/components/protected_game_route.dart';
+import 'package:human_benchmark/web/components/maintenance_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -90,48 +91,50 @@ void main() async {
         builder: (context, state, child) {
           final String location = state.uri.toString();
           final int selectedIndex = _getSelectedIndex(location);
-          return Scaffold(
-            body: Row(
-              children: [
-                WebSidebar(
-                  selectedIndex: selectedIndex,
-                  onIndexChanged: (int idx) {
-                    switch (idx) {
-                      case 0:
-                        context.go('/app/reaction');
-                        break;
-                      case 1:
-                        context.go('/app/dashboard');
-                        break;
-                      case 2:
-                        context.go('/app/personality');
-                        break;
-                      case 3:
-                        context.go('/app/decision');
-                        break;
-                      case 4:
-                        context.go('/app/number-memory');
-                        break;
-                      case 5:
-                        context.go('/app/settings');
-                        break;
-                      case 6:
-                        context.go('/app/profile');
-                        break;
-                      case 7:
-                        context.go('/app/admin-users');
-                        break;
-                      case 8:
-                        context.go('/app/admin-game-management');
-                        break;
-                    }
-                  },
-                  onBackToLanding: () => context.go('/'),
-                ),
-                Expanded(
-                  child: Container(color: Colors.white, child: child),
-                ),
-              ],
+          return MaintenanceWrapper(
+            child: Scaffold(
+              body: Row(
+                children: [
+                  WebSidebar(
+                    selectedIndex: selectedIndex,
+                    onIndexChanged: (int idx) {
+                      switch (idx) {
+                        case 0:
+                          context.go('/app/reaction');
+                          break;
+                        case 1:
+                          context.go('/app/dashboard');
+                          break;
+                        case 2:
+                          context.go('/app/personality');
+                          break;
+                        case 3:
+                          context.go('/app/decision');
+                          break;
+                        case 4:
+                          context.go('/app/number-memory');
+                          break;
+                        case 5:
+                          context.go('/app/settings');
+                          break;
+                        case 6:
+                          context.go('/app/profile');
+                          break;
+                        case 7:
+                          context.go('/app/admin-users');
+                          break;
+                        case 8:
+                          context.go('/app/admin-game-management');
+                          break;
+                      }
+                    },
+                    onBackToLanding: () => context.go('/'),
+                  ),
+                  Expanded(
+                    child: Container(color: Colors.white, child: child),
+                  ),
+                ],
+              ),
             ),
           );
         },
