@@ -33,8 +33,8 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
         elevation: 0,
         centerTitle: true,
       ),
-      body: StreamBuilder<List<GameManagement>>(
-        stream: GameManagementService.getEnabledGamesStream(),
+      body: FutureBuilder<List<String>>(
+        future: GameManagementService.getVisibleGames(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -45,7 +45,11 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.grey.shade400),
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.grey.shade400,
+                  ),
                   const Gap(16),
                   Text(
                     'Failed to load games',
@@ -59,9 +63,9 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
             );
           }
 
-          final enabledGames = snapshot.data ?? [];
+          final visibleGames = snapshot.data ?? [];
 
-          if (enabledGames.isEmpty) {
+          if (visibleGames.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -77,7 +81,7 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
                   ),
                   const Gap(8),
                   Text(
-                    'All games are currently disabled',
+                    'All games are currently unavailable',
                     style: GoogleFonts.montserrat(
                       fontSize: 14,
                       color: Colors.grey.shade500,
@@ -97,10 +101,10 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
                 mainAxisSpacing: 16,
                 childAspectRatio: 1.2,
               ),
-              itemCount: enabledGames.length,
+              itemCount: visibleGames.length,
               itemBuilder: (context, index) {
-                final game = enabledGames[index];
-                return _buildGameCard(game);
+                final gameId = visibleGames[index];
+                return _buildGameCard(gameId);
               },
             ),
           );
@@ -109,11 +113,11 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
     );
   }
 
-  Widget _buildGameCard(GameManagement game) {
-    final gameData = _getGameData(game.gameId);
-    
+  Widget _buildGameCard(String gameId) {
+    final gameData = _getGameData(gameId);
+
     return GestureDetector(
-      onTap: () => _navigateToGame(game.gameId),
+      onTap: () => _navigateToGame(gameId),
       child: Container(
         decoration: BoxDecoration(
           color: gameData.color,
@@ -144,11 +148,7 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    gameData.icon,
-                    size: 32,
-                    color: Colors.white,
-                  ),
+                  Icon(gameData.icon, size: 32, color: Colors.white),
                   const Spacer(),
                   Text(
                     gameData.name,
@@ -179,11 +179,7 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  Icons.play_arrow,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                child: Icon(Icons.play_arrow, color: Colors.white, size: 20),
               ),
             ),
           ],

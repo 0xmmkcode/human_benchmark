@@ -419,9 +419,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
   }
 
   Stream<List<String>> _getEnabledGameTypesStream() {
-    return GameManagementService.getEnabledGamesStream().map(
-      (games) => games.map((game) => game.gameType).toList(),
-    );
+    return Stream.fromFuture(
+      GameManagementService.getVisibleGames(),
+    ).map((gameIds) => gameIds.map((gameId) => gameId).toList());
   }
 
   Widget _buildStatCard(

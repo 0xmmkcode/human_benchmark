@@ -148,8 +148,8 @@ class _WebSidebarState extends State<WebSidebar> {
 
           // Navigation Items
           Expanded(
-            child: StreamBuilder<List<GameManagement>>(
-              stream: GameManagementService.getEnabledGamesStream(),
+            child: FutureBuilder<List<String>>(
+              future: GameManagementService.getVisibleGames(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return ListView(
@@ -203,7 +203,7 @@ class _WebSidebarState extends State<WebSidebar> {
                   );
                 }
 
-                final enabledGames = snapshot.data ?? [];
+                final visibleGames = snapshot.data ?? [];
 
                 return ListView(
                   padding: EdgeInsets.symmetric(vertical: 16),
@@ -218,16 +218,16 @@ class _WebSidebarState extends State<WebSidebar> {
                     ),
 
                     // Dynamic game items
-                    ...enabledGames
-                        .map((game) {
-                          final gameIndex = _getGameIndex(game.gameId);
+                    ...visibleGames
+                        .map((gameId) {
+                          final gameIndex = _getGameIndex(gameId);
                           if (gameIndex == -1)
                             return SizedBox.shrink(); // Skip if no index mapping
 
                           return WebNavigationItem(
-                            icon: WebUtils.getIconFromString(game.icon),
-                            title: game.gameName,
-                            subtitle: _getGameSubtitle(game.gameId),
+                            icon: _getGameIcon(gameId),
+                            title: _getGameName(gameId),
+                            subtitle: _getGameSubtitle(gameId),
                             isSelected: widget.selectedIndex == gameIndex,
                             onTap: () => widget.onIndexChanged(gameIndex),
                           );
@@ -439,5 +439,68 @@ class _WebSidebarState extends State<WebSidebar> {
         ],
       ),
     );
+  }
+
+  // Helper methods for game information
+  IconData _getGameIcon(String gameId) {
+    switch (gameId) {
+      case 'reaction_time':
+        return Icons.timer;
+      case 'number_memory':
+        return Icons.memory;
+      case 'decision_making':
+        return Icons.speed;
+      case 'personality_quiz':
+        return Icons.psychology;
+      case 'aim_trainer':
+        return Icons.gps_fixed;
+      case 'verbal_memory':
+        return Icons.record_voice_over;
+      case 'visual_memory':
+        return Icons.visibility;
+      case 'typing_speed':
+        return Icons.keyboard;
+      case 'sequence_memory':
+        return Icons.format_list_numbered;
+      case 'chimp_test':
+        return Icons.pets;
+      default:
+        return Icons.games;
+    }
+  }
+
+  String _getGameName(String gameId) {
+    switch (gameId) {
+      case 'reaction_time':
+        return 'Reaction Time';
+      case 'number_memory':
+        return 'Number Memory';
+      case 'decision_making':
+        return 'Decision Making';
+      case 'personality_quiz':
+        return 'Personality Quiz';
+      case 'aim_trainer':
+        return 'Aim Trainer';
+      case 'verbal_memory':
+        return 'Verbal Memory';
+      case 'visual_memory':
+        return 'Visual Memory';
+      case 'typing_speed':
+        return 'Typing Speed';
+      case 'sequence_memory':
+        return 'Sequence Memory';
+      case 'chimp_test':
+        return 'Chimp Test';
+      default:
+        return gameId
+            .replaceAll('_', ' ')
+            .split(' ')
+            .map(
+              (word) => word.isNotEmpty
+                  ? '${word[0].toUpperCase()}${word.substring(1)}'
+                  : '',
+            )
+            .join(' ');
+    }
   }
 }

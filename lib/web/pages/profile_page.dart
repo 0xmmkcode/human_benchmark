@@ -7,6 +7,8 @@ import 'package:human_benchmark/services/user_profile_service.dart';
 import 'package:human_benchmark/models/user_score.dart';
 import 'package:human_benchmark/models/game_score.dart';
 import 'package:human_benchmark/models/user_profile.dart';
+import 'package:human_benchmark/web/widgets/country_selector.dart';
+import 'package:human_benchmark/web/constants/countries.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class WebProfilePage extends StatefulWidget {
@@ -107,12 +109,16 @@ class _WebProfilePageState extends State<WebProfilePage> {
                   ),
                 ),
                 const Gap(16),
-                TextField(
-                  controller: countryController,
-                  decoration: const InputDecoration(
-                    labelText: 'Country',
-                    hintText: 'Enter your country',
-                  ),
+                CountrySelector(
+                  initialValue: _userProfile!.country,
+                  onCountrySelected: (String? country) {
+                    // Update the country controller when a country is selected
+                    if (country != null) {
+                      countryController.text = country;
+                    } else {
+                      countryController.clear();
+                    }
+                  },
                 ),
                 const Gap(16),
                 ListTile(
@@ -445,9 +451,23 @@ class _WebProfilePageState extends State<WebProfilePage> {
                 ),
                 if (_userProfile?.country != null) ...[
                   const Gap(4),
-                  Text(
-                    'Country: ${_userProfile!.country}',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                  Row(
+                    children: [
+                      Text(
+                        'Country: ',
+                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                      ),
+                      Text(
+                        Countries.findByName(_userProfile!.country!)?.flag ??
+                            '',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      const Gap(4),
+                      Text(
+                        _userProfile!.country!,
+                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                      ),
+                    ],
                   ),
                 ],
                 if (_userProfile?.birthday != null) ...[

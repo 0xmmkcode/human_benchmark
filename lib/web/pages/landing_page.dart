@@ -372,7 +372,7 @@ class _LandingPageState extends State<LandingPage>
                       padding: EdgeInsetsGeometry.all(isMobile ? 6 : 8),
                       child: Image.asset(
                         "assets/images/human_benchmark_onlylogo_white.png",
-                        height: isMobile ? 16 : 18,
+                        height: isMobile ? 16 : 50,
                       ),
                     ),
                   ),
@@ -510,6 +510,9 @@ class _LandingPageState extends State<LandingPage>
       child: Container(
         key: _heroKey,
         decoration: BoxDecoration(color: WebTheme.grey50),
+        constraints: BoxConstraints(
+          minHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
         padding: EdgeInsets.symmetric(
           horizontal: isTiny ? 16 : (isMobile ? 20 : (isSmall ? 24 : 100)),
           vertical: isTiny ? 30 : (isMobile ? 40 : (isSmall ? 60 : 100)),
@@ -517,6 +520,7 @@ class _LandingPageState extends State<LandingPage>
         child: isSmall
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Animated Title
                   TweenAnimationBuilder<double>(
@@ -617,10 +621,13 @@ class _LandingPageState extends State<LandingPage>
                   Center(
                     child: ScaleTransition(
                       scale: _scaleAnimation,
-                      child: Image.asset(
-                        'assets/images/frame_phone.jpg',
-                        fit: BoxFit.fitHeight,
-                        height: isTiny ? 280 : (isMobile ? 380 : 500),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: Image.asset(
+                          'assets/images/frame_phone.jpg',
+                          fit: BoxFit.fitHeight,
+                          height: isTiny ? 280 : (isMobile ? 380 : 500),
+                        ),
                       ),
                     ),
                   ),
@@ -629,9 +636,10 @@ class _LandingPageState extends State<LandingPage>
             : Row(
                 children: [
                   Expanded(
-                    flex: 1,
+                    flex: 3,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         // (same content as above for large screens)
                         TweenAnimationBuilder<double>(
@@ -710,14 +718,18 @@ class _LandingPageState extends State<LandingPage>
                     ),
                   ),
                   Expanded(
-                    flex: 1,
-                    child: Center(
-                      child: ScaleTransition(
-                        scale: _scaleAnimation,
-                        child: Image.asset(
-                          'assets/images/frame_phone.jpg',
-                          fit: BoxFit.fitHeight,
-                          height: 700,
+                    flex: 2,
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Padding(
+                        padding: EdgeInsets.only(right: 40),
+                        child: ScaleTransition(
+                          scale: _scaleAnimation,
+                          child: Image.asset(
+                            'assets/images/frame_phone.jpg',
+                            fit: BoxFit.fitHeight,
+                            height: 700,
+                          ),
                         ),
                       ),
                     ),

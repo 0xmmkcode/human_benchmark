@@ -2,78 +2,118 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/game_management.dart';
 import 'app_logger.dart';
+import 'admin_service.dart';
 
 class GameManagementService {
   GameManagementService._();
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Collection reference
+  // Collection references
   static CollectionReference<Map<String, dynamic>>
   get _gameManagementCollection => _firestore.collection('game_management');
 
-  // Get all game management settings
-  static Future<List<GameManagement>> getAllGameSettings() async {
+  // Check if user is admin
+  static Future<bool> isUserAdmin() async {
     try {
-      final snapshot = await _gameManagementCollection.get();
-
-      if (snapshot.docs.isEmpty) {
-        // Initialize with default games if collection is empty
-        await _initializeDefaultGames();
-        return GameManagement.defaultGames;
-      }
-
-      return snapshot.docs
-          .map((doc) => GameManagement.fromMap(doc.data()))
-          .toList();
+      return await AdminService.isCurrentUserAdmin();
     } catch (e, st) {
-      AppLogger.error('gameManagement.getAllGameSettings', e, st);
-      return GameManagement.defaultGames;
+      AppLogger.error('gameManagement.isUserAdmin', e, st);
+      return false;
     }
   }
 
-  // Get game setting by ID
-  static Future<GameManagement?> getGameSetting(String gameId) async {
+  // (Dev utility) Grant admin role to current user via AdminService
+  static Future<bool> makeCurrentUserAdmin() async {
+    try {
+      return await AdminService.makeCurrentUserAdmin();
+    } catch (e, st) {
+      AppLogger.error('gameManagement.makeCurrentUserAdmin', e, st);
+      return false;
+    }
+  }
+
+  // Get all game management settings
+  static Future<List<GameManagement>> getAllGameManagement() async {
+    try {
+      final querySnapshot = await _gameManagementCollection.get();
+      return querySnapshot.docs
+          .map((doc) => GameManagement.fromMap(doc.data()))
+          .toList();
+    } catch (e, st) {
+      AppLogger.error('gameManagement.getAllGameManagement', e, st);
+      return [];
+    }
+  }
+
+  // Get game management for a specific game
+  static Future<GameManagement?> getGameManagement(String gameId) async {
     try {
       final doc = await _gameManagementCollection.doc(gameId).get();
       if (!doc.exists) return null;
-
       return GameManagement.fromMap(doc.data()!);
     } catch (e, st) {
-      AppLogger.error('gameManagement.getGameSetting', e, st);
+      AppLogger.error('gameManagement.getGameManagement', e, st);
       return null;
     }
   }
 
-  // Check if a game is enabled
-  static Future<bool> isGameEnabled(String gameId) async {
+  // Check if a game is accessible
+  static Future<bool> isGameAccessible(String gameId) async {
     try {
-      final gameSetting = await getGameSetting(gameId);
-      return gameSetting?.isEnabled ?? false;
+      final gameManagement = await getGameManagement(gameId);
+      if (gameManagement == null)
+        return true; // Default to accessible if no management record
+
+      return gameManagement.isAccessible &&
+          !gameManagement.isBlockedTemporarily;
     } catch (e, st) {
-      AppLogger.error('gameManagement.isGameEnabled', e, st);
-      return false; // Default to disabled on error
+      AppLogger.error('gameManagement.isGameAccessible', e, st);
+      return false; // Default to blocked on error
     }
   }
 
-  // Update game enabled status
-  static Future<bool> updateGameStatus(String gameId, bool isEnabled) async {
+  // Check if a game should be visible in menu
+  static Future<bool> isGameVisible(String gameId) async {
     try {
-      final User? currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
-        AppLogger.log('No authenticated user for game status update');
-        return false;
+      final gameManagement = await getGameManagement(gameId);
+      if (gameManagement == null)
+        return true; // Default to visible if no management record
+
+      return gameManagement.isActive;
+    } catch (e, st) {
+      AppLogger.error('gameManagement.isGameVisible', e, st);
+      return false; // Default to hidden on error
+    }
+  }
+
+  // Update game status (admin only)
+  static Future<bool> updateGameStatus({
+    required String gameId,
+    required GameStatus status,
+    String? reason,
+    DateTime? blockedUntil,
+  }) async {
+    try {
+      if (!await isUserAdmin()) {
+        throw Exception('User is not an admin');
       }
 
-      final now = FieldValue.serverTimestamp();
-      await _gameManagementCollection.doc(gameId).update({
-        'isEnabled': isEnabled,
-        'updatedAt': now,
-        'updatedBy': currentUser.uid,
-      });
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('User not authenticated');
 
-      AppLogger.log(
-        'Game $gameId ${isEnabled ? 'enabled' : 'disabled'} by ${currentUser.uid}',
+      final gameManagement = GameManagement(
+        gameId: gameId,
+        gameName: _getGameDisplayName(gameId),
+        status: status,
+        reason: reason,
+        blockedUntil: blockedUntil,
+        updatedAt: DateTime.now(),
+        updatedBy: user.uid,
       );
+
+      await _gameManagementCollection.doc(gameId).set(gameManagement.toMap());
+      AppLogger.log('Game status updated: $gameId -> ${status.name}');
       return true;
     } catch (e, st) {
       AppLogger.error('gameManagement.updateGameStatus', e, st);
@@ -81,152 +121,130 @@ class GameManagementService {
     }
   }
 
-  // Get all enabled games
-  static Future<List<GameManagement>> getEnabledGames() async {
+  // Initialize default game management records
+  static Future<void> initializeDefaultGames() async {
     try {
-      final allGames = await getAllGameSettings();
-      return allGames.where((game) => game.isEnabled).toList();
-    } catch (e, st) {
-      AppLogger.error('gameManagement.getEnabledGames', e, st);
-      return GameManagement.defaultGames
-          .where((game) => game.isEnabled)
-          .toList();
-    }
-  }
+      if (!await isUserAdmin()) return;
 
-  // Stream of enabled games for real-time updates
-  static Stream<List<GameManagement>> getEnabledGamesStream() {
-    try {
-      return _gameManagementCollection
-          .where('isEnabled', isEqualTo: true)
-          .snapshots()
-          .map(
-            (snapshot) => snapshot.docs
-                .map((doc) => GameManagement.fromMap(doc.data()))
-                .toList(),
-          );
-    } catch (e, st) {
-      AppLogger.error('gameManagement.getEnabledGamesStream', e, st);
-      // Return a stream with default enabled games on error
-      return Stream.value(
-        GameManagement.defaultGames.where((game) => game.isEnabled).toList(),
-      );
-    }
-  }
-
-  // Stream of all game settings for real-time updates
-  static Stream<List<GameManagement>> getAllGameSettingsStream() {
-    try {
-      return _gameManagementCollection.snapshots().map((snapshot) {
-        if (snapshot.docs.isEmpty) {
-          // Return default games if collection is empty
-          return GameManagement.defaultGames;
-        }
-        return snapshot.docs
-            .map((doc) => GameManagement.fromMap(doc.data()))
-            .toList();
-      });
-    } catch (e, st) {
-      AppLogger.error('gameManagement.getAllGameSettingsStream', e, st);
-      // Return a stream with default games on error
-      return Stream.value(GameManagement.defaultGames);
-    }
-  }
-
-  // Get all disabled games
-  static Future<List<GameManagement>> getDisabledGames() async {
-    try {
-      final allGames = await getAllGameSettings();
-      return allGames.where((game) => !game.isEnabled).toList();
-    } catch (e, st) {
-      AppLogger.error('gameManagement.getDisabledGames', e, st);
-      return GameManagement.defaultGames
-          .where((game) => !game.isEnabled)
-          .toList();
-    }
-  }
-
-  // Initialize default games in Firestore
-  static Future<void> _initializeDefaultGames() async {
-    try {
-      AppLogger.log('Initializing default games in Firestore...');
+      final defaultGames = [
+        'reaction_time',
+        'number_memory',
+        'decision_making',
+        'personality_quiz',
+        'aim_trainer',
+        'verbal_memory',
+        'visual_memory',
+        'typing_speed',
+        'sequence_memory',
+        'chimp_test',
+      ];
 
       final batch = _firestore.batch();
-      final now = FieldValue.serverTimestamp();
+      final user = _auth.currentUser;
 
-      for (final game in GameManagement.defaultGames) {
-        final gameData = game.toMap();
-        gameData['createdAt'] = now;
-        gameData['updatedAt'] = now;
+      for (final gameId in defaultGames) {
+        final docRef = _gameManagementCollection.doc(gameId);
+        final existingDoc = await docRef.get();
 
-        batch.set(_gameManagementCollection.doc(game.gameId), gameData);
+        if (!existingDoc.exists) {
+          final gameManagement = GameManagement(
+            gameId: gameId,
+            gameName: _getGameDisplayName(gameId),
+            status: GameStatus.active,
+            updatedAt: DateTime.now(),
+            updatedBy: user?.uid ?? 'system',
+          );
+          batch.set(docRef, gameManagement.toMap());
+        }
       }
 
       await batch.commit();
-      AppLogger.log('Default games initialized successfully');
+      AppLogger.log('Default game management records initialized');
     } catch (e, st) {
       AppLogger.error('gameManagement.initializeDefaultGames', e, st);
     }
   }
 
-  // Reset all games to default state
-  static Future<bool> resetToDefaults() async {
+  // Get accessible games for menu
+  static Future<List<String>> getAccessibleGames() async {
     try {
-      final User? currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
-        AppLogger.log('No authenticated user for reset operation');
-        return false;
-      }
-
-      final batch = _firestore.batch();
-      final now = FieldValue.serverTimestamp();
-
-      for (final game in GameManagement.defaultGames) {
-        final gameData = game.toMap();
-        gameData['createdAt'] = now;
-        gameData['updatedAt'] = now;
-        gameData['updatedBy'] = currentUser.uid;
-
-        batch.set(_gameManagementCollection.doc(game.gameId), gameData);
-      }
-
-      await batch.commit();
-      AppLogger.log('Games reset to defaults by ${currentUser.uid}');
-      return true;
+      final allGames = await getAllGameManagement();
+      return allGames
+          .where((game) => game.isAccessible && !game.isBlockedTemporarily)
+          .map((game) => game.gameId)
+          .toList();
     } catch (e, st) {
-      AppLogger.error('gameManagement.resetToDefaults', e, st);
-      return false;
+      AppLogger.error('gameManagement.getAccessibleGames', e, st);
+      return [];
     }
   }
 
-  // Bulk update game statuses
-  static Future<bool> bulkUpdateGameStatuses(
-    Map<String, bool> gameStatuses,
-  ) async {
+  // Get visible games for menu
+  static Future<List<String>> getVisibleGames() async {
     try {
-      final User? currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
-        AppLogger.log('No authenticated user for bulk update');
-        return false;
-      }
-
-      final batch = _firestore.batch();
-      final now = FieldValue.serverTimestamp();
-
-      for (final entry in gameStatuses.entries) {
-        batch.update(_gameManagementCollection.doc(entry.key), {
-          'isEnabled': entry.value,
-          'updatedAt': now,
-          'updatedBy': currentUser.uid,
-        });
-      }
-
-      await batch.commit();
-      AppLogger.log('Bulk game status update completed by ${currentUser.uid}');
-      return true;
+      final allGames = await getAllGameManagement();
+      return allGames
+          .where((game) => game.isActive)
+          .map((game) => game.gameId)
+          .toList();
     } catch (e, st) {
-      AppLogger.error('gameManagement.bulkUpdateGameStatuses', e, st);
-      return false;
+      AppLogger.error('gameManagement.getVisibleGames', e, st);
+      return [];
+    }
+  }
+
+  // Helper method to get game display names
+  static String _getGameDisplayName(String gameId) {
+    switch (gameId) {
+      case 'reaction_time':
+        return 'Reaction Time';
+      case 'number_memory':
+        return 'Number Memory';
+      case 'decision_making':
+        return 'Decision Making';
+      case 'personality_quiz':
+        return 'Personality Quiz';
+      case 'aim_trainer':
+        return 'Aim Trainer';
+      case 'verbal_memory':
+        return 'Verbal Memory';
+      case 'visual_memory':
+        return 'Visual Memory';
+      case 'typing_speed':
+        return 'Typing Speed';
+      case 'sequence_memory':
+        return 'Sequence Memory';
+      case 'chimp_test':
+        return 'Chimp Test';
+      default:
+        return gameId
+            .replaceAll('_', ' ')
+            .split(' ')
+            .map(
+              (word) => word.isNotEmpty
+                  ? '${word[0].toUpperCase()}${word.substring(1)}'
+                  : '',
+            )
+            .join(' ');
+    }
+  }
+
+  // Get game status with reason
+  static Future<Map<String, dynamic>?> getGameStatusInfo(String gameId) async {
+    try {
+      final gameManagement = await getGameManagement(gameId);
+      if (gameManagement == null) return null;
+
+      return {
+        'status': gameManagement.status.name,
+        'reason': gameManagement.reason,
+        'blockedUntil': gameManagement.blockedUntil,
+        'isAccessible': gameManagement.isAccessible,
+        'isVisible': gameManagement.isActive,
+      };
+    } catch (e, st) {
+      AppLogger.error('gameManagement.getGameStatusInfo', e, st);
+      return null;
     }
   }
 }

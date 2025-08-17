@@ -8,7 +8,7 @@ class RouteProtectionService {
   // Check if a game route is accessible
   static Future<bool> isGameRouteAccessible(String gameId) async {
     try {
-      return await GameManagementService.isGameEnabled(gameId);
+      return await GameManagementService.isGameAccessible(gameId);
     } catch (e, st) {
       AppLogger.error('routeProtection.isGameRouteAccessible', e, st);
       return false; // Default to disabled on error
@@ -29,7 +29,7 @@ class RouteProtectionService {
   // Check if navigation should show a game
   static Future<bool> shouldShowGameInNavigation(String gameId) async {
     try {
-      return await GameManagementService.isGameEnabled(gameId);
+      return await GameManagementService.isGameVisible(gameId);
     } catch (e, st) {
       AppLogger.error('routeProtection.shouldShowGameInNavigation', e, st);
       return false;
@@ -39,8 +39,8 @@ class RouteProtectionService {
   // Get all accessible game routes
   static Future<List<String>> getAccessibleGameRoutes() async {
     try {
-      final enabledGames = await GameManagementService.getEnabledGames();
-      return enabledGames.map((game) => '/app/${game.gameId}').toList();
+      final accessibleGames = await GameManagementService.getAccessibleGames();
+      return accessibleGames.map((gameId) => '/app/$gameId').toList();
     } catch (e, st) {
       AppLogger.error('routeProtection.getAccessibleGameRoutes', e, st);
       return [];

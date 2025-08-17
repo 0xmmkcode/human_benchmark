@@ -1,260 +1,189 @@
-# 🎮 Game Management System
+# Game Management System
 
-## Overview
+This system allows administrators to control game visibility and access across the Human Benchmark platform.
 
-The Game Management System allows administrators to enable or disable games on the Human Benchmark website. When a game is disabled, users cannot access it and will be redirected to a "Game Not Available" page.
+## Features
 
-## 🏗️ Architecture
+### Game Status Control
+- **Active**: Game is visible in menu and fully playable
+- **Hidden**: Game is hidden from menu but accessible via direct URL
+- **Blocked**: Game is completely inaccessible
+- **Maintenance**: Game is temporarily unavailable with optional end date
 
-### Components
+### Admin Controls
+- Set game status with optional reason
+- Schedule maintenance periods
+- Bulk game management
+- Real-time status updates
 
-1. **GameManagement Model** (`lib/models/game_management.dart`)
-   - Defines the structure for game settings
-   - Includes predefined list of all available games
-   - Tracks enable/disable status, metadata, and audit info
+## Setup
 
-2. **GameManagementService** (`lib/services/game_management_service.dart`)
-   - Manages game enable/disable operations
-   - Handles Firestore operations for game settings
-   - Provides methods for bulk updates and resets
-
-3. **RouteProtectionService** (`lib/services/route_protection_service.dart`)
-   - Protects game routes from unauthorized access
-   - Redirects disabled games to appropriate pages
-   - Integrates with navigation and routing
-
-4. **AdminGameManagementPage** (`lib/web/pages/admin_game_management_page.dart`)
-   - Admin interface for managing game states
-   - Shows statistics and allows bulk operations
-   - Provides visual feedback for changes
-
-5. **GameNotAvailablePage** (`lib/web/pages/game_not_available_page.dart`)
-   - User-friendly page when games are disabled
-   - Shows available games and navigation options
-   - Explains why games might be unavailable
-
-6. **ProtectedGameRoute** (`lib/web/components/protected_game_route.dart`)
-   - Wrapper component for game routes
-   - Checks game status before rendering
-   - Redirects to fallback page if disabled
-
-## 🔐 Security
-
-### Firestore Rules
+### 1. Admin User Setup
+To use game management, a user must have admin privileges. Add the `isAdmin: true` field to their user document in Firestore:
 
 ```javascript
-// Game management collection - only admins can modify
-match /game_management/{gameId} {
-  // Anyone can read game status (needed for route protection)
-  allow read: if true;
-  
-  // Only admins can create, update, or delete game settings
-  allow create, update, delete: if request.auth != null && 
-    exists(/databases/$(database)/documents/admin_roles/$(request.auth.uid)) &&
-    get(/databases/$(database)/documents/admin_roles/$(request.auth.uid)).data.isAdmin == true;
+// In Firestore: users/{userId}
+{
+  "isAdmin": true,
+  "email": "admin@example.com",
+  // ... other user fields
 }
 ```
 
-### Access Control
+### 2. Initialize Game Management
+The system will automatically create game management records when an admin first accesses the management page. Default games include:
 
-- **Read Access**: Public (needed for route protection)
-- **Write Access**: Admin only (create, update, delete)
-- **Admin Verification**: Checks `admin_roles` collection
+- Reaction Time
+- Number Memory
+- Decision Making
+- Personality Quiz
+- Aim Trainer
+- Verbal Memory
+- Visual Memory
+- Typing Speed
+- Sequence Memory
+- Chimp Test
 
-## 🚀 Setup and Deployment
+## Usage
 
-### 1. Deploy Firestore Rules and Indexes
+### Admin Game Management Page
+Navigate to `/admin/game-management` to access the admin interface.
 
-```bash
-# Make script executable
-chmod +x deploy_game_management.sh
+#### Managing Individual Games
+1. Click "Manage" on any game card
+2. Set the desired status
+3. Add optional reason for status change
+4. Set maintenance end date if applicable
+5. Click "Update"
 
-# Deploy everything
-./deploy_game_management.sh
+#### Status Descriptions
+- **Active**: Users can see and play the game normally
+- **Hidden**: Game won't appear in menus but direct links still work
+- **Blocked**: Game is completely inaccessible with error message
+- **Maintenance**: Game shows maintenance message with optional end date
+
+### Integration in Code
+
+#### Game Access Guard
+Wrap game pages with the `GameAccessGuard` widget:
+
+```dart
+GameAccessGuard(
+  gameId: 'reaction_time',
+  child: ReactionTimePage(),
+)
 ```
 
-### 2. Initialize Game Management
+#### Game Menu
+Use the `GameMenu` widget to display only visible games:
 
-The system automatically initializes with default games when first accessed:
-- All games start as enabled
-- Default games include: Reaction Time, Number Memory, Decision Making, etc.
-- Games can be individually enabled/disabled
+```dart
+GameMenu(
+  onGameSelected: (gameId) => _navigateToGame(gameId),
+  selectedGameId: _currentGameId,
+  compact: false,
+)
+```
 
-### 3. Access Admin Panel
+#### Service Methods
+```dart
+// Check if game is accessible
+bool accessible = await GameManagementService.isGameAccessible('reaction_time');
 
-1. Navigate to the web app
-2. Sign in as an admin user
-3. Access "Game Management" from the sidebar
-4. Configure game states as needed
+// Check if game should be visible in menu
+bool visible = await GameManagementService.isGameVisible('reaction_time');
 
-## 📱 Usage
+// Get game status info
+Map<String, dynamic>? statusInfo = await GameManagementService.getGameStatusInfo('reaction_time');
+```
 
-### For Administrators
+## Firestore Structure
 
-1. **Access Game Management**
-   - Navigate to `/app/admin-game-management`
-   - Only visible to admin users
-
-2. **Enable/Disable Games**
-   - Toggle individual game switches
-   - Save changes in bulk
-   - Reset to default settings
-
-3. **Monitor Changes**
-   - View enabled/disabled game counts
-   - See modification history
-   - Track who made changes
-
-### For Users
-
-1. **Accessing Games**
-   - Games automatically check if enabled
-   - Disabled games redirect to "Game Not Available" page
-   - Available games function normally
-
-2. **Game Not Available Page**
-   - Clear explanation of why game is unavailable
-   - Links to available games
-   - Navigation back to dashboard
-
-## 🔄 Route Protection
-
-### How It Works
-
-1. **Route Wrapping**: All game routes are wrapped with `ProtectedGameRoute`
-2. **Status Check**: Component checks if game is enabled via `GameManagementService`
-3. **Complete Blocking**: Disabled games are completely inaccessible
-4. **No Fallback Pages**: Users are blocked from accessing disabled games
-
-### Real-Time Updates
-
-The system provides **immediate menu hiding** for disabled games:
-
-1. **Web Sidebar**: Uses `StreamBuilder` to listen for real-time game status changes
-2. **Mobile Navigation**: Bottom navigation bar updates instantly when games are disabled
-3. **Dashboard Filtering**: Game statistics automatically filter out disabled games
-4. **No Page Refresh**: Changes take effect immediately without requiring app restart
-5. **Complete Hiding**: Disabled games disappear completely from all navigation
-
-### Protected Routes
-
-- `/app/reaction` → Reaction Time Game
-- `/app/number-memory` → Number Memory Game
-- `/app/decision` → Decision Making Game
-- `/app/personality` → Personality Quiz Game
-
-### Access Control
-
-- **Enabled Games**: Fully accessible with normal functionality
-- **Disabled Games**: Completely hidden from navigation and inaccessible
-- **No Fallback**: Users cannot access disabled games at all
-- **Immediate Effect**: Changes take effect instantly across all platforms
-
-## 📊 Database Schema
-
-### Game Management Collection
-
+### Collection: `game_management`
 ```javascript
 {
   "gameId": "reaction_time",
   "gameName": "Reaction Time",
-  "gameType": "reaction_time",
-  "isEnabled": true,
-  "description": "Test your reflexes and reaction speed",
-  "icon": "timer",
-  "createdAt": "2024-01-01T00:00:00Z",
+  "status": "active", // active, hidden, blocked, maintenance
+  "reason": "Optional reason for status change",
+  "blockedUntil": "2024-01-01T00:00:00Z", // Optional timestamp
   "updatedAt": "2024-01-01T00:00:00Z",
   "updatedBy": "admin_user_id"
 }
 ```
 
-### Indexes
-
+### Collection: `users`
 ```javascript
 {
-  "collectionGroup": "game_management",
-  "queryScope": "COLLECTION",
-  "fields": [
-    {"fieldPath": "isEnabled", "order": "ASCENDING"},
-    {"fieldPath": "gameType", "order": "ASCENDING"}
-  ]
+  "uid": "user_id",
+  "isAdmin": true, // Required for admin access
+  "email": "user@example.com",
+  // ... other user fields
 }
 ```
 
-## 🛠️ Development
+## Security Rules
 
-### Adding New Games
+Ensure your Firestore security rules allow only admins to modify game management:
 
-1. **Update Model**: Add to `GameManagement.defaultGames`
-2. **Update Routes**: Add to main.dart with protection
-3. **Update Navigation**: Add to sidebar if needed
-4. **Update Icons**: Add to `WebUtils.getIconFromString`
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Only admins can read/write game management
+    match /game_management/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // Users can read their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+```
 
-### Testing
+## Best Practices
 
-1. **Enable/Disable Games**: Test admin interface
-2. **Route Protection**: Verify disabled games redirect
-3. **User Experience**: Test from non-admin perspective
-4. **Edge Cases**: Test with network errors, invalid states
+### 1. Status Management
+- Use "Hidden" for games you want to temporarily remove from menus
+- Use "Blocked" for games that should be completely inaccessible
+- Use "Maintenance" for temporary outages with clear end dates
 
-## 🚨 Troubleshooting
+### 2. User Communication
+- Always provide clear reasons for status changes
+- Set realistic maintenance end dates
+- Consider user impact when blocking popular games
+
+### 3. Monitoring
+- Regularly review game statuses
+- Monitor user feedback about blocked games
+- Keep maintenance periods as short as possible
+
+## Troubleshooting
 
 ### Common Issues
 
-1. **Games Not Loading**
-   - Check Firestore rules deployment
-   - Verify admin role setup
-   - Check console for errors
+#### Admin Access Denied
+- Ensure user document has `isAdmin: true`
+- Check Firestore security rules
+- Verify user is authenticated
 
-2. **Route Protection Not Working**
-   - Ensure `ProtectedGameRoute` wraps game components
-   - Check `GameManagementService` connectivity
-   - Verify game IDs match between service and routes
+#### Games Not Loading
+- Check if game management records exist
+- Verify Firestore permissions
+- Check console for errors
 
-3. **Admin Access Denied**
-   - Verify user has admin role in `admin_roles` collection
-   - Check Firestore rules for admin_roles
-   - Ensure proper authentication
+#### Status Changes Not Taking Effect
+- Refresh the page after status changes
+- Check if changes were saved to Firestore
+- Verify game access guards are properly implemented
 
-### Debug Commands
+### Debug Mode
+Enable debug logging by checking the browser console for detailed error messages from the game management service.
 
-```bash
-# Check Firestore rules
-firebase firestore:rules:get
+## Support
 
-# Check indexes
-firebase firestore:indexes
-
-# View logs
-firebase functions:log
-```
-
-## 🔮 Future Enhancements
-
-1. **Scheduled Maintenance**: Automatically disable games during maintenance windows
-2. **A/B Testing**: Enable/disable games for specific user segments
-3. **Analytics**: Track game usage and availability metrics
-4. **Notifications**: Alert users when games become available again
-5. **Mobile Support**: Extend game management to mobile app
-
-## 📚 Related Files
-
-- `lib/models/game_management.dart` - Data model
-- `lib/services/game_management_service.dart` - Business logic
-- `lib/services/route_protection_service.dart` - Route protection
-- `lib/web/pages/admin_game_management_page.dart` - Admin UI
-- `lib/web/pages/game_not_available_page.dart` - User fallback
-- `lib/web/components/protected_game_route.dart` - Route wrapper
-- `firestore.rules` - Security rules
-- `firestore.indexes.json` - Database indexes
-- `deploy_game_management.sh` - Deployment script
-
-## 🤝 Support
-
-For issues or questions about the Game Management System:
-
-1. Check this documentation
-2. Review Firestore rules and indexes
-3. Check browser console for errors
-4. Verify admin permissions
-5. Test with different user roles
+For technical support or questions about the game management system, contact the development team or check the project documentation.
