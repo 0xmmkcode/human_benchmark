@@ -31,28 +31,50 @@ class _GlobalDashboardPageState extends State<GlobalDashboardPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: WebTheme.grey50,
-      appBar: AppBar(
-        title: const Text(
-          'Global Dashboard',
-          style: TextStyle(
-            fontFamily: 'Montserrat',
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
+      body: Column(
+        children: [
+          // Page Header
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Global Dashboard',
+                  style: TextStyle(
+                    fontSize: 35,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'View global statistics and trends.',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 24),
+                TabBar(
+                  controller: _tabController,
+                  labelColor: WebTheme.primaryBlue,
+                  unselectedLabelColor: Colors.grey[600],
+                  indicatorColor: WebTheme.primaryBlue,
+                  tabs: const [Tab(text: 'Overview')],
+                ),
+              ],
+            ),
           ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: WebTheme.primaryBlue,
-          unselectedLabelColor: Colors.grey[600],
-          indicatorColor: WebTheme.primaryBlue,
-          tabs: const [Tab(text: 'Overview')],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [_buildOverviewTab()],
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [_buildOverviewTab()],
+            ),
+          ),
+        ],
       ),
     );
   }

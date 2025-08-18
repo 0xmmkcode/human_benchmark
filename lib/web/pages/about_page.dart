@@ -84,17 +84,18 @@ class AboutPage extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'About Human Benchmark',
-            style: WebTheme.headingLarge.copyWith(
-              fontSize: 48,
+            'About',
+            style: TextStyle(
+              fontSize: 35,
               fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
             ),
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: 24),
+          SizedBox(height: 8),
           Text(
-            'Discover the science behind cognitive testing and how we\'re helping people understand their mental capabilities.',
-            style: WebTheme.bodyLarge.copyWith(fontSize: 18, height: 1.6),
+            'Learn about our mission and the science behind cognitive testing.',
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             textAlign: TextAlign.center,
           ),
         ],

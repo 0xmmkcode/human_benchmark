@@ -216,27 +216,6 @@ class _WebProfilePageState extends State<WebProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: WebTheme.grey50,
-      appBar: AppBar(
-        title: const Text(
-          'Profile',
-          style: TextStyle(
-            fontFamily: 'Montserrat',
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: () async {
-              await AuthService.signOut();
-            },
-            icon: const Icon(Icons.logout),
-            tooltip: 'Sign out',
-          ),
-        ],
-      ),
       body: StreamBuilder<User?>(
         stream: AuthService.authStateChanges,
         builder: (context, snapshot) {
@@ -355,6 +334,28 @@ class _WebProfilePageState extends State<WebProfilePage> {
     );
   }
 
+  Widget _buildPageHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Profile',
+          style: TextStyle(
+            fontSize: 35,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey[800],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'View your statistics and achievements.',
+          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+        ),
+        const SizedBox(height: 40),
+      ],
+    );
+  }
+
   Widget _buildProfileContent(User user) {
     return RefreshIndicator(
       onRefresh: () async {
@@ -372,6 +373,9 @@ class _WebProfilePageState extends State<WebProfilePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Page Header
+                _buildPageHeader(),
+
                 // Profile Header
                 _buildProfileHeader(user),
                 const Gap(32),

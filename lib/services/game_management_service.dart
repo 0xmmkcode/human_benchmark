@@ -46,6 +46,21 @@ class GameManagementService {
     }
   }
 
+  // Get all game management settings as a real-time stream for live updates
+  static Stream<List<GameManagement>> getAllGameManagementStream() {
+    try {
+      return _gameManagementCollection
+          .snapshots()
+          .map((snapshot) => snapshot.docs
+              .map((doc) => GameManagement.fromMap(doc.data()))
+              .toList());
+    } catch (e, st) {
+      AppLogger.error('gameManagement.getAllGameManagementStream', e, st);
+      // Return a stream with empty list on error
+      return Stream.value(<GameManagement>[]);
+    }
+  }
+
   // Get game management for a specific game
   static Future<GameManagement?> getGameManagement(String gameId) async {
     try {
@@ -179,6 +194,23 @@ class GameManagementService {
     }
   }
 
+  // Get accessible games as a real-time stream for live updates
+  static Stream<List<String>> getAccessibleGamesStream() {
+    try {
+      return _gameManagementCollection
+          .snapshots()
+          .map((snapshot) => snapshot.docs
+              .map((doc) => GameManagement.fromMap(doc.data()))
+              .where((game) => game.isAccessible && !game.isBlockedTemporarily)
+              .map((game) => game.gameId)
+              .toList());
+    } catch (e, st) {
+      AppLogger.error('gameManagement.getAccessibleGamesStream', e, st);
+      // Return a stream with empty list on error
+      return Stream.value(<String>[]);
+    }
+  }
+
   // Get visible games for menu
   static Future<List<String>> getVisibleGames() async {
     try {
@@ -190,6 +222,23 @@ class GameManagementService {
     } catch (e, st) {
       AppLogger.error('gameManagement.getVisibleGames', e, st);
       return [];
+    }
+  }
+
+  // Get visible games as a real-time stream for live updates
+  static Stream<List<String>> getVisibleGamesStream() {
+    try {
+      return _gameManagementCollection
+          .snapshots()
+          .map((snapshot) => snapshot.docs
+              .map((doc) => GameManagement.fromMap(doc.data()))
+              .where((game) => game.isActive)
+              .map((game) => game.gameId)
+              .toList());
+    } catch (e, st) {
+      AppLogger.error('gameManagement.getVisibleGamesStream', e, st);
+      // Return a stream with empty list on error
+      return Stream.value(<String>[]);
     }
   }
 

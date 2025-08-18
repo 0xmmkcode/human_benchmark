@@ -5,10 +5,7 @@ import 'package:human_benchmark/web/constants/web_constants.dart';
 class FeaturesPage extends StatelessWidget {
   final VoidCallback? onBackToLanding;
 
-  const FeaturesPage({
-    Key? key,
-    this.onBackToLanding,
-  }) : super(key: key);
+  const FeaturesPage({Key? key, this.onBackToLanding}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +15,7 @@ class FeaturesPage extends StatelessWidget {
         children: [
           // Navigation Header
           if (onBackToLanding != null) _buildNavigationHeader(context),
-          
+
           // Content
           Expanded(
             child: SingleChildScrollView(
@@ -26,19 +23,19 @@ class FeaturesPage extends StatelessWidget {
                 children: [
                   // Header
                   _buildHeader(context),
-                  
+
                   // Core Features
                   _buildCoreFeatures(context),
-                  
+
                   // Game Modes
                   _buildGameModes(context),
-                  
+
                   // Advanced Features
                   _buildAdvancedFeatures(context),
-                  
+
                   // Platform Features
                   _buildPlatformFeatures(context),
-                  
+
                   // Coming Soon
                   _buildComingSoon(context),
                 ],
@@ -89,20 +86,18 @@ class FeaturesPage extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Features & Capabilities',
-            style: WebTheme.headingLarge.copyWith(
-              fontSize: 48,
+            'Features',
+            style: TextStyle(
+              fontSize: 35,
               fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
             ),
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: 24),
+          SizedBox(height: 8),
           Text(
             'Discover all the powerful tools and features that make Human Benchmark the ultimate cognitive testing platform.',
-            style: WebTheme.bodyLarge.copyWith(
-              fontSize: 18,
-              height: 1.6,
-            ),
+            style: WebTheme.bodyLarge.copyWith(fontSize: 18, height: 1.6),
             textAlign: TextAlign.center,
           ),
         ],
@@ -130,36 +125,39 @@ class FeaturesPage extends StatelessWidget {
               _buildFeatureCard(
                 icon: Icons.timer,
                 title: 'Reaction Time Testing',
-                description: 'Precise measurement of your reflexes with randomized delays and instant feedback.',
+                description:
+                    'Precise measurement of your reflexes with randomized delays and instant feedback.',
                 features: [
                   'Randomized delay intervals',
                   'Millisecond precision',
                   'Visual and audio cues',
-                  'Immediate results display'
+                  'Immediate results display',
                 ],
               ),
               SizedBox(width: 24),
               _buildFeatureCard(
                 icon: Icons.leaderboard,
                 title: 'Global Leaderboards',
-                description: 'Compete with players worldwide and track your ranking across different categories.',
+                description:
+                    'Compete with players worldwide and track your ranking across different categories.',
                 features: [
                   'Real-time rankings',
                   'Category-based competition',
                   'Personal best tracking',
-                  'Global statistics'
+                  'Global statistics',
                 ],
               ),
               SizedBox(width: 24),
               _buildFeatureCard(
                 icon: Icons.analytics,
                 title: 'Progress Analytics',
-                description: 'Comprehensive tracking of your cognitive performance over time.',
+                description:
+                    'Comprehensive tracking of your cognitive performance over time.',
                 features: [
                   'Performance trends',
                   'Score history',
                   'Improvement metrics',
-                  'Statistical insights'
+                  'Statistical insights',
                 ],
               ),
             ],
@@ -193,11 +191,7 @@ class FeaturesPage extends StatelessWidget {
                 color: WebTheme.primaryBlue.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(
-                icon,
-                size: 40,
-                color: WebTheme.primaryBlue,
-              ),
+              child: Icon(icon, size: 40, color: WebTheme.primaryBlue),
             ),
             SizedBox(height: 24),
             Text(
@@ -208,30 +202,24 @@ class FeaturesPage extends StatelessWidget {
               ),
             ),
             SizedBox(height: 16),
-            Text(
-              description,
-              style: WebTheme.bodyLarge.copyWith(height: 1.5),
-            ),
+            Text(description, style: WebTheme.bodyLarge.copyWith(height: 1.5)),
             SizedBox(height: 20),
-            ...features.map((feature) => Padding(
-              padding: EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.check_circle,
-                    size: 16,
-                    color: WebTheme.primaryBlue,
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      feature,
-                      style: WebTheme.bodyMedium,
+            ...features.map(
+              (feature) => Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.check_circle,
+                      size: 16,
+                      color: WebTheme.primaryBlue,
                     ),
-                  ),
-                ],
+                    SizedBox(width: 8),
+                    Expanded(child: Text(feature, style: WebTheme.bodyMedium)),
+                  ],
+                ),
               ),
-            )),
+            ),
           ],
         ),
       ),
@@ -273,7 +261,8 @@ class FeaturesPage extends StatelessWidget {
                       child: _buildGameModeCard(
                         icon: Icons.flash_on,
                         title: 'Quick Test',
-                        description: 'Fast 5-minute sessions for quick cognitive assessment.',
+                        description:
+                            'Fast 5-minute sessions for quick cognitive assessment.',
                         duration: '5 min',
                         difficulty: 'Easy',
                       ),
@@ -283,7 +272,8 @@ class FeaturesPage extends StatelessWidget {
                       child: _buildGameModeCard(
                         icon: Icons.timer,
                         title: 'Standard Mode',
-                        description: 'Comprehensive testing with detailed analytics.',
+                        description:
+                            'Comprehensive testing with detailed analytics.',
                         duration: '15 min',
                         difficulty: 'Medium',
                       ),
@@ -293,7 +283,8 @@ class FeaturesPage extends StatelessWidget {
                       child: _buildGameModeCard(
                         icon: Icons.psychology,
                         title: 'Advanced Mode',
-                        description: 'In-depth cognitive evaluation with multiple tests.',
+                        description:
+                            'In-depth cognitive evaluation with multiple tests.',
                         duration: '30 min',
                         difficulty: 'Hard',
                       ),
@@ -307,7 +298,8 @@ class FeaturesPage extends StatelessWidget {
                       child: _buildGameModeCard(
                         icon: Icons.trending_up,
                         title: 'Practice Mode',
-                        description: 'Unlimited practice sessions to improve your skills.',
+                        description:
+                            'Unlimited practice sessions to improve your skills.',
                         duration: 'Unlimited',
                         difficulty: 'Variable',
                       ),
@@ -317,7 +309,8 @@ class FeaturesPage extends StatelessWidget {
                       child: _buildGameModeCard(
                         icon: Icons.emoji_events,
                         title: 'Challenge Mode',
-                        description: 'Compete against your previous best scores.',
+                        description:
+                            'Compete against your previous best scores.',
                         duration: '10 min',
                         difficulty: 'Dynamic',
                       ),
@@ -327,7 +320,8 @@ class FeaturesPage extends StatelessWidget {
                       child: _buildGameModeCard(
                         icon: Icons.group,
                         title: 'Multiplayer',
-                        description: 'Real-time competition with friends and other players.',
+                        description:
+                            'Real-time competition with friends and other players.',
                         duration: '20 min',
                         difficulty: 'Competitive',
                       ),
@@ -358,11 +352,7 @@ class FeaturesPage extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(
-            icon,
-            size: 40,
-            color: WebTheme.primaryBlue,
-          ),
+          Icon(icon, size: 40, color: WebTheme.primaryBlue),
           SizedBox(height: 16),
           Text(
             title,
@@ -439,7 +429,8 @@ class FeaturesPage extends StatelessWidget {
               _buildAdvancedFeatureCard(
                 icon: Icons.sync,
                 title: 'Cross-Platform Sync',
-                description: 'Your progress and scores automatically sync across all devices.',
+                description:
+                    'Your progress and scores automatically sync across all devices.',
                 status: 'Available',
                 statusColor: WebTheme.green600,
               ),
@@ -447,7 +438,8 @@ class FeaturesPage extends StatelessWidget {
               _buildAdvancedFeatureCard(
                 icon: Icons.security,
                 title: 'Data Privacy',
-                description: 'Your personal data is encrypted and never shared with third parties.',
+                description:
+                    'Your personal data is encrypted and never shared with third parties.',
                 status: 'Available',
                 statusColor: WebTheme.green600,
               ),
@@ -455,7 +447,8 @@ class FeaturesPage extends StatelessWidget {
               _buildAdvancedFeatureCard(
                 icon: Icons.cloud_download,
                 title: 'Offline Mode',
-                description: 'Play without internet connection with basic features.',
+                description:
+                    'Play without internet connection with basic features.',
                 status: 'Available',
                 statusColor: WebTheme.green600,
               ),
@@ -483,11 +476,7 @@ class FeaturesPage extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Icon(
-              icon,
-              size: 40,
-              color: WebTheme.primaryBlue,
-            ),
+            Icon(icon, size: 40, color: WebTheme.primaryBlue),
             SizedBox(height: 24),
             Text(
               title,
@@ -548,7 +537,7 @@ class FeaturesPage extends StatelessWidget {
                   'Native Android performance',
                   'Touch-optimized interface',
                   'Background sync',
-                  'Push notifications'
+                  'Push notifications',
                 ],
                 status: 'Available',
                 statusColor: WebTheme.green600,
@@ -561,7 +550,7 @@ class FeaturesPage extends StatelessWidget {
                   'Cross-browser compatibility',
                   'Responsive design',
                   'No installation required',
-                  'Instant access'
+                  'Instant access',
                 ],
                 status: 'Available',
                 statusColor: WebTheme.green600,
@@ -574,7 +563,7 @@ class FeaturesPage extends StatelessWidget {
                   'Optimized layouts',
                   'Touch gestures',
                   'Large screen experience',
-                  'Landscape mode'
+                  'Landscape mode',
                 ],
                 status: 'Available',
                 statusColor: WebTheme.green600,
@@ -609,11 +598,7 @@ class FeaturesPage extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Icon(
-              icon,
-              size: 40,
-              color: WebTheme.primaryBlue,
-            ),
+            Icon(icon, size: 40, color: WebTheme.primaryBlue),
             SizedBox(height: 24),
             Text(
               title,
@@ -624,25 +609,22 @@ class FeaturesPage extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 20),
-            ...features.map((feature) => Padding(
-              padding: EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.check_circle,
-                    size: 16,
-                    color: WebTheme.primaryBlue,
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      feature,
-                      style: WebTheme.bodyMedium,
+            ...features.map(
+              (feature) => Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.check_circle,
+                      size: 16,
+                      color: WebTheme.primaryBlue,
                     ),
-                  ),
-                ],
+                    SizedBox(width: 8),
+                    Expanded(child: Text(feature, style: WebTheme.bodyMedium)),
+                  ],
+                ),
               ),
-            )),
+            ),
             SizedBox(height: 20),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -734,11 +716,7 @@ class FeaturesPage extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Icon(
-              icon,
-              size: 40,
-              color: WebTheme.orange600,
-            ),
+            Icon(icon, size: 40, color: WebTheme.orange600),
             SizedBox(height: 24),
             Text(
               title,

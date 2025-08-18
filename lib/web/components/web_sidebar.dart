@@ -148,8 +148,8 @@ class _WebSidebarState extends State<WebSidebar> {
 
           // Navigation Items
           Expanded(
-            child: FutureBuilder<List<String>>(
-              future: GameManagementService.getVisibleGames(),
+            child: StreamBuilder<List<String>>(
+              stream: GameManagementService.getVisibleGamesStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return ListView(

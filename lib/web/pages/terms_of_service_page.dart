@@ -96,9 +96,10 @@ class TermsOfServicePage extends StatelessWidget {
                     children: [
                       Text(
                         'Terms of Service',
-                        style: WebTheme.headingLarge.copyWith(
-                          fontSize: 42,
+                        style: TextStyle(
+                          fontSize: 35,
                           fontWeight: FontWeight.bold,
+                          color: Colors.grey[800],
                         ),
                       ),
                       const SizedBox(height: 16),

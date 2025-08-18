@@ -190,45 +190,55 @@ class _WebSettingsPageState extends State<WebSettingsPage> {
   Widget _buildNotAuthenticatedView() {
     return Scaffold(
       backgroundColor: WebTheme.grey50,
-      appBar: AppBar(
-        title: const Text(
-          'Settings',
-          style: TextStyle(
-            fontFamily: 'Montserrat',
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: Center(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.lock_outline, size: 80, color: Colors.grey.shade400),
-            const Gap(24),
-            const Text(
-              'Sign in Required',
+            // Page Header
+            Text(
+              'Settings',
               style: TextStyle(
-                fontFamily: 'Montserrat',
-                fontSize: 28,
+                fontSize: 35,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey,
+                color: Colors.grey[800],
               ),
             ),
-            const Gap(16),
-            const Text(
-              'Please sign in to access your settings',
-              style: TextStyle(
-                fontFamily: 'Montserrat',
-                fontSize: 18,
-                color: Colors.grey,
-              ),
-              textAlign: TextAlign.center,
+            const SizedBox(height: 8),
+            Text(
+              'Customize your experience and preferences.',
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
-            const Gap(32),
-            ElevatedButton(
+            const SizedBox(height: 40),
+            
+            // Sign in required content
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.lock_outline, size: 80, color: Colors.grey.shade400),
+                  const Gap(24),
+                  const Text(
+                    'Sign in Required',
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const Gap(16),
+                  const Text(
+                    'Please sign in to access your settings',
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 18,
+                      color: Colors.grey,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const Gap(32),
+                  ElevatedButton(
               onPressed: () async {
                 try {
                   await FirebaseAuth.instance.signInAnonymously();
@@ -261,7 +271,10 @@ class _WebSettingsPageState extends State<WebSettingsPage> {
                 ),
               ),
             ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -270,18 +283,6 @@ class _WebSettingsPageState extends State<WebSettingsPage> {
   Widget _buildLoadingView() {
     return Scaffold(
       backgroundColor: WebTheme.grey50,
-      appBar: AppBar(
-        title: const Text(
-          'Settings',
-          style: TextStyle(
-            fontFamily: 'Montserrat',
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
       body: const Center(child: CircularProgressIndicator()),
     );
   }
@@ -289,18 +290,6 @@ class _WebSettingsPageState extends State<WebSettingsPage> {
   Widget _buildErrorView() {
     return Scaffold(
       backgroundColor: WebTheme.grey50,
-      appBar: AppBar(
-        title: const Text(
-          'Settings',
-          style: TextStyle(
-            fontFamily: 'Montserrat',
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -361,34 +350,27 @@ class _WebSettingsPageState extends State<WebSettingsPage> {
 
     return Scaffold(
       backgroundColor: WebTheme.grey50,
-      appBar: AppBar(
-        title: const Text(
-          'Settings',
-          style: TextStyle(
-            fontFamily: 'Montserrat',
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          if (_isUpdating)
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-        ],
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Page Header
+            Text(
+              'Settings',
+              style: TextStyle(
+                fontSize: 35,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[800],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Customize your experience and preferences.',
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 40),
+            
             // User Info Card
             _buildUserInfoCard(),
             const Gap(32),

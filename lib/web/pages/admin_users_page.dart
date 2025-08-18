@@ -423,33 +423,58 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
   Widget build(BuildContext context) {
     if (!_isAdmin) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Admin Users'),
-          backgroundColor: Colors.red[700],
-          foregroundColor: Colors.white,
-        ),
-        body: const Center(
-          child: Text(
-            'Access Denied. Admin privileges required.',
-            style: TextStyle(fontSize: 18, color: Colors.red),
+        backgroundColor: Colors.grey.shade50,
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Page Header
+              Text(
+                'Admin Users',
+                style: TextStyle(
+                  fontSize: 35,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Manage user accounts and permissions.',
+                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 40),
+
+              // Access Denied
+              Center(
+                child: Column(
+                  children: [
+                    Icon(Icons.block, size: 80, color: Colors.red[400]),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Access Denied',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Admin privileges required.',
+                      style: TextStyle(fontSize: 18, color: Colors.red),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Admin Users'),
-        backgroundColor: Colors.blue[700],
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            onPressed: _loadUsers,
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh Users',
-          ),
-        ],
-      ),
+      backgroundColor: Colors.grey.shade50,
       body: Stack(
         children: [
           Column(
@@ -490,67 +515,92 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
 
   Widget _buildSearchAndFilterBar() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: Colors.white,
         border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: TextField(
-              decoration: const InputDecoration(
-                hintText: 'Search users by email, name, or UID...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                  _currentPage = 0;
-                });
-                _filterUsers();
-              },
+          // Page Header
+          Text(
+            'Admin Users',
+            style: TextStyle(
+              fontSize: 35,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
             ),
           ),
-          const SizedBox(width: 16),
-          DropdownButton<String>(
-            value: _sortBy,
-            hint: const Text('Sort by'),
-            items: [
-              DropdownMenuItem(
-                value: 'lastActive',
-                child: const Text('Last Active'),
+          const SizedBox(height: 8),
+          Text(
+            'Manage user accounts and permissions.',
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 24),
+
+          // Search and Filter Controls
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  decoration: const InputDecoration(
+                    hintText: 'Search users by email, name, or UID...',
+                    prefixIcon: Icon(Icons.search),
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                      _currentPage = 0;
+                    });
+                    _filterUsers();
+                  },
+                ),
               ),
-              DropdownMenuItem(
-                value: 'createdAt',
-                child: const Text('Created'),
+              const SizedBox(width: 16),
+              DropdownButton<String>(
+                value: _sortBy,
+                hint: const Text('Sort by'),
+                items: [
+                  DropdownMenuItem(
+                    value: 'lastActive',
+                    child: const Text('Last Active'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'createdAt',
+                    child: const Text('Created'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'totalGames',
+                    child: const Text('Total Games'),
+                  ),
+                  DropdownMenuItem(value: 'email', child: const Text('Email')),
+                  DropdownMenuItem(
+                    value: 'displayName',
+                    child: const Text('Name'),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    _sortUsers(value);
+                  }
+                },
               ),
-              DropdownMenuItem(
-                value: 'totalGames',
-                child: const Text('Total Games'),
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: () {
+                  setState(() {
+                    _sortAscending = !_sortAscending;
+                  });
+                  _sortUsers(_sortBy);
+                },
+                icon: Icon(
+                  _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+                ),
+                tooltip: 'Sort direction',
               ),
-              DropdownMenuItem(value: 'email', child: const Text('Email')),
-              DropdownMenuItem(value: 'displayName', child: const Text('Name')),
             ],
-            onChanged: (value) {
-              if (value != null) {
-                _sortUsers(value);
-              }
-            },
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            onPressed: () {
-              setState(() {
-                _sortAscending = !_sortAscending;
-              });
-              _sortUsers(_sortBy);
-            },
-            icon: Icon(
-              _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
-            ),
-            tooltip: 'Sort direction',
           ),
         ],
       ),

@@ -36,35 +36,57 @@ class _WebDashboardPageState extends State<WebDashboardPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        title: const Text(
-          'Dashboard',
-          style: TextStyle(
-            fontFamily: 'Montserrat',
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: Colors.blue.shade600,
-          unselectedLabelColor: Colors.grey.shade600,
-          indicatorColor: Colors.blue.shade600,
-          tabs: const [
-            Tab(text: 'Overview'),
-            Tab(text: 'Players'),
-            Tab(text: 'Games'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
-          _buildOverviewTab(),
-          _buildPlayersTab(),
-          _buildGamesTab(),
+          // Page Header
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Dashboard',
+                  style: TextStyle(
+                    fontSize: 35,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Monitor game statistics and player activity.',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 24),
+                TabBar(
+                  controller: _tabController,
+                  labelColor: Colors.blue.shade600,
+                  unselectedLabelColor: Colors.grey.shade600,
+                  indicatorColor: Colors.blue.shade600,
+                  tabs: const [
+                    Tab(text: 'Overview'),
+                    Tab(text: 'Players'),
+                    Tab(text: 'Games'),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildOverviewTab(),
+                _buildPlayersTab(),
+                _buildGamesTab(),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -83,7 +105,11 @@ class _WebDashboardPageState extends State<WebDashboardPage>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, size: 64, color: Colors.grey.shade400),
+                Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: Colors.grey.shade400,
+                ),
                 const Gap(16),
                 const Text(
                   'Failed to load dashboard',
@@ -140,7 +166,9 @@ class _WebDashboardPageState extends State<WebDashboardPage>
                 ),
               ),
               const Gap(24),
-              ...overview.topPerformers.take(5).map((player) => _buildPlayerCard(player)),
+              ...overview.topPerformers
+                  .take(5)
+                  .map((player) => _buildPlayerCard(player)),
               const Gap(40),
 
               // Recent Activity
@@ -154,7 +182,9 @@ class _WebDashboardPageState extends State<WebDashboardPage>
                 ),
               ),
               const Gap(24),
-              ...overview.recentActivity.take(5).map((activity) => _buildActivityCard(activity)),
+              ...overview.recentActivity
+                  .take(5)
+                  .map((activity) => _buildActivityCard(activity)),
             ],
           ),
         );
@@ -182,7 +212,10 @@ class _WebDashboardPageState extends State<WebDashboardPage>
                   ),
                   filled: true,
                   fillColor: Colors.grey.shade50,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
                 ),
                 onChanged: (value) {
                   setState(() {
@@ -191,7 +224,7 @@ class _WebDashboardPageState extends State<WebDashboardPage>
                 },
               ),
               const Gap(24),
-              
+
               // Sort Controls
               Row(
                 children: [
@@ -203,12 +236,24 @@ class _WebDashboardPageState extends State<WebDashboardPage>
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'overallScore', child: Text('Overall Score')),
-                        DropdownMenuItem(value: 'totalGames', child: Text('Total Games')),
-                        DropdownMenuItem(value: 'lastPlayed', child: Text('Last Played')),
+                        DropdownMenuItem(
+                          value: 'overallScore',
+                          child: Text('Overall Score'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'totalGames',
+                          child: Text('Total Games'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'lastPlayed',
+                          child: Text('Last Played'),
+                        ),
                       ],
                       onChanged: (value) {
                         setState(() {
@@ -225,7 +270,9 @@ class _WebDashboardPageState extends State<WebDashboardPage>
                       });
                     },
                     icon: Icon(
-                      _sortDescending ? Icons.arrow_downward : Icons.arrow_upward,
+                      _sortDescending
+                          ? Icons.arrow_downward
+                          : Icons.arrow_upward,
                       color: Colors.blue.shade600,
                       size: 28,
                     ),
@@ -255,7 +302,11 @@ class _WebDashboardPageState extends State<WebDashboardPage>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error_outline, size: 64, color: Colors.grey.shade400),
+                      Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: Colors.grey.shade400,
+                      ),
                       const Gap(16),
                       const Text(
                         'Failed to load players',
@@ -277,10 +328,16 @@ class _WebDashboardPageState extends State<WebDashboardPage>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.people_outline, size: 64, color: Colors.grey.shade400),
+                      Icon(
+                        Icons.people_outline,
+                        size: 64,
+                        color: Colors.grey.shade400,
+                      ),
                       const Gap(16),
                       Text(
-                        _searchQuery.isNotEmpty ? 'No players found' : 'No players yet',
+                        _searchQuery.isNotEmpty
+                            ? 'No players found'
+                            : 'No players yet',
                         style: TextStyle(
                           fontFamily: 'Montserrat',
                           fontSize: 18,
@@ -323,7 +380,11 @@ class _WebDashboardPageState extends State<WebDashboardPage>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.games_outlined, size: 64, color: Colors.grey.shade400),
+                Icon(
+                  Icons.games_outlined,
+                  size: 64,
+                  color: Colors.grey.shade400,
+                ),
                 const Gap(16),
                 const Text(
                   'No game statistics yet',
@@ -351,7 +412,12 @@ class _WebDashboardPageState extends State<WebDashboardPage>
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
@@ -430,7 +496,11 @@ class _WebDashboardPageState extends State<WebDashboardPage>
             : CircleAvatar(
                 radius: 25,
                 backgroundColor: Colors.blue.shade100,
-                child: Icon(Icons.person, size: 30, color: Colors.blue.shade600),
+                child: Icon(
+                  Icons.person,
+                  size: 30,
+                  color: Colors.blue.shade600,
+                ),
               ),
         title: Text(
           player.displayName,
@@ -484,7 +554,9 @@ class _WebDashboardPageState extends State<WebDashboardPage>
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: activity.isHighScore ? Colors.amber.shade300 : Colors.grey.shade200,
+          color: activity.isHighScore
+              ? Colors.amber.shade300
+              : Colors.grey.shade200,
         ),
       ),
       child: Row(
@@ -735,7 +807,11 @@ class WebPlayerDetailPage extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.grey.shade400),
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.grey.shade400,
+                  ),
                   const Gap(16),
                   const Text(
                     'Failed to load player details',
@@ -777,11 +853,16 @@ class WebPlayerDetailPage extends StatelessWidget {
                       CircleAvatar(
                         radius: 50,
                         backgroundColor: Colors.blue.shade100,
-                        child: Icon(Icons.person, size: 50, color: Colors.blue.shade600),
+                        child: Icon(
+                          Icons.person,
+                          size: 50,
+                          color: Colors.blue.shade600,
+                        ),
                       ),
                       const Gap(24),
                       Text(
-                        userScore.userName ?? 'Player ${userScore.userId.substring(0, 6)}',
+                        userScore.userName ??
+                            'Player ${userScore.userId.substring(0, 6)}',
                         style: TextStyle(
                           fontFamily: 'Montserrat',
                           fontSize: 32,
@@ -810,7 +891,8 @@ class WebPlayerDetailPage extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const ComprehensiveLeaderboardPage(),
+                        builder: (context) =>
+                            const ComprehensiveLeaderboardPage(),
                       ),
                     );
                   },
@@ -828,7 +910,9 @@ class WebPlayerDetailPage extends StatelessWidget {
                   ),
                 ),
                 const Gap(24),
-                ...playerData.recentScores.take(10).map((score) => _buildRecentScoreCard(score)),
+                ...playerData.recentScores
+                    .take(10)
+                    .map((score) => _buildRecentScoreCard(score)),
               ],
             ),
           );
@@ -845,7 +929,9 @@ class WebPlayerDetailPage extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: score.isHighScore ? Colors.amber.shade300 : Colors.grey.shade200,
+          color: score.isHighScore
+              ? Colors.amber.shade300
+              : Colors.grey.shade200,
         ),
       ),
       child: Row(
