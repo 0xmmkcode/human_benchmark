@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:gap/gap.dart';
 import '../services/game_management_service.dart';
-import '../models/game_management.dart';
 import 'reaction_time_page.dart';
 import 'number_memory_page.dart';
 import 'decision_risk_page.dart';
@@ -33,8 +32,8 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
         elevation: 0,
         centerTitle: true,
       ),
-      body: FutureBuilder<List<String>>(
-        future: GameManagementService.getVisibleGames(),
+      body: StreamBuilder<List<String>>(
+        stream: GameManagementService.getVisibleGamesStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -214,8 +213,68 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
           MaterialPageRoute(builder: (context) => PersonalityQuizPage()),
         );
         break;
+      case 'chimp_test':
+        // TODO: Add ChimpTestPage when available
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Chimp Test coming soon!'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+        break;
+      case 'aim_trainer':
+        // TODO: Add AimTrainerPage when available
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Aim Trainer coming soon!'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+        break;
+      case 'verbal_memory':
+        // TODO: Add VerbalMemoryPage when available
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Verbal Memory coming soon!'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+        break;
+      case 'visual_memory':
+        // TODO: Add VisualMemoryPage when available
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Visual Memory coming soon!'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+        break;
+      case 'typing_speed':
+        // TODO: Add TypingSpeedPage when available
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Typing Speed coming soon!'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+        break;
+      case 'sequence_memory':
+        // TODO: Add SequenceMemoryPage when available
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sequence Memory coming soon!'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+        break;
       default:
         // Handle unknown game
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Game "$gameId" not implemented yet'),
+            backgroundColor: Colors.orange,
+          ),
+        );
         break;
     }
   }
@@ -250,9 +309,53 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
           icon: Icons.psychology,
           color: Color(0xFF10B981), // Emerald
         );
+      case 'chimp_test':
+        return GameData(
+          name: 'Chimp Test',
+          subtitle: 'Test your memory',
+          icon: Icons.pets,
+          color: Color(0xFFF59E0B), // Amber
+        );
+      case 'aim_trainer':
+        return GameData(
+          name: 'Aim Trainer',
+          subtitle: 'Test your precision',
+          icon: Icons.gps_fixed,
+          color: Color(0xFFEF4444), // Red
+        );
+      case 'verbal_memory':
+        return GameData(
+          name: 'Verbal Memory',
+          subtitle: 'Remember words',
+          icon: Icons.record_voice_over,
+          color: Color(0xFF06B6D4), // Cyan
+        );
+      case 'visual_memory':
+        return GameData(
+          name: 'Visual Memory',
+          subtitle: 'Remember patterns',
+          icon: Icons.visibility,
+          color: Color(0xFF84CC16), // Lime
+        );
+      case 'typing_speed':
+        return GameData(
+          name: 'Typing Speed',
+          subtitle: 'Test your typing',
+          icon: Icons.keyboard,
+          color: Color(0xFF7C3AED), // Violet
+        );
+      case 'sequence_memory':
+        return GameData(
+          name: 'Sequence Memory',
+          subtitle: 'Remember sequences',
+          icon: Icons.format_list_numbered,
+          color: Color(0xFFF97316), // Orange
+        );
       default:
         return GameData(
-          name: 'Unknown Game',
+          name: gameId.replaceAll('_', ' ').split(' ').map((word) => 
+            word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1)}' : ''
+          ).join(' '),
           subtitle: 'Game not found',
           icon: Icons.games,
           color: Color(0xFF6B7280), // Gray
