@@ -28,10 +28,8 @@ service cloud.firestore {
       // Users can read and write their own profile
       allow read, write: if request.auth != null && request.auth.uid == userId;
       
-      // Allow reading other users' profiles for leaderboards (limited data)
-      allow read: if request.auth != null && 
-        // Only allow reading specific fields needed for leaderboards
-        request.query.limit <= 100; // Prevent abuse
+      // Allow public read access for leaderboards (anyone can read)
+      allow read: if true;
         
       // Allow admins to read and write all user profiles
       allow read, write: if request.auth != null && 
@@ -103,27 +101,12 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // NEW: Allow anonymous access to users collection for leaderboard purposes
-    // This enables public leaderboards without authentication
-    match /users/{userId} {
-      // Allow anonymous read access for leaderboard data
-      allow read: if 
-        // Only for leaderboard-related queries
-        request.query.limit <= 100 && // Prevent abuse
-        // Allow reading when the user has any game stats (for all game types)
-        (resource.data.gameStats != null && 
-         ((resource.data.gameStats.reactionTime != null &&
-           resource.data.gameStats.reactionTime.highScore != null &&
-           resource.data.gameStats.reactionTime.highScore > 0) ||
-          (resource.data.gameStats.decisionMaking != null &&
-           resource.data.gameStats.decisionMaking.highScore != null &&
-           resource.data.gameStats.decisionMaking.highScore > 0) ||
-          (resource.data.gameStats.numberMemory != null &&
-           resource.data.gameStats.numberMemory.highScore != null &&
-           resource.data.gameStats.numberMemory.highScore > 0) ||
-          (resource.data.gameStats.personalityQuiz != null &&
-           resource.data.gameStats.personalityQuiz.highScore != null &&
-           resource.data.gameStats.personalityQuiz.highScore > 0)));
+    // App settings collection - allow public read access
+    match /app_settings/{settingId} {
+      allow read: if true; // Anyone can read app settings (for maintenance mode, etc.)
+      allow write: if request.auth != null && 
+        exists(/databases/$(database)/documents/admin_roles/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/admin_roles/$(request.auth.uid)).data.isAdmin == true;
     }
     
     // Default rule - deny all other access

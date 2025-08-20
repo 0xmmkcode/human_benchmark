@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:gap/gap.dart';
 import 'package:human_benchmark/services/auth_service.dart';
 import 'package:human_benchmark/services/score_service.dart';
-import 'package:human_benchmark/services/local_storage_service.dart';
+
 import 'package:human_benchmark/models/user_score.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -25,30 +25,49 @@ class ReactionTimeLeaderboard extends StatefulWidget {
 }
 
 class _ReactionTimeLeaderboardState extends State<ReactionTimeLeaderboard> {
-  List<Map<String, dynamic>> _localScores = [];
-  bool _isLoadingLocal = true;
+  List<Map<String, dynamic>> _publicScores = [];
+  bool _isLoadingPublic = true;
 
   @override
   void initState() {
     super.initState();
-    if (widget.showLocalScores) {
-      _loadLocalScores();
-    }
+    _loadPublicScores();
   }
 
-  Future<void> _loadLocalScores() async {
+  Future<void> _loadPublicScores() async {
     try {
-      final scores = await LocalStorageService.getLocalLeaderboard();
+      // Try to get public leaderboard data
+      final scores = await ScoreService.getReactionTimeLeaderboard(
+        limit: widget.maxItems,
+      );
       if (mounted) {
         setState(() {
-          _localScores = scores.take(widget.maxItems).toList();
-          _isLoadingLocal = false;
+          _publicScores = scores
+              .map(
+                (score) => {
+                  'rank': 0, // Will be set below
+                  'userName': score.userName ?? 'Player',
+                  'time': score.getHighScore(GameType.reactionTime),
+                  'userId': score.userId,
+                },
+              )
+              .toList();
+
+          // Sort by time (lower is better for reaction time) and assign ranks
+          _publicScores.sort(
+            (a, b) => (a['time'] as int).compareTo(b['time'] as int),
+          );
+          for (int i = 0; i < _publicScores.length; i++) {
+            _publicScores[i]['rank'] = i + 1;
+          }
+
+          _isLoadingPublic = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _isLoadingLocal = false;
+          _isLoadingPublic = false;
         });
       }
     }
@@ -81,7 +100,7 @@ class _ReactionTimeLeaderboardState extends State<ReactionTimeLeaderboard> {
                 ),
                 const Spacer(),
                 IconButton(
-                  onPressed: _loadLocalScores,
+                  onPressed: _loadPublicScores,
                   icon: const Icon(Icons.refresh),
                   tooltip: 'Refresh',
                 ),
@@ -168,8 +187,8 @@ class _ReactionTimeLeaderboardState extends State<ReactionTimeLeaderboard> {
                   },
                 );
               } else {
-                // Show local scores for non-logged-in users
-                if (_isLoadingLocal) {
+                // Show public scores for non-logged-in users
+                if (_isLoadingPublic) {
                   return const Center(
                     child: Padding(
                       padding: EdgeInsets.all(20),
@@ -178,11 +197,9 @@ class _ReactionTimeLeaderboardState extends State<ReactionTimeLeaderboard> {
                   );
                 }
 
-                if (_localScores.isEmpty) {
+                if (_publicScores.isEmpty) {
                   return Center(
-                    child: _buildEmptyState(
-                      'Take a test to see your scores here!',
-                    ),
+                    child: _buildEmptyState('No public scores available yet.'),
                   );
                 }
 
@@ -190,13 +207,13 @@ class _ReactionTimeLeaderboardState extends State<ReactionTimeLeaderboard> {
                   children: [
                     _buildLeaderboardHeader(),
                     const Gap(8),
-                    ..._localScores.map((score) {
+                    ..._publicScores.map((score) {
                       return _buildLeaderboardRow(
                         rank: score['rank'],
                         userName: score['userName'],
                         score: score['time'],
                         isCurrentUser: false,
-                        isLocal: true,
+                        isLocal: false,
                       );
                     }),
                   ],
@@ -232,7 +249,7 @@ class _ReactionTimeLeaderboardState extends State<ReactionTimeLeaderboard> {
                           const Gap(8),
                           Expanded(
                             child: Text(
-                              'Sign in to compete on the global leaderboard!',
+                              'Sign in to compete on the global leaderboard and save your scores!',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.blue[700],

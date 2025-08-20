@@ -16,10 +16,12 @@ import 'package:human_benchmark/web/pages/privacy_policy_page.dart';
 import 'package:human_benchmark/web/pages/terms_of_service_page.dart';
 import 'package:human_benchmark/screens/personality_quiz_page.dart';
 import 'package:human_benchmark/web/pages/decision_making_page.dart';
-import 'package:human_benchmark/web/pages/settings_page.dart';
+
 import 'package:human_benchmark/services/auth_service.dart';
 import 'package:human_benchmark/web/pages/global_dashboard_page.dart';
 import 'package:human_benchmark/web/pages/number_memory_page.dart';
+import 'package:human_benchmark/web/pages/typing_speed_page.dart';
+import 'package:human_benchmark/web/pages/chimp_test_page.dart';
 import 'package:human_benchmark/web/pages/profile_page.dart';
 import 'package:human_benchmark/web/pages/admin_users_page.dart';
 import 'package:human_benchmark/web/pages/admin_game_management_page.dart';
@@ -109,21 +111,33 @@ void main() async {
                           context.go('/app/personality');
                           break;
                         case 3:
-                          context.go('/app/decision');
-                          break;
-                        case 4:
                           context.go('/app/number-memory');
                           break;
+                        case 4:
+                          context.go('/app/chimp-test');
+                          break;
                         case 5:
-                          context.go('/app/settings');
+                          context.go('/app/decision');
                           break;
                         case 6:
-                          context.go('/app/profile');
+                          context.go('/app/aim-trainer');
                           break;
                         case 7:
-                          context.go('/app/admin-users');
+                          context.go('/app/verbal-memory');
                           break;
                         case 8:
+                          context.go('/app/typing-speed');
+                          break;
+                        case 9:
+                          context.go('/app/sequence-memory');
+                          break;
+                        case 10:
+                          context.go('/app/profile');
+                          break;
+                        case 11:
+                          context.go('/app/admin-users');
+                          break;
+                        case 12:
                           context.go('/app/admin-game-management');
                           break;
                       }
@@ -172,9 +186,62 @@ void main() async {
             ),
           ),
           GoRoute(
-            path: '/app/settings',
-            builder: (context, state) => const WebSettingsPage(),
+            path: '/app/typing-speed',
+            builder: (context, state) => ProtectedGameRoute(
+              gameId: 'typing_speed',
+              child: const WebTypingSpeedPage(),
+            ),
           ),
+          GoRoute(
+            path: '/app/verbal-memory',
+            builder: (context, state) => ProtectedGameRoute(
+              gameId: 'verbal_memory',
+              child: const Scaffold(
+                body: Center(
+                  child: Text(
+                    'Verbal Memory - Coming Soon!',
+                    style: TextStyle(fontSize: 24),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/app/sequence-memory',
+            builder: (context, state) => ProtectedGameRoute(
+              gameId: 'sequence_memory',
+              child: const Scaffold(
+                body: Center(
+                  child: Text(
+                    'Sequence Memory - Coming Soon!',
+                    style: TextStyle(fontSize: 24),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/app/chimp-test',
+            builder: (context, state) => ProtectedGameRoute(
+              gameId: 'chimp_test',
+              child: const WebChimpTestPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/app/aim-trainer',
+            builder: (context, state) => ProtectedGameRoute(
+              gameId: 'aim_trainer',
+              child: const Scaffold(
+                body: Center(
+                  child: Text(
+                    'Aim Trainer - Coming Soon!',
+                    style: TextStyle(fontSize: 24),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
           GoRoute(
             path: '/app/profile',
             builder: (context, state) => const WebProfilePage(),
@@ -220,14 +287,24 @@ int _getSelectedIndex(String location) {
     return 3;
   } else if (location.endsWith('/number-memory')) {
     return 4;
-  } else if (location.endsWith('/settings')) {
+  } else if (location.endsWith('/chimp-test')) {
+    return 4;
+  } else if (location.endsWith('/decision')) {
     return 5;
-  } else if (location.endsWith('/profile')) {
+  } else if (location.endsWith('/aim-trainer')) {
     return 6;
-  } else if (location.endsWith('/admin-users')) {
+  } else if (location.endsWith('/verbal-memory')) {
     return 7;
-  } else if (location.endsWith('/admin-game-management')) {
+  } else if (location.endsWith('/typing-speed')) {
     return 8;
+  } else if (location.endsWith('/sequence-memory')) {
+    return 9;
+  } else if (location.endsWith('/profile')) {
+    return 10;
+  } else if (location.endsWith('/admin-users')) {
+    return 11;
+  } else if (location.endsWith('/admin-game-management')) {
+    return 12;
   }
   return 0; // Default to reaction time
 }

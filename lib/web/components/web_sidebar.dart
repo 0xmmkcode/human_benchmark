@@ -4,7 +4,7 @@ import 'package:human_benchmark/web/components/web_navigation_item.dart';
 import 'package:human_benchmark/services/auth_service.dart';
 import 'package:human_benchmark/services/admin_service.dart';
 import 'package:human_benchmark/services/game_management_service.dart';
-import 'package:human_benchmark/models/game_management.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
 
 class WebSidebar extends StatefulWidget {
@@ -54,10 +54,22 @@ class _WebSidebarState extends State<WebSidebar> {
         return 0;
       case 'personality_quiz':
         return 2;
-      case 'decision_making':
-        return 3;
       case 'number_memory':
+        return 3;
+      case 'chimp_test':
         return 4;
+      case 'decision_making':
+        return 5;
+      case 'aim_trainer':
+        return 6;
+      case 'verbal_memory':
+        return 7;
+      case 'typing_speed':
+        return 8;
+      case 'visual_memory':
+        return 8;
+      case 'sequence_memory':
+        return 9;
       default:
         return -1; // No specific index for this game
     }
@@ -69,10 +81,22 @@ class _WebSidebarState extends State<WebSidebar> {
         return 'Test your reflexes';
       case 'personality_quiz':
         return 'Big Five assessment (Sign in required)';
-      case 'decision_making':
-        return 'Speed vs accuracy';
       case 'number_memory':
         return 'Test your memory (Sign in required)';
+      case 'chimp_test':
+        return 'Test your working memory';
+      case 'decision_making':
+        return 'Speed vs accuracy';
+      case 'aim_trainer':
+        return 'Test your aim precision';
+      case 'verbal_memory':
+        return 'Test your word memory';
+      case 'typing_speed':
+        return 'Test your typing speed';
+      case 'visual_memory':
+        return 'Test your visual memory';
+      case 'sequence_memory':
+        return 'Test your sequence memory';
       default:
         return '';
     }
@@ -235,22 +259,13 @@ class _WebSidebarState extends State<WebSidebar> {
                         .where((item) => item != SizedBox.shrink())
                         .toList(),
 
-                    // Settings (always visible)
-                    WebNavigationItem(
-                      icon: WebUtils.getIconFromString('settings'),
-                      title: 'Settings',
-                      subtitle: 'Customize your experience',
-                      isSelected: widget.selectedIndex == 5,
-                      onTap: () => widget.onIndexChanged(5),
-                    ),
-
                     // Profile (always visible)
                     WebNavigationItem(
                       icon: WebUtils.getIconFromString('person'),
                       title: 'Profile',
                       subtitle: 'View your statistics',
-                      isSelected: widget.selectedIndex == 6,
-                      onTap: () => widget.onIndexChanged(6),
+                      isSelected: widget.selectedIndex == 10,
+                      onTap: () => widget.onIndexChanged(10),
                     ),
 
                     // Admin Users Link - Only show for admin users
@@ -259,8 +274,8 @@ class _WebSidebarState extends State<WebSidebar> {
                         icon: WebUtils.getIconFromString('people'),
                         title: 'Admin Users',
                         subtitle: 'Manage all users',
-                        isSelected: widget.selectedIndex == 7,
-                        onTap: () => widget.onIndexChanged(7),
+                        isSelected: widget.selectedIndex == 11,
+                        onTap: () => widget.onIndexChanged(11),
                       ),
 
                     // Game Management Link - Only show for admin users
@@ -269,8 +284,8 @@ class _WebSidebarState extends State<WebSidebar> {
                         icon: WebUtils.getIconFromString('games'),
                         title: 'Game Management',
                         subtitle: 'Enable/disable games',
-                        isSelected: widget.selectedIndex == 8,
-                        onTap: () => widget.onIndexChanged(8),
+                        isSelected: widget.selectedIndex == 12,
+                        onTap: () => widget.onIndexChanged(12),
                       ),
 
                     // Show loading indicator while checking admin status

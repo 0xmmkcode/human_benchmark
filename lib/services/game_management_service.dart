@@ -242,6 +242,140 @@ class GameManagementService {
     }
   }
 
+  // Get visible games in fixed order for consistent navigation
+  static Future<List<String>> getVisibleGamesInOrder() async {
+    try {
+      final allGames = await getAllGameManagement();
+      final activeGames = allGames
+          .where((game) => game.isActive)
+          .map((game) => game.gameId)
+          .toList();
+
+      // Define the complete fixed order for ALL games
+      final completeFixedOrder = [
+        'reaction_time',      // 1. Reaction Time
+        'personality_quiz',   // 2. Personality Quiz
+        'number_memory',      // 3. Number Memory
+        'chimp_test',         // 4. Chimp Test
+        'decision_making',    // 5. Decision Making
+        'aim_trainer',        // 6. Aim Trainer
+        'verbal_memory',      // 7. Verbal Memory
+        'visual_memory',      // 8. Visual Memory
+        'typing_speed',       // 9. Typing Speed
+        'sequence_memory',    // 10. Sequence Memory
+      ];
+
+      // Start with games in fixed order (if they're active)
+      final orderedGames = <String>[];
+      for (final gameId in completeFixedOrder) {
+        if (activeGames.contains(gameId)) {
+          orderedGames.add(gameId);
+        }
+      }
+
+      // Add any other active games that aren't in the fixed order (future games)
+      for (final gameId in activeGames) {
+        if (!completeFixedOrder.contains(gameId)) {
+          orderedGames.add(gameId);
+        }
+      }
+
+      return orderedGames;
+    } catch (e, st) {
+      AppLogger.error('gameManagement.getVisibleGamesInOrder', e, st);
+      return [];
+    }
+  }
+
+  // Get visible games in fixed order as a real-time stream
+  static Stream<List<String>> getVisibleGamesInOrderStream() {
+    try {
+      return _gameManagementCollection
+          .snapshots()
+          .map((snapshot) {
+            final allGames = snapshot.docs
+                .map((doc) => GameManagement.fromMap(doc.data()))
+                .toList();
+            
+            final activeGames = allGames
+                .where((game) => game.isActive)
+                .map((game) => game.gameId)
+                .toList();
+
+            // Define the complete fixed order for ALL games
+            final completeFixedOrder = [
+              'reaction_time',      // 1. Reaction Time
+              'personality_quiz',   // 2. Personality Quiz
+              'number_memory',      // 3. Number Memory
+              'chimp_test',         // 4. Chimp Test
+              'decision_making',    // 5. Decision Making
+              'aim_trainer',        // 6. Aim Trainer
+              'verbal_memory',      // 7. Verbal Memory
+              'visual_memory',      // 8. Visual Memory
+              'typing_speed',       // 9. Typing Speed
+              'sequence_memory',    // 10. Sequence Memory
+            ];
+
+            // Start with games in fixed order (if they're active)
+            final orderedGames = <String>[];
+            for (final gameId in completeFixedOrder) {
+              if (activeGames.contains(gameId)) {
+                orderedGames.add(gameId);
+              }
+            }
+
+            // Add any other active games that aren't in the fixed order (future games)
+            for (final gameId in activeGames) {
+              if (!completeFixedOrder.contains(gameId)) {
+                orderedGames.add(gameId);
+              }
+            }
+
+            return orderedGames;
+          });
+    } catch (e, st) {
+      AppLogger.error('gameManagement.getVisibleGamesInOrderStream', e, st);
+      // Return a stream with empty list on error
+      return Stream.value(<String>[]);
+    }
+  }
+
+  // Get the order index of a game (for consistent positioning)
+  static int getGameOrderIndex(String gameId) {
+    // Define the complete fixed order for ALL games
+    final completeFixedOrder = [
+      'reaction_time',      // 0. Reaction Time
+      'personality_quiz',   // 1. Personality Quiz
+      'number_memory',      // 2. Number Memory
+      'chimp_test',         // 3. Chimp Test
+      'decision_making',    // 4. Decision Making
+      'aim_trainer',        // 5. Aim Trainer
+      'verbal_memory',      // 6. Verbal Memory
+      'visual_memory',      // 7. Visual Memory
+      'typing_speed',       // 8. Typing Speed
+      'sequence_memory',    // 9. Sequence Memory
+    ];
+
+    final index = completeFixedOrder.indexOf(gameId);
+    return index >= 0 ? index : completeFixedOrder.length; // Unknown games go to the end
+  }
+
+  // Get the complete list of all games in order (regardless of status)
+  static List<String> getAllGamesInOrder() {
+    return [
+      'reaction_time',      // 0. Reaction Time
+      'personality_quiz',   // 1. Personality Quiz
+      'number_memory',      // 2. Number Memory
+      'chimp_test',         // 3. Chimp Test
+      'decision_making',    // 4. Decision Making
+      'aim_trainer',        // 5. Aim Trainer
+      'verbal_memory',      // 6. Verbal Memory
+      'visual_memory',      // 7. Visual Memory
+      'typing_speed',       // 8. Typing Speed
+      'sequence_memory',    // 9. Sequence Memory
+    ];
+  }
+
   // Helper method to get game display names
   static String _getGameDisplayName(String gameId) {
     switch (gameId) {

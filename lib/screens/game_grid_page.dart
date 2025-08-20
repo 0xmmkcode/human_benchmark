@@ -7,6 +7,7 @@ import 'reaction_time_page.dart';
 import 'number_memory_page.dart';
 import 'decision_risk_page.dart';
 import 'personality_quiz_page.dart';
+import 'chimp_test_page.dart';
 
 class GameGridPage extends ConsumerStatefulWidget {
   const GameGridPage({super.key});
@@ -33,7 +34,7 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
         centerTitle: true,
       ),
       body: StreamBuilder<List<String>>(
-        stream: GameManagementService.getVisibleGamesStream(),
+        stream: GameManagementService.getVisibleGamesInOrderStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -64,7 +65,23 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
 
           final visibleGames = snapshot.data ?? [];
 
-          if (visibleGames.isEmpty) {
+          // Fallback games if no games are initialized yet
+          final fallbackGames = visibleGames.isEmpty
+              ? [
+                  'reaction_time', // 1. Reaction Time
+                  'personality_quiz', // 2. Personality Quiz
+                  'number_memory', // 3. Number Memory
+                  'chimp_test', // 4. Chimp Test
+                  'decision_making', // 5. Decision Making
+                  'aim_trainer', // 6. Aim Trainer
+                  'verbal_memory', // 7. Verbal Memory
+                  'visual_memory', // 8. Visual Memory
+                  'typing_speed', // 9. Typing Speed
+                  'sequence_memory', // 10. Sequence Memory
+                ]
+              : visibleGames;
+
+          if (fallbackGames.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -100,9 +117,9 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
                 mainAxisSpacing: 16,
                 childAspectRatio: 1.2,
               ),
-              itemCount: visibleGames.length,
+              itemCount: fallbackGames.length,
               itemBuilder: (context, index) {
-                final gameId = visibleGames[index];
+                final gameId = fallbackGames[index];
                 return _buildGameCard(gameId);
               },
             ),
@@ -214,12 +231,9 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
         );
         break;
       case 'chimp_test':
-        // TODO: Add ChimpTestPage when available
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Chimp Test coming soon!'),
-            backgroundColor: Colors.blue,
-          ),
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => ChimpTestPage()),
         );
         break;
       case 'aim_trainer':
@@ -353,9 +367,15 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
         );
       default:
         return GameData(
-          name: gameId.replaceAll('_', ' ').split(' ').map((word) => 
-            word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1)}' : ''
-          ).join(' '),
+          name: gameId
+              .replaceAll('_', ' ')
+              .split(' ')
+              .map(
+                (word) => word.isNotEmpty
+                    ? '${word[0].toUpperCase()}${word.substring(1)}'
+                    : '',
+              )
+              .join(' '),
           subtitle: 'Game not found',
           icon: Icons.games,
           color: Color(0xFF6B7280), // Gray

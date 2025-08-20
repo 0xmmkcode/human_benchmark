@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'screens/dashboard_page.dart';
 import 'screens/game_grid_page.dart';
-import 'screens/settings_page.dart';
+
 import 'screens/profile_page.dart';
 
 class HomeShell extends ConsumerStatefulWidget {
@@ -25,29 +25,19 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   }
 
   void _initializeNavigation() {
-    // Initialize with basic pages
-    pages = [
-      const DashboardPage(),
-      const GameGridPage(),
-      const SettingsPage(),
-      const ProfilePage(),
-    ];
+    // Initialize with basic pages - Games first
+    pages = [const GameGridPage(), const DashboardPage(), const ProfilePage()];
 
     navigationItems = [
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.dashboard),
-        activeIcon: Icon(Icons.dashboard),
-        label: 'Dashboard',
-      ),
       const BottomNavigationBarItem(
         icon: Icon(Icons.games),
         activeIcon: Icon(Icons.games),
         label: 'Games',
       ),
       const BottomNavigationBarItem(
-        icon: Icon(Icons.settings),
-        activeIcon: Icon(Icons.settings),
-        label: 'Settings',
+        icon: Icon(Icons.dashboard),
+        activeIcon: Icon(Icons.dashboard),
+        label: 'Dashboard',
       ),
       const BottomNavigationBarItem(
         icon: Icon(Icons.person),

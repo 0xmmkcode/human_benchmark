@@ -156,17 +156,33 @@ class _PersonalityQuizPageState extends ConsumerState<PersonalityQuizPage> {
                     ),
                     child: Column(
                       children: [
-                        Text(
-                          'Big Five Personality Assessment',
-                          style: TextStyle(
-                            fontFamily: 'Montserrat',
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue.shade800,
-                          ),
-                          textAlign: TextAlign.center,
+                        // Back button and game name header
+                        Row(
+                          children: [
+                            IconButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              icon: Icon(Icons.arrow_back, size: 24),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colors.grey[200],
+                                padding: EdgeInsets.all(12),
+                              ),
+                            ),
+                            SizedBox(width: 16),
+                            Expanded(
+                              child: Text(
+                                'Big Five Personality Assessment',
+                                style: TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey[800],
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 16),
                         Text(
                           'Discover your personality traits through this scientifically validated assessment',
                           style: TextStyle(
@@ -552,10 +568,7 @@ class _PersonalityQuizPageState extends ConsumerState<PersonalityQuizPage> {
         const SizedBox(height: 12),
         Container(
           constraints: const BoxConstraints(maxWidth: 800),
-          child: const PersonalityLeaderboard(
-            showTitle: false,
-            maxItems: 5,
-          ),
+          child: const PersonalityLeaderboard(showTitle: false, maxItems: 5),
         ),
         const SizedBox(height: 24),
 

@@ -300,20 +300,34 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Game Title
-                Text(
-                  'Number Memory Test',
-                  style: TextStyle(
-                    fontSize: 35,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                  ),
+                // Back button and game name header
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: Icon(Icons.arrow_back, size: 24),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.grey[200],
+                        padding: EdgeInsets.all(12),
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    Text(
+                      'Number Memory Test',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                  ],
                 ),
-                SizedBox(height: 8),
+                SizedBox(height: 24),
                 Text(
                   'Remember the number sequence and type it back',
                   style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
+                SizedBox(height: 24),
 
                 // Score Display
                 Row(

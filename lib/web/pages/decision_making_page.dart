@@ -21,15 +21,29 @@ class _WebDecisionMakingPageState extends State<WebDecisionMakingPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Decision Making Test',
-            style: TextStyle(
-              fontSize: 35,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
+          // Back button and game name header
+          Row(
+            children: [
+              IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: Icon(Icons.arrow_back, size: 24),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.grey[200],
+                  padding: EdgeInsets.all(12),
+                ),
+              ),
+              SizedBox(width: 16),
+              Text(
+                'Decision Making Test',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ],
           ),
-          const Gap(8),
+          SizedBox(height: 24),
           Text(
             'A quick task to measure speed and accuracy under simple choices.',
             style: TextStyle(fontSize: 16, color: Colors.grey[600]),

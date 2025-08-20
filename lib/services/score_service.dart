@@ -871,11 +871,340 @@ class ScoreService {
     }
   }
 
+  // Get reaction time statistics as a real-time stream
+  static Stream<Map<String, dynamic>> getReactionTimeStatsStream() {
+    try {
+      if (Firebase.apps.isEmpty) {
+        return Stream.value({});
+      }
+
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return Stream.value({});
+
+      return _userScoresCollection
+          .doc(currentUser.uid)
+          .snapshots()
+          .map<Map<String, dynamic>>((doc) {
+            if (!doc.exists) return <String, dynamic>{};
+
+            final data = doc.data()!;
+            final gameScores = data['gameScores'] as Map<String, dynamic>?;
+            if (gameScores == null || gameScores['reaction_time'] == null)
+              return <String, dynamic>{};
+
+            return gameScores['reaction_time'] as Map<String, dynamic>;
+          })
+          .handleError((error, stackTrace) {
+            AppLogger.error(
+              'score.getReactionTimeStatsStream',
+              error,
+              stackTrace,
+            );
+            return <String, dynamic>{};
+          });
+    } catch (e, st) {
+      AppLogger.error('score.getReactionTimeStatsStream', e, st);
+      return Stream.value({});
+    }
+  }
+
+  // Get user's high score as a real-time stream
+  static Stream<int> getUserHighScoreStream(String gameType) {
+    try {
+      if (Firebase.apps.isEmpty) {
+        return Stream.value(0);
+      }
+
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return Stream.value(0);
+
+      return _userScoresCollection
+          .doc(currentUser.uid)
+          .snapshots()
+          .map((doc) {
+            if (!doc.exists) return 0;
+
+            final data = doc.data()!;
+            final gameScores = data['gameScores'] as Map<String, dynamic>?;
+            if (gameScores == null || gameScores[gameType] == null) return 0;
+
+            return (gameScores[gameType]['highScore'] as num?)?.toInt() ?? 0;
+          })
+          .handleError((error, stackTrace) {
+            AppLogger.error('score.getUserHighScoreStream', error, stackTrace);
+            return 0;
+          });
+    } catch (e, st) {
+      AppLogger.error('score.getUserHighScoreStream', e, st);
+      return Stream.value(0);
+    }
+  }
+
+  // Get user's complete score profile as a real-time stream
+  static Stream<UserScore?> getUserScoreProfileStream() {
+    try {
+      if (Firebase.apps.isEmpty) {
+        return Stream.value(null);
+      }
+
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return Stream.value(null);
+
+      return _userScoresCollection
+          .doc(currentUser.uid)
+          .snapshots()
+          .map((doc) {
+            if (!doc.exists) return null;
+
+            try {
+              return UserScore.fromMap(doc.data()!);
+            } catch (e) {
+              AppLogger.error('score.parseUserScoreProfile', e, null);
+              return null;
+            }
+          })
+          .handleError((error, stackTrace) {
+            AppLogger.error(
+              'score.getUserScoreProfileStream',
+              error,
+              stackTrace,
+            );
+            return null;
+          });
+    } catch (e, st) {
+      AppLogger.error('score.getUserScoreProfileStream', e, st);
+      return Stream.value(null);
+    }
+  }
+
+  // Get game leaderboard as a real-time stream
+  static Stream<List<UserScore>> getGameLeaderboardStream({
+    required GameType gameType,
+    int limit = 100,
+  }) {
+    try {
+      if (Firebase.apps.isEmpty) {
+        return Stream.value([]);
+      }
+
+      // Determine sorting order based on game type
+      final bool descending = _shouldSortDescending(gameType);
+      final String gameTypeField = 'gameScores.${gameType.name}.highScore';
+
+      return _userScoresCollection
+          .orderBy(gameTypeField, descending: descending)
+          .limit(limit)
+          .snapshots()
+          .map(
+            (snapshot) => snapshot.docs
+                .map((doc) {
+                  try {
+                    return UserScore.fromMap(doc.data());
+                  } catch (e) {
+                    AppLogger.error('score.parseGameLeaderboard', e, null);
+                    return null;
+                  }
+                })
+                .where((score) => score != null)
+                .cast<UserScore>()
+                .toList(),
+          )
+          .handleError((error, stackTrace) {
+            AppLogger.error(
+              'score.getGameLeaderboardStream',
+              error,
+              stackTrace,
+            );
+            return <UserScore>[];
+          });
+    } catch (e, st) {
+      AppLogger.error('score.getGameLeaderboardStream', e, st);
+      return Stream.value([]);
+    }
+  }
+
+  // Get overall leaderboard as a real-time stream (enhanced version)
+  static Stream<List<UserScore>> getOverallLeaderboardStream({
+    int limit = 100,
+  }) {
+    try {
+      if (Firebase.apps.isEmpty) {
+        return Stream.value([]);
+      }
+
+      return _userScoresCollection
+          .orderBy('totalScore', descending: true)
+          .limit(limit)
+          .snapshots()
+          .map(
+            (snapshot) => snapshot.docs
+                .map((doc) {
+                  try {
+                    return UserScore.fromMap(doc.data());
+                  } catch (e) {
+                    AppLogger.error('score.parseOverallLeaderboard', e, null);
+                    return null;
+                  }
+                })
+                .where((score) => score != null)
+                .cast<UserScore>()
+                .toList(),
+          )
+          .handleError((error, stackTrace) {
+            AppLogger.error(
+              'score.getOverallLeaderboardStream',
+              error,
+              stackTrace,
+            );
+            return <UserScore>[];
+          });
+    } catch (e, st) {
+      AppLogger.error('score.getOverallLeaderboardStream', e, st);
+      return Stream.value([]);
+    }
+  }
+
+  // Get user's ranking in a specific game as a real-time stream
+  static Stream<int> getUserRankingStream({
+    required GameType gameType,
+    int limit = 1000, // Higher limit to get accurate ranking
+  }) {
+    try {
+      if (Firebase.apps.isEmpty) {
+        return Stream.value(-1);
+      }
+
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return Stream.value(-1);
+
+      // Determine sorting order based on game type
+      final bool descending = _shouldSortDescending(gameType);
+      final String gameTypeField = 'gameScores.${gameType.name}.highScore';
+
+      return _userScoresCollection
+          .orderBy(gameTypeField, descending: descending)
+          .limit(limit)
+          .snapshots()
+          .map((snapshot) {
+            final userIndex = snapshot.docs.indexWhere(
+              (doc) => doc.id == currentUser.uid,
+            );
+            return userIndex >= 0 ? userIndex + 1 : -1;
+          })
+          .handleError((error, stackTrace) {
+            AppLogger.error('score.getUserRankingStream', error, stackTrace);
+            return -1;
+          });
+    } catch (e, st) {
+      AppLogger.error('score.getUserRankingStream', e, st);
+      return Stream.value(-1);
+    }
+  }
+
+  // Get user's total games played as a real-time stream
+  static Stream<int> getUserTotalGamesStream() {
+    try {
+      if (Firebase.apps.isEmpty) {
+        return Stream.value(0);
+      }
+
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return Stream.value(0);
+
+      return _userScoresCollection
+          .doc(currentUser.uid)
+          .snapshots()
+          .map((doc) {
+            if (!doc.exists) return 0;
+
+            final data = doc.data()!;
+            return (data['totalGames'] as num?)?.toInt() ?? 0;
+          })
+          .handleError((error, stackTrace) {
+            AppLogger.error('score.getUserTotalGamesStream', error, stackTrace);
+            return 0;
+          });
+    } catch (e, st) {
+      AppLogger.error('score.getUserTotalGamesStream', e, st);
+      return Stream.value(0);
+    }
+  }
+
+  // Get user's average score as a real-time stream
+  static Stream<double> getUserAverageScoreStream() {
+    try {
+      if (Firebase.apps.isEmpty) {
+        return Stream.value(0.0);
+      }
+
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return Stream.value(0.0);
+
+      return _userScoresCollection
+          .doc(currentUser.uid)
+          .snapshots()
+          .map((doc) {
+            if (!doc.exists) return 0.0;
+
+            final data = doc.data()!;
+            return (data['averageScore'] as num?)?.toDouble() ?? 0.0;
+          })
+          .handleError((error, stackTrace) {
+            AppLogger.error(
+              'score.getUserAverageScoreStream',
+              error,
+              stackTrace,
+            );
+            return 0.0;
+          });
+    } catch (e, st) {
+      AppLogger.error('score.getUserAverageScoreStream', e, st);
+      return Stream.value(0.0);
+    }
+  }
+
+  // Get user's last played date as a real-time stream
+  static Stream<DateTime?> getUserLastPlayedStream() {
+    try {
+      if (Firebase.apps.isEmpty) {
+        return Stream.value(null);
+      }
+
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return Stream.value(null);
+
+      return _userScoresCollection
+          .doc(currentUser.uid)
+          .snapshots()
+          .map((doc) {
+            if (!doc.exists) return null;
+
+            final data = doc.data()!;
+            final lastActive = data['lastActive'];
+            if (lastActive is Timestamp) {
+              return lastActive.toDate();
+            }
+            return null;
+          })
+          .handleError((error, stackTrace) {
+            AppLogger.error('score.getUserLastPlayedStream', error, stackTrace);
+            return null;
+          });
+    } catch (e, st) {
+      AppLogger.error('score.getUserLastPlayedStream', e, st);
+      return Stream.value(null);
+    }
+  }
+
   // Private helper methods
   static Future<String> _getUserId() async {
     if (Firebase.apps.isNotEmpty && FirebaseAuth.instance.currentUser != null) {
       return FirebaseAuth.instance.currentUser!.uid;
     }
     return '';
+  }
+
+  static bool _shouldSortDescending(GameType gameType) {
+    return gameType == GameType.reactionTime;
   }
 }

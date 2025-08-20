@@ -124,17 +124,33 @@ class DecisionRiskPage extends ConsumerWidget {
                     ),
                     child: Column(
                       children: [
-                        Text(
-                          'Decision-Making Speed & Risk',
-                          style: TextStyle(
-                            fontFamily: 'Montserrat',
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue.shade800,
-                          ),
-                          textAlign: TextAlign.center,
+                        // Back button and game name header
+                        Row(
+                          children: [
+                            IconButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              icon: Icon(Icons.arrow_back, size: 24),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colors.grey[200],
+                                padding: EdgeInsets.all(12),
+                              ),
+                            ),
+                            SizedBox(width: 16),
+                            Expanded(
+                              child: Text(
+                                'Decision-Making Speed & Risk',
+                                style: TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey[800],
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 16),
                         Text(
                           trial == null
                               ? 'No trials available.'

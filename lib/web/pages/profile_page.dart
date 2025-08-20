@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:gap/gap.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
 import 'package:human_benchmark/services/auth_service.dart';
@@ -94,97 +95,151 @@ class _WebProfilePageState extends State<WebProfilePage> {
 
     await showDialog(
       context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Edit Profile'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: displayNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Display Name',
-                    hintText: 'Enter your display name',
-                  ),
-                ),
-                const Gap(16),
-                CountrySelector(
-                  initialValue: _userProfile!.country,
-                  onCountrySelected: (String? country) {
-                    // Update the country controller when a country is selected
-                    if (country != null) {
-                      countryController.text = country;
-                    } else {
-                      countryController.clear();
-                    }
-                  },
-                ),
-                const Gap(16),
-                ListTile(
-                  title: const Text('Birthday'),
-                  subtitle: Text(
-                    selectedBirthday != null
-                        ? '${selectedBirthday!.day}/${selectedBirthday!.month}/${selectedBirthday!.year}'
-                        : 'Select your birthday',
-                  ),
-                  trailing: const Icon(Icons.calendar_today),
-                  onTap: () async {
-                    final DateTime? picked = await showDatePicker(
-                      context: context,
-                      initialDate: selectedBirthday ?? DateTime.now(),
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime.now(),
-                    );
-                    if (picked != null) {
-                      setState(() {
-                        selectedBirthday = picked;
-                      });
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  await UserProfileService.updateProfileFields(
-                    uid: _userProfile!.uid,
-                    displayName: displayNameController.text.isNotEmpty
-                        ? displayNameController.text
-                        : null,
-                    birthday: selectedBirthday,
-                    country: countryController.text.isNotEmpty
-                        ? countryController.text
-                        : null,
-                  );
-
-                  if (mounted) {
-                    Navigator.of(context).pop();
-                    _loadUserProfileData();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Profile updated successfully!'),
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: AlertDialog(
+            title: const Text('Edit Profile'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: displayNameController,
+                    decoration: InputDecoration(
+                      labelText: 'Display Name',
+                      hintText: 'Enter your display name',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
                       ),
-                    );
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed to update profile: $e')),
-                    );
-                  }
-                }
-              },
-              child: const Text('Save'),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: WebTheme.primaryBlue,
+                          width: 2,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                  const Gap(16),
+                  CountrySelector(
+                    initialValue: _userProfile!.country,
+                    onCountrySelected: (String? country) {
+                      // Update the country controller when a country is selected
+                      if (country != null) {
+                        countryController.text = country;
+                      } else {
+                        countryController.clear();
+                      }
+                    },
+                  ),
+                  const Gap(16),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey[300]!),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ListTile(
+                      title: const Text('Birthday'),
+                      subtitle: Text(
+                        selectedBirthday != null
+                            ? '${selectedBirthday!.day}/${selectedBirthday!.month}/${selectedBirthday!.year}'
+                            : 'Select your birthday',
+                      ),
+                      trailing: Icon(
+                        Icons.calendar_today,
+                        color: WebTheme.primaryBlue,
+                      ),
+                      onTap: () async {
+                        final DateTime? picked = await showDatePicker(
+                          context: context,
+                          initialDate: selectedBirthday ?? DateTime.now(),
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime.now(),
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            selectedBirthday = picked;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                ),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  try {
+                    await UserProfileService.updateProfileFields(
+                      uid: _userProfile!.uid,
+                      displayName: displayNameController.text.isNotEmpty
+                          ? displayNameController.text
+                          : null,
+                      birthday: selectedBirthday,
+                      country: countryController.text.isNotEmpty
+                          ? countryController.text
+                          : null,
+                    );
+
+                    if (mounted) {
+                      Navigator.of(context).pop();
+                      _loadUserProfileData();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Profile updated successfully!'),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to update profile: $e')),
+                      );
+                    }
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: WebTheme.primaryBlue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Save Changes',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -441,10 +496,21 @@ class _WebProfilePageState extends State<WebProfilePage> {
                         ),
                       ),
                     ),
-                    IconButton(
+                    ElevatedButton.icon(
                       onPressed: _showEditProfileDialog,
-                      icon: const Icon(Icons.edit, color: Colors.blue),
-                      tooltip: 'Edit Profile',
+                      icon: const Icon(Icons.edit, size: 18),
+                      label: const Text('Edit Profile'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: WebTheme.primaryBlue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
                     ),
                   ],
                 ),

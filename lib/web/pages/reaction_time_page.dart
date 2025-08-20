@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:human_benchmark/web/components/web_banner_ad.dart';
-import 'package:human_benchmark/models/user_score.dart';
 import 'package:human_benchmark/services/score_service.dart';
 import 'package:human_benchmark/services/local_storage_service.dart';
 import 'package:human_benchmark/services/auth_service.dart';
-import 'package:human_benchmark/widgets/score_display.dart';
 import 'package:human_benchmark/widgets/reaction_time_leaderboard.dart';
-import 'package:human_benchmark/screens/comprehensive_leaderboard_page.dart';
 
 class WebReactionTimePage extends StatefulWidget {
   @override
@@ -182,16 +179,29 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Text(
-            'Reaction Time Test',
-            style: TextStyle(
-              fontSize: 35,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
+          // Back button and game name header
+          Row(
+            children: [
+              IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: Icon(Icons.arrow_back, size: 24),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.grey[200],
+                  padding: EdgeInsets.all(12),
+                ),
+              ),
+              SizedBox(width: 16),
+              Text(
+                'Reaction Time Test',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ],
           ),
-          SizedBox(height: 8),
+          SizedBox(height: 24),
           Text(
             'Test your reflexes! Click when the screen turns green.',
             style: TextStyle(fontSize: 16, color: Colors.grey[600]),
@@ -329,7 +339,7 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.green.withOpacity(0.3),
+                                  color: Colors.green.withValues(alpha: 0.3),
                                   blurRadius: 20,
                                   spreadRadius: 5,
                                 ),

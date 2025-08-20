@@ -5,13 +5,14 @@ import 'package:flutter/material.dart';
 // import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:gap/gap.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:human_benchmark/ad_helper.dart';
 import 'package:human_benchmark/models/user_score.dart';
 import 'package:human_benchmark/services/score_service.dart';
 import 'package:human_benchmark/services/local_storage_service.dart';
 import 'package:human_benchmark/services/auth_service.dart';
+import 'package:human_benchmark/widgets/reaction_time_leaderboard.dart';
 
 class ReactionTimePage extends StatefulWidget {
   @override
@@ -34,7 +35,7 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
   int? _highScore;
   int _totalTests = 0;
   int _averageTime = 0;
-  bool _isLoadingStats = true;
+
   final Random _random = Random();
   final Color backgroundColor = Color(0xFF0074EB);
 
@@ -235,7 +236,7 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
   Future<void> _loadReactionTimeStats() async {
     try {
       setState(() {
-        _isLoadingStats = true;
+        // Loading stats...
       });
 
       // Always load local stats first as fallback
@@ -260,7 +261,6 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
             setState(() {
               _totalTests = firebaseStats['totalTests'] ?? localTotalTests;
               _averageTime = firebaseStats['averageTime'] ?? localAverageTime;
-              _isLoadingStats = false;
             });
             return;
           }
@@ -274,7 +274,6 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
       setState(() {
         _totalTests = localTotalTests;
         _averageTime = localAverageTime;
-        _isLoadingStats = false;
       });
     } catch (e) {
       print('Error loading reaction time stats: $e');
@@ -282,209 +281,405 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
       setState(() {
         _totalTests = 0;
         _averageTime = 0;
-        _isLoadingStats = false;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    String message = '';
-    Color bgColor = backgroundColor;
-
-    switch (_state) {
-      case GameState.ready:
-        message = 'Tap to Start';
-        break;
-      case GameState.waiting:
-        message = 'Wait for Green...';
-        bgColor = Colors.red;
-        break;
-      case GameState.go:
-        message = 'TAP NOW!';
-        bgColor = Colors.green;
-        break;
-      case GameState.result:
-        if (_reactionTime == -1) {
-          message = 'Game Over\nWait for green to appear\nTap to try again';
-          bgColor = Colors.red.shade900;
-        } else {
-          message = 'Your Reaction Time: $_reactionTime ms\nTap to Retry';
-          bgColor = Colors.blueGrey;
-        }
-        break;
-    }
-
     return Scaffold(
-      backgroundColor: bgColor,
-      body: LayoutBuilder(
-        builder: (ctx, constraints) {
-          return SafeArea(
-            child: Stack(
+      backgroundColor: Colors.grey[50],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
               children: [
-                GestureDetector(
-                  onTap: () {
-                    if (_state == GameState.ready) {
-                      _startGame();
-                    } else {
-                      _onScreenTap();
-                    }
-                  },
-                  child: Container(
-                    padding: EdgeInsets.only(
-                      top: 70,
-                      left: 20,
-                      right: 20,
-                      bottom: 20,
-                    ),
-                    decoration: BoxDecoration(color: bgColor),
-                    height: constraints.maxHeight * 0.8,
-                    width: double.infinity,
-                    child: Center(
-                      child: Text(
-                        message,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.montserrat(
-                          fontSize: 28,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
+                _buildPageHeader(),
+                const Gap(24),
+                Text(
+                  'Test your reflexes! Tap when the screen turns green.',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  textAlign: TextAlign.center,
                 ),
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Image.asset(
-                              "assets/images/human_logo_white.png",
-                              height: 40,
-                            ),
-                            Spacer(),
-                            Container(
-                              padding: EdgeInsets.all(5),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Image.asset(
-                                    "assets/images/trophy-star.png",
-                                    height: 30,
-                                  ),
-                                  Gap(10),
-                                  Text(
-                                    '${_highScore ?? "--"} ms',
-                                    style: GoogleFonts.montserrat(
-                                      fontSize: 12,
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (!_isLoadingStats) ...[
-                          Gap(10),
-                          Row(
+                const Gap(32),
+
+                // Game Area
+                Center(
+                  child: Column(
+                    children: [
+                      // Game Instructions
+                      if (_state == GameState.ready)
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.grey[200]!),
+                          ),
+                          child: Column(
                             children: [
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.9),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.play_arrow,
-                                      size: 16,
-                                      color: Colors.blue.shade600,
-                                    ),
-                                    Gap(4),
-                                    Text(
-                                      'Tests: $_totalTests',
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: 11,
-                                        color: Colors.blue.shade600,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
+                              Icon(
+                                Icons.touch_app,
+                                size: 48,
+                                color: Colors.blue[400],
+                              ),
+                              const Gap(20),
+                              Text(
+                                'Tap Start to begin',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey[800],
                                 ),
                               ),
-                              Gap(8),
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
+                              const Gap(12),
+                              Text(
+                                'Wait for the screen to turn green, then tap as fast as you can!',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
                                 ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.9),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.trending_up,
-                                      size: 16,
-                                      color: Colors.green.shade600,
+                              ),
+                              const Gap(24),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: _startGame,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue[600],
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 32,
+                                      vertical: 16,
                                     ),
-                                    Gap(4),
-                                    Text(
-                                      'Avg: ${_averageTime}ms',
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: 11,
-                                        color: Colors.green.shade600,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
-                                  ],
+                                  ),
+                                  child: const Text(
+                                    'Start Test',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Banner Ad
-                      // Banner Ad
-                      if (kReleaseMode && _isBannerAdReady && _bannerAd != null)
-                        SizedBox(
-                          height: _bannerAd!.size.height.toDouble(),
-                          width: _bannerAd!.size.width.toDouble(),
-                          child: AdWidget(ad: _bannerAd!),
+                        ),
+
+                      // Waiting State
+                      if (_state == GameState.waiting)
+                        GestureDetector(
+                          onTapDown: (_) {
+                            // Too early -> game over
+                            setState(() {
+                              _state = GameState.result;
+                              _reactionTime = -1;
+                            });
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Colors.orange[50],
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.orange[200]!),
+                            ),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.hourglass_empty,
+                                  size: 48,
+                                  color: Colors.orange[400],
+                                ),
+                                const Gap(20),
+                                Text(
+                                  'Wait for it...',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.orange[800],
+                                  ),
+                                ),
+                                const Gap(12),
+                                Text(
+                                  'The screen will turn green soon. Don\'t tap yet!',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.orange[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                      // Game Area (Green Screen)
+                      if (_state == GameState.go)
+                        GestureDetector(
+                          onTapDown: (_) => _onScreenTap(),
+                          child: Container(
+                            width: double.infinity,
+                            height: 200,
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.green.withValues(alpha: 0.3),
+                                  blurRadius: 20,
+                                  spreadRadius: 5,
+                                ),
+                              ],
+                            ),
+                            child: const Center(
+                              child: Text(
+                                'TAP NOW!',
+                                style: TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                      // Results
+                      if (_state == GameState.result)
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: _reactionTime == -1
+                                ? Colors.red[50]
+                                : Colors.blue[50],
+                            borderRadius: BorderRadius.circular(16),
+                            border: _reactionTime == -1
+                                ? Border.all(color: Colors.red[200]!)
+                                : null,
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                _reactionTime == -1
+                                    ? Icons.error_outline
+                                    : Icons.timer,
+                                size: 48,
+                                color: _reactionTime == -1
+                                    ? Colors.red[400]
+                                    : Colors.blue[400],
+                              ),
+                              const Gap(20),
+                              if (_reactionTime == -1) ...[
+                                Text(
+                                  'Game Over',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.red[800],
+                                  ),
+                                ),
+                                const Gap(8),
+                                Text(
+                                  'Wait for green to appear',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.red[600],
+                                  ),
+                                ),
+                              ] else ...[
+                                Text(
+                                  'Your Reaction Time',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey[800],
+                                  ),
+                                ),
+                                const Gap(16),
+                                Text(
+                                  '${_reactionTime}ms',
+                                  style: TextStyle(
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue[600],
+                                  ),
+                                ),
+                              ],
+                              const Gap(24),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: _startGame,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: _reactionTime == -1
+                                          ? Colors.red[600]
+                                          : Colors.blue[600],
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 12,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: const Text('Try Again'),
+                                  ),
+                                  OutlinedButton(
+                                    onPressed: _resetGame,
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 12,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: const Text('New Game'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                     ],
                   ),
                 ),
+
+                const Gap(24),
+                // Stats Bar
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatCard(
+                          'Best Time',
+                          _highScore == null ? '--' : '${_highScore}ms',
+                          Icons.star,
+                          Colors.amber[600]!,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildStatCard(
+                          'Tests Taken',
+                          '$_totalTests',
+                          Icons.analytics,
+                          Colors.green[600]!,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildStatCard(
+                          'Average',
+                          _averageTime == 0 ? '--' : '${_averageTime}ms',
+                          Icons.trending_up,
+                          Colors.blue[600]!,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const Gap(24),
+                // Leaderboard
+                ReactionTimeLeaderboard(
+                  showTitle: true,
+                  maxItems: 5,
+                  showLocalScores: true,
+                ),
+
+                // Banner Ad at bottom
+                if (kReleaseMode && _isBannerAdReady && _bannerAd != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: SizedBox(
+                      height: _bannerAd!.size.height.toDouble(),
+                      width: _bannerAd!.size.width.toDouble(),
+                      child: AdWidget(ad: _bannerAd!),
+                    ),
+                  ),
               ],
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
+  }
+
+  Widget _buildPageHeader() {
+    return Row(
+      children: [
+        IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back, size: 24),
+          style: IconButton.styleFrom(
+            backgroundColor: Colors.grey[200],
+            padding: const EdgeInsets.all(12),
+          ),
+        ),
+        const SizedBox(width: 16),
+        const Text(
+          'Reaction Time',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(title, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+        ],
+      ),
+    );
+  }
+
+  void _resetGame() {
+    setState(() {
+      _state = GameState.ready;
+      _reactionTime = null;
+    });
   }
 }
