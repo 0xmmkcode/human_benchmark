@@ -294,59 +294,75 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
         // Authenticated user - show the game
         return Scaffold(
           backgroundColor: WebTheme.grey50,
-          body: Container(
-            constraints: const BoxConstraints(maxWidth: 600),
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Back button and game name header
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: Icon(Icons.arrow_back, size: 24),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.grey[200],
-                        padding: EdgeInsets.all(12),
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Back button and game name header
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: Icon(Icons.arrow_back, size: 24),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.grey[200],
+                          padding: EdgeInsets.all(12),
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 16),
-                    Text(
-                      'Number Memory Test',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[800],
+                      SizedBox(width: 16),
+                      Text(
+                        'Number Memory Test',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[800],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 24),
-                Text(
-                  'Remember the number sequence and type it back',
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                ),
-                SizedBox(height: 24),
+                    ],
+                  ),
+                  SizedBox(height: 24),
+                  Text(
+                    'Remember the number sequence and type it back',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  ),
+                  SizedBox(height: 24),
 
-                // Score Display
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildScoreCard(
-                      'Level',
-                      '$_currentLevel',
-                      Icons.trending_up,
-                    ),
-                    _buildScoreCard('Score', '$_currentScore', Icons.star),
-                    _buildScoreCard('Best', '$_bestScore', Icons.emoji_events),
-                  ],
-                ),
-                const Gap(40),
+                  // Score Display (equal widths)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildScoreCard(
+                          'Level',
+                          '$_currentLevel',
+                          Icons.trending_up,
+                        ),
+                      ),
+                      SizedBox(width: 24),
+                      Expanded(
+                        child: _buildScoreCard(
+                          'Score',
+                          '$_currentScore',
+                          Icons.star,
+                        ),
+                      ),
+                      SizedBox(width: 24),
+                      Expanded(
+                        child: _buildScoreCard(
+                          'Best',
+                          '$_bestScore',
+                          Icons.emoji_events,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Gap(40),
 
-                // Game Area
-                _buildGameArea(),
-              ],
+                  // Game Area fills remaining space and is centered
+                  Expanded(child: Center(child: _buildGameArea())),
+                ],
+              ),
             ),
           ),
         );
@@ -369,6 +385,8 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
         ],
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Icon(icon, color: WebTheme.primaryBlue, size: 32),
           const Gap(8),
@@ -416,6 +434,8 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
         ],
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Icon(Icons.memory, size: 80, color: WebTheme.primaryBlue),
           const Gap(24),
@@ -470,13 +490,18 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
         ],
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             'Remember this number:',
             style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+            textAlign: TextAlign.center,
           ),
           const Gap(24),
           Container(
+            width: double.infinity,
+            alignment: Alignment.center,
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
               color: WebTheme.primaryBlue.withOpacity(0.1),
@@ -494,6 +519,7 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
                 color: WebTheme.primaryBlue,
                 fontFamily: 'monospace',
               ),
+              textAlign: TextAlign.center,
             ),
           ),
           const Gap(24),
@@ -504,6 +530,7 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
           Text(
             'Memorizing...',
             style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -525,10 +552,13 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
         ],
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             'Type the number you remember:',
             style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+            textAlign: TextAlign.center,
           ),
           const Gap(24),
           TextField(

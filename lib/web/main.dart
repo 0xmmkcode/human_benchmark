@@ -115,6 +115,28 @@ Future<GoRouter> _createDynamicRouter() async {
         path: '/terms',
         builder: (context, state) => const TermsOfServicePage(),
       ),
+      // Admin pages (registered statically to avoid missing routes)
+      GoRoute(
+        path: '/app/admin-users',
+        builder: (context, state) => const AdminUsersPage(),
+      ),
+      GoRoute(
+        path: '/app/admin-game-management',
+        builder: (context, state) => const AdminGameManagementPage(),
+      ),
+      GoRoute(
+        path: '/app/admin-web-settings',
+        builder: (context, state) => const AdminWebSettingsPage(),
+      ),
+      // Aliases/redirects for common typos
+      GoRoute(
+        path: '/app/game-management',
+        redirect: (context, state) => '/app/admin-game-management',
+      ),
+      GoRoute(
+        path: '/app/ugame-management',
+        redirect: (context, state) => '/app/admin-game-management',
+      ),
       // Dynamic shell route for all app pages
       ShellRoute(
         builder: (context, state, child) {
