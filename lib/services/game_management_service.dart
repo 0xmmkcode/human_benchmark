@@ -95,7 +95,8 @@ class GameManagementService {
       if (gameManagement == null)
         return true; // Default to visible if no management record
 
-      return gameManagement.isActive;
+      // Show game if it's active OR in maintenance (maintenance games are visible but greyed out)
+      return gameManagement.isActive || gameManagement.isMaintenance;
     } catch (e, st) {
       AppLogger.error('gameManagement.isGameVisible', e, st);
       return false; // Default to hidden on error
@@ -230,7 +231,7 @@ class GameManagementService {
       return _gameManagementCollection.snapshots().map(
         (snapshot) => snapshot.docs
             .map((doc) => GameManagement.fromMap(doc.data()))
-            .where((game) => game.isActive)
+            .where((game) => game.isActive || game.isMaintenance)
             .map((game) => game.gameId)
             .toList(),
       );
@@ -245,8 +246,8 @@ class GameManagementService {
   static Future<List<String>> getVisibleGamesInOrder() async {
     try {
       final allGames = await getAllGameManagement();
-      final activeGames = allGames
-          .where((game) => game.isActive)
+      final visibleGames = allGames
+          .where((game) => game.isActive || game.isMaintenance)
           .map((game) => game.gameId)
           .toList();
 
@@ -263,16 +264,16 @@ class GameManagementService {
         'personality_quiz', // 9. Personality Quiz - Assessment
       ];
 
-      // Start with games in fixed order (if they're active)
+      // Start with games in fixed order (if they're visible)
       final orderedGames = <String>[];
       for (final gameId in completeFixedOrder) {
-        if (activeGames.contains(gameId)) {
+        if (visibleGames.contains(gameId)) {
           orderedGames.add(gameId);
         }
       }
 
-      // Add any other active games that aren't in the fixed order (future games)
-      for (final gameId in activeGames) {
+      // Add any other visible games that aren't in the fixed order (future games)
+      for (final gameId in visibleGames) {
         if (!completeFixedOrder.contains(gameId)) {
           orderedGames.add(gameId);
         }
@@ -301,8 +302,8 @@ class GameManagementService {
             .cast<GameManagement>()
             .toList();
 
-        final activeGames = allGames
-            .where((game) => game.isActive)
+        final visibleGames = allGames
+            .where((game) => game.isActive || game.isMaintenance)
             .map((game) => game.gameId)
             .toList();
 
@@ -319,16 +320,16 @@ class GameManagementService {
           'personality_quiz', // 9. Personality Quiz - Assessment
         ];
 
-        // Start with games in fixed order (if they're active)
+        // Start with games in fixed order (if they're visible)
         final orderedGames = <String>[];
         for (final gameId in completeFixedOrder) {
-          if (activeGames.contains(gameId)) {
+          if (visibleGames.contains(gameId)) {
             orderedGames.add(gameId);
           }
         }
 
-        // Add any other active games that aren't in the fixed order (future games)
-        for (final gameId in activeGames) {
+        // Add any other visible games that aren't in the fixed order (future games)
+        for (final gameId in visibleGames) {
           if (!completeFixedOrder.contains(gameId)) {
             orderedGames.add(gameId);
           }

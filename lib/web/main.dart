@@ -26,6 +26,7 @@ import 'package:human_benchmark/web/pages/admin_web_settings_page.dart';
 import 'package:human_benchmark/web/components/protected_game_route.dart';
 import 'package:human_benchmark/web/components/maintenance_wrapper.dart';
 import 'package:human_benchmark/web/services/firebase_navigation_service.dart';
+import 'package:human_benchmark/services/game_management_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -184,45 +185,159 @@ List<RouteBase> _buildDynamicRoutes(List<Map<String, dynamic>> routes) {
 
 // Build game route based on game ID
 Widget _buildGameRoute(String gameId) {
-  switch (gameId) {
-    case 'reaction_time':
-      return ProtectedGameRoute(gameId: gameId, child: WebReactionTimePage());
-    case 'number_memory':
-      return ProtectedGameRoute(
-        gameId: gameId,
-        child: const WebNumberMemoryPage(),
-      );
-    case 'chimp_test':
-      return ProtectedGameRoute(
-        gameId: gameId,
-        child: const WebChimpTestPage(),
-      );
-    case 'decision_risk':
-      return ProtectedGameRoute(
-        gameId: gameId,
-        child: const WebDecisionMakingPage(),
-      );
-    case 'personality_quiz':
-      return ProtectedGameRoute(
-        gameId: gameId,
-        child: const PersonalityQuizPage(),
-      );
-    case 'sequence_memory':
-    case 'verbal_memory':
-    case 'visual_memory':
-    case 'aim_trainer':
-    default:
-      return ProtectedGameRoute(
-        gameId: gameId,
-        child: Scaffold(
-          body: Center(
-            child: Text(
-              '${_getGameTitle(gameId)} - Coming Soon!',
-              style: const TextStyle(fontSize: 24),
+  return FutureBuilder<Map<String, dynamic>>(
+    future: _getGameStatus(gameId),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      }
+
+      final gameStatus = snapshot.data ?? {};
+      final isMaintenance = gameStatus['isMaintenance'] ?? false;
+      final isBlocked = gameStatus['isBlocked'] ?? false;
+      final isActive = gameStatus['isActive'] ?? true;
+
+      // Show appropriate message based on game status
+      if (isMaintenance) {
+        return _buildStatusPage(
+          gameId: gameId,
+          status: 'Under Maintenance',
+          message:
+              'This game is temporarily unavailable. Please check back later.',
+          icon: Icons.build,
+          color: Colors.purple[400]!,
+        );
+      } else if (isBlocked) {
+        return _buildStatusPage(
+          gameId: gameId,
+          status: 'Blocked',
+          message: 'This game has been blocked and is not available.',
+          icon: Icons.block,
+          color: Colors.red[400]!,
+        );
+      } else if (!isActive) {
+        return _buildStatusPage(
+          gameId: gameId,
+          status: 'Disabled',
+          message: 'This game is currently disabled and not available.',
+          icon: Icons.pause,
+          color: Colors.orange[400]!,
+        );
+      }
+
+      // Game is active, show the actual game
+      switch (gameId) {
+        case 'reaction_time':
+          return ProtectedGameRoute(
+            gameId: gameId,
+            child: WebReactionTimePage(),
+          );
+        case 'number_memory':
+          return ProtectedGameRoute(
+            gameId: gameId,
+            child: const WebNumberMemoryPage(),
+          );
+        case 'chimp_test':
+          return ProtectedGameRoute(
+            gameId: gameId,
+            child: const WebChimpTestPage(),
+          );
+        case 'decision_risk':
+          return ProtectedGameRoute(
+            gameId: gameId,
+            child: const WebDecisionMakingPage(),
+          );
+        case 'personality_quiz':
+          return ProtectedGameRoute(
+            gameId: gameId,
+            child: const PersonalityQuizPage(),
+          );
+        case 'sequence_memory':
+        case 'verbal_memory':
+        case 'visual_memory':
+        case 'aim_trainer':
+        default:
+          return ProtectedGameRoute(
+            gameId: gameId,
+            child: Scaffold(
+              body: Center(
+                child: Text(
+                  '${_getGameTitle(gameId)} - Coming Soon!',
+                  style: const TextStyle(fontSize: 24),
+                ),
+              ),
+            ),
+          );
+      }
+    },
+  );
+}
+
+// Build status page for different game states
+Widget _buildStatusPage({
+  required String gameId,
+  required String status,
+  required String message,
+  required IconData icon,
+  required Color color,
+}) {
+  return Scaffold(
+    body: Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 64, color: color),
+          const SizedBox(height: 16),
+          Text(
+            _getGameTitle(gameId),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            status,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: color,
             ),
           ),
-        ),
-      );
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          Builder(
+            builder: (context) => ElevatedButton.icon(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.arrow_back),
+              label: const Text('Go Back'),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+// Get complete game status information
+Future<Map<String, dynamic>> _getGameStatus(String gameId) async {
+  try {
+    final gameManagement = await GameManagementService.getGameManagement(
+      gameId,
+    );
+    if (gameManagement == null) {
+      return {'isMaintenance': false, 'isBlocked': false, 'isActive': true};
+    }
+
+    return {
+      'isMaintenance': gameManagement.isMaintenance,
+      'isBlocked': gameManagement.isBlocked,
+      'isActive': gameManagement.isActive,
+    };
+  } catch (e) {
+    return {'isMaintenance': false, 'isBlocked': false, 'isActive': true};
   }
 }
 
@@ -271,67 +386,68 @@ class _WebAppShell extends StatefulWidget {
 }
 
 class _WebAppShellState extends State<_WebAppShell> {
-  List<Map<String, dynamic>> _navigationItems = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeNavigation();
-  }
-
-  Future<void> _initializeNavigation() async {
-    try {
-      final navigationItems =
-          await FirebaseNavigationService.getAllNavigationItems();
-
-      setState(() {
-        _navigationItems = navigationItems;
-      });
-    } catch (e) {
-      print('Error initializing navigation: $e');
-      setState(() {
-        _navigationItems = [];
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (_navigationItems.isEmpty) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: FirebaseNavigationService.getAllNavigationItemsStream(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-    final location = GoRouterState.of(context).uri.toString();
-    final selectedIndex = _getSelectedIndex(location);
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(
+              child: Text('Error loading navigation: ${snapshot.error}'),
+            ),
+          );
+        }
 
-    return Scaffold(
-      body: Row(
-        children: [
-          WebSidebar(
-            selectedIndex: selectedIndex,
-            onIndexChanged: (int idx) {
-              final item = _navigationItems.firstWhere(
-                (item) => item['index'] == idx,
-                orElse: () => <String, dynamic>{},
-              );
+        final navigationItems = snapshot.data ?? [];
+        if (navigationItems.isEmpty) {
+          return const Scaffold(
+            body: Center(child: Text('No navigation items available')),
+          );
+        }
 
-              final route = item['path'] as String?;
-              if (route != null) {
-                context.go(route);
-              }
-            },
-            onBackToLanding: () => context.go('/'),
+        final location = GoRouterState.of(context).uri.toString();
+        final selectedIndex = _getSelectedIndex(location, navigationItems);
+
+        return Scaffold(
+          body: Row(
+            children: [
+              WebSidebar(
+                selectedIndex: selectedIndex,
+                onIndexChanged: (int idx) {
+                  final item = navigationItems.firstWhere(
+                    (item) => item['index'] == idx,
+                    orElse: () => <String, dynamic>{},
+                  );
+
+                  final route = item['path'] as String?;
+                  if (route != null) {
+                    context.go(route);
+                  }
+                },
+                onBackToLanding: () => context.go('/'),
+              ),
+              Expanded(
+                child: Container(color: Colors.white, child: widget.child),
+              ),
+            ],
           ),
-          Expanded(
-            child: Container(color: Colors.white, child: widget.child),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  int _getSelectedIndex(String location) {
-    for (final item in _navigationItems) {
+  int _getSelectedIndex(
+    String location,
+    List<Map<String, dynamic>> navigationItems,
+  ) {
+    for (final item in navigationItems) {
       if (item['path'] == location) {
         return item['index'] as int;
       }

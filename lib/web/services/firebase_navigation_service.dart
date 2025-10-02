@@ -1,5 +1,7 @@
 import 'package:human_benchmark/services/game_management_service.dart';
 import 'package:human_benchmark/services/admin_service.dart';
+import 'package:human_benchmark/models/game_management.dart';
+import 'dart:async';
 
 class FirebaseNavigationService {
   // Static navigation items (always present)
@@ -105,6 +107,113 @@ class FirebaseNavigationService {
     }
 
     return allItems;
+  }
+
+  // Get navigation items stream for real-time updates
+  static Stream<List<Map<String, dynamic>>> getAllNavigationItemsStream() {
+    return GameManagementService.getAllGameManagementStream().asyncMap((
+      allGames,
+    ) async {
+      final isAdmin = await AdminService.isCurrentUserAdmin();
+
+      final List<Map<String, dynamic>> allItems = [];
+      int currentIndex = 0;
+
+      // Add static items first
+      for (final item in staticNavigationItems) {
+        allItems.add({...item, 'index': currentIndex});
+        currentIndex++;
+      }
+
+      // Add ALL games from Firebase (including hidden/blocked ones for admin view)
+      // Sort by the fixed order
+      final completeFixedOrder = [
+        'reaction_time',
+        'number_memory',
+        'sequence_memory',
+        'verbal_memory',
+        'visual_memory',
+        'chimp_test',
+        'decision_risk',
+        'aim_trainer',
+        'personality_quiz',
+      ];
+
+      final orderedGames = <GameManagement>[];
+
+      // Add games in fixed order
+      for (final gameId in completeFixedOrder) {
+        final game = allGames.firstWhere(
+          (g) => g.gameId == gameId,
+          orElse: () => GameManagement(
+            gameId: '',
+            gameName: '',
+            status: GameStatus.active,
+            updatedAt: DateTime.now(),
+            updatedBy: '',
+          ),
+        );
+        if (game.gameId.isNotEmpty) {
+          orderedGames.add(game);
+        }
+      }
+
+      // Add any other games not in the fixed order
+      for (final game in allGames) {
+        if (!completeFixedOrder.contains(game.gameId)) {
+          orderedGames.add(game);
+        }
+      }
+
+      for (final game in orderedGames) {
+        // Determine if game should be visible to user (only show active games or maintenance games)
+        final isVisible = game.isActive || game.isMaintenance;
+
+        if (isVisible) {
+          allItems.add({
+            'type': 'game',
+            'gameId': game.gameId,
+            'path': gameIdToRoute[game.gameId],
+            'title': _getGameTitle(game.gameId),
+            'subtitle': _getGameSubtitleWithStatus(game),
+            'icon': _getGameIcon(game.gameId),
+            'index': currentIndex,
+            'status': game.status.name,
+            'isMaintenance': game.isMaintenance,
+            'isBlocked': game.isBlocked,
+            'isActive': game.isActive,
+          });
+          currentIndex++;
+        }
+      }
+
+      // Add end items
+      for (final item in endNavigationItems) {
+        allItems.add({...item, 'index': currentIndex});
+        currentIndex++;
+      }
+
+      // Add admin items if user is admin
+      if (isAdmin) {
+        for (final item in adminNavigationItems) {
+          allItems.add({...item, 'index': currentIndex});
+          currentIndex++;
+        }
+      }
+
+      return allItems;
+    });
+  }
+
+  // Helper method to get subtitle with status
+  static String _getGameSubtitleWithStatus(GameManagement game) {
+    if (game.isMaintenance) {
+      return 'Under Maintenance';
+    } else if (game.isBlocked) {
+      return 'Blocked';
+    } else {
+      return _getGameSubtitle(game.gameId);
+    }
   }
 
   // Get navigation item for a specific index
