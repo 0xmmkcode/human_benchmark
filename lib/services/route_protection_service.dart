@@ -62,7 +62,6 @@ class RouteProtectionService {
           'aim_trainer',
           'verbal_memory',
           'visual_memory',
-          'typing_speed',
           'sequence_memory',
           'chimp_test',
         ];

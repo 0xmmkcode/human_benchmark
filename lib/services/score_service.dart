@@ -96,9 +96,6 @@ class ScoreService {
       case 'visual_memory':
       case 'visualmemory':
         return GameType.visualMemory;
-      case 'typing_speed':
-      case 'typingspeed':
-        return GameType.typingSpeed;
       case 'sequence_memory':
       case 'sequencememory':
         return GameType.sequenceMemory;

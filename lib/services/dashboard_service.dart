@@ -304,7 +304,6 @@ class DashboardService {
       case GameType.numberMemory:
       case GameType.verbalMemory:
       case GameType.visualMemory:
-      case GameType.typingSpeed:
       case GameType.sequenceMemory:
       case GameType.chimpTest:
         // Higher scores are better

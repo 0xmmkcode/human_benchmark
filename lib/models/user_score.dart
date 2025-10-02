@@ -7,7 +7,6 @@ enum GameType {
   numberMemory,
   verbalMemory,
   visualMemory,
-  typingSpeed,
   aimTrainer,
   sequenceMemory,
   chimpTest,

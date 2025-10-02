@@ -1,11 +1,16 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:human_benchmark/ad_helper.dart';
+import 'package:flutter/foundation.dart' show kReleaseMode;
 
 import 'package:human_benchmark/services/auth_service.dart';
 import 'package:human_benchmark/services/user_profile_service.dart';
 import 'package:human_benchmark/models/user_score.dart';
 import 'package:human_benchmark/services/app_logger.dart';
+import 'package:human_benchmark/widgets/game_page_header.dart';
+import 'package:human_benchmark/widgets/game_score_display.dart';
 
 class ChimpTestPage extends StatefulWidget {
   const ChimpTestPage({super.key});
@@ -15,6 +20,10 @@ class ChimpTestPage extends StatefulWidget {
 }
 
 class _ChimpTestPageState extends State<ChimpTestPage> {
+  // AdMob banner ad
+  BannerAd? _bannerAd;
+  bool _isBannerAdReady = false;
+
   // Game state
   GameState _gameState = GameState.instructions;
   int _currentLevel = 1;
@@ -36,11 +45,13 @@ class _ChimpTestPageState extends State<ChimpTestPage> {
   void initState() {
     super.initState();
     _loadBestScore();
+    _loadBannerAd();
   }
 
   @override
   void dispose() {
     _gameTimer?.cancel();
+    _bannerAd?.dispose();
     super.dispose();
   }
 
@@ -60,6 +71,27 @@ class _ChimpTestPageState extends State<ChimpTestPage> {
     } catch (e) {
       AppLogger.log('Failed to load best score: $e');
     }
+  }
+
+  void _loadBannerAd() {
+    if (!kReleaseMode) return;
+    _bannerAd = BannerAd(
+      adUnitId: AdHelper.bannerAdUnitId,
+      request: const AdRequest(),
+      size: AdSize.banner,
+      listener: BannerAdListener(
+        onAdLoaded: (_) {
+          if (!mounted) return;
+          setState(() {
+            _isBannerAdReady = true;
+          });
+        },
+        onAdFailedToLoad: (ad, err) {
+          ad.dispose();
+        },
+      ),
+    );
+    _bannerAd!.load();
   }
 
   void _startGame() {
@@ -192,37 +224,28 @@ class _ChimpTestPageState extends State<ChimpTestPage> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              _buildPageHeader(),
+              GamePageHeader(
+                title: 'Chimp Test',
+                subtitle:
+                    'This test is based on research showing that chimpanzees can outperform humans in certain working memory tasks. Working memory is crucial for reasoning, learning, and decision-making. Training it can improve cognitive performance across many areas.',
+              ),
               const SizedBox(height: 24),
               Expanded(child: _buildGameContent()),
+
+              // Banner Ad at bottom
+              if (kReleaseMode && _isBannerAdReady && _bannerAd != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: SizedBox(
+                    height: _bannerAd!.size.height.toDouble(),
+                    width: _bannerAd!.size.width.toDouble(),
+                    child: AdWidget(ad: _bannerAd!),
+                  ),
+                ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildPageHeader() {
-    return Row(
-      children: [
-        IconButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back, size: 24),
-          style: IconButton.styleFrom(
-            backgroundColor: Colors.grey[200],
-            padding: const EdgeInsets.all(12),
-          ),
-        ),
-        const SizedBox(width: 16),
-        const Text(
-          'Chimp Test',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-      ],
     );
   }
 
@@ -281,6 +304,47 @@ class _ChimpTestPageState extends State<ChimpTestPage> {
               'Test your working memory like a chimpanzee!\nNumbers will appear briefly, then you must tap them in order.',
               style: TextStyle(fontSize: 16, color: Colors.black54),
               textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.science,
+                        color: Colors.amber.shade700,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Working Memory Research',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber.shade800,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'This test is based on research showing that chimpanzees can outperform humans in certain working memory tasks. Working memory is crucial for reasoning, learning, and decision-making. Training it can improve cognitive performance across many areas.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.amber.shade700,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 24),
 
@@ -346,27 +410,25 @@ class _ChimpTestPageState extends State<ChimpTestPage> {
     return Column(
       children: [
         // Stats
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildStatItem('Level', '$_currentLevel'),
-              _buildStatItem('Score', '$_currentScore'),
-              _buildStatItem('Best', '$_bestScore'),
-            ],
-          ),
+        GameScoreDisplay(
+          scores: [
+            ScoreItem(
+              label: 'Level',
+              value: '$_currentLevel',
+              icon: Icons.trending_up,
+            ),
+            ScoreItem(
+              label: 'Score',
+              value: '$_currentScore',
+              icon: Icons.star,
+            ),
+            ScoreItem(
+              label: 'Best',
+              value: '$_bestScore',
+              icon: Icons.emoji_events,
+            ),
+          ],
+          primaryColor: Colors.amber[600],
         ),
         const SizedBox(height: 20),
 
@@ -560,25 +622,6 @@ class _ChimpTestPageState extends State<ChimpTestPage> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildStatItem(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: Colors.black54),
-        ),
-      ],
     );
   }
 

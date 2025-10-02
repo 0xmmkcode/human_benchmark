@@ -65,7 +65,6 @@ class _GameMenuState extends State<GameMenu> {
         return Icons.record_voice_over;
       case 'visual_memory':
         return Icons.visibility;
-      case 'typing_speed':
         return Icons.keyboard;
       case 'sequence_memory':
         return Icons.format_list_numbered;
@@ -92,8 +91,6 @@ class _GameMenuState extends State<GameMenu> {
         return 'Verbal Memory';
       case 'visual_memory':
         return 'Visual Memory';
-      case 'typing_speed':
-        return 'Typing Speed';
       case 'sequence_memory':
         return 'Sequence Memory';
       case 'chimp_test':

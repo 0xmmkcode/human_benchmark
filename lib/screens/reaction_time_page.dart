@@ -13,6 +13,9 @@ import 'package:human_benchmark/services/score_service.dart';
 import 'package:human_benchmark/services/local_storage_service.dart';
 import 'package:human_benchmark/services/auth_service.dart';
 import 'package:human_benchmark/widgets/reaction_time_leaderboard.dart';
+import 'package:human_benchmark/widgets/game_page_header.dart';
+import 'package:human_benchmark/widgets/game_score_display.dart';
+import 'package:human_benchmark/widgets/brain_theme.dart';
 
 class ReactionTimePage extends StatefulWidget {
   @override
@@ -109,7 +112,7 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
   void _onScreenTap() async {
     _roundCounter++;
 
-    if (kReleaseMode && _roundCounter % 5 == 0 && _isAdLoaded) {
+    if (kReleaseMode && _roundCounter % 8 == 0 && _isAdLoaded) {
       _interstitialAd?.show();
       _interstitialAd = null;
       _isAdLoaded = false;
@@ -295,14 +298,13 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                _buildPageHeader(),
-                const Gap(24),
-                Text(
-                  'Test your reflexes! Tap when the screen turns green.',
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  textAlign: TextAlign.center,
+                GamePageHeader(
+                  title: 'Reaction Time Test',
+                  subtitle:
+                      'Reaction time measures how quickly you can respond to a visual stimulus. This test helps assess your cognitive processing speed, which is crucial for daily activities like driving, sports, and decision-making. The average human reaction time is 200-300ms.',
+                  primaryColor: BrainTheme.primaryBrain,
                 ),
-                const Gap(32),
+                const Gap(24),
 
                 // Game Area
                 Center(
@@ -311,57 +313,81 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
                       // Game Instructions
                       if (_state == GameState.ready)
                         Container(
-                          padding: const EdgeInsets.all(24),
+                          padding: const EdgeInsets.all(16),
                           width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.grey[200]!),
-                          ),
+                          decoration: BrainTheme.brainCard,
                           child: Column(
                             children: [
-                              Icon(
-                                Icons.touch_app,
-                                size: 48,
-                                color: Colors.blue[400],
+                              BrainTheme.brainIcon(
+                                size: 40,
+                                color: BrainTheme.primaryBrain,
                               ),
-                              const Gap(20),
+                              const Gap(16),
                               Text(
-                                'Tap Start to begin',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey[800],
+                                'Ready to Test Your Reflexes?',
+                                style: BrainTheme.brainTitle.copyWith(
+                                  fontSize: 18,
+                                  color: BrainTheme.primaryBrain,
                                 ),
                               ),
-                              const Gap(12),
+                              const Gap(10),
                               Text(
                                 'Wait for the screen to turn green, then tap as fast as you can!',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
+                                style: BrainTheme.brainSubtitle.copyWith(
+                                  fontSize: 13,
                                 ),
                               ),
-                              const Gap(24),
+                              const Gap(20),
                               SizedBox(
                                 width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: _startGame,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blue[600],
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 32,
-                                      vertical: 16,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: BrainTheme.brainGradient,
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: BrainTheme.primaryBrain
+                                            .withOpacity(0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
                                   ),
-                                  child: const Text(
-                                    'Start Test',
-                                    style: TextStyle(fontSize: 16),
+                                  child: ElevatedButton(
+                                    onPressed: _startGame,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.transparent,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                        vertical: 14,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        BrainTheme.neuralPulse(
+                                          color: Colors.white,
+                                          size: 14,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        const Text(
+                                          'Start Test',
+                                          style: TextStyle(fontSize: 14),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        BrainTheme.neuralPulse(
+                                          color: Colors.white,
+                                          size: 14,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
@@ -381,36 +407,86 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
                           },
                           child: Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.all(24),
+                            padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.orange[50],
+                              gradient: LinearGradient(
+                                colors: [
+                                  BrainTheme.warningBrain.withOpacity(0.1),
+                                  BrainTheme.warningBrain.withOpacity(0.05),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.orange[200]!),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: BrainTheme.warningBrain.withOpacity(
+                                    0.1,
+                                  ),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
                             ),
                             child: Column(
                               children: [
-                                Icon(
-                                  Icons.hourglass_empty,
-                                  size: 48,
-                                  color: Colors.orange[400],
-                                ),
-                                const Gap(20),
-                                Text(
-                                  'Wait for it...',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.orange[800],
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        BrainTheme.warningBrain,
+                                        BrainTheme.warningBrain.withOpacity(
+                                          0.8,
+                                        ),
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    Icons.hourglass_empty,
+                                    size: 28,
+                                    color: Colors.white,
                                   ),
                                 ),
-                                const Gap(12),
+                                const Gap(16),
+                                Text(
+                                  'Neural Processing...',
+                                  style: BrainTheme.brainTitle.copyWith(
+                                    fontSize: 18,
+                                    color: BrainTheme.warningBrain,
+                                  ),
+                                ),
+                                const Gap(10),
                                 Text(
                                   'The screen will turn green soon. Don\'t tap yet!',
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.orange[600],
+                                  style: BrainTheme.brainSubtitle.copyWith(
+                                    fontSize: 13,
+                                    color: BrainTheme.warningBrain,
                                   ),
+                                ),
+                                const Gap(12),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    BrainTheme.neuralPulse(
+                                      color: BrainTheme.warningBrain,
+                                      size: 10,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    BrainTheme.neuralPulse(
+                                      color: BrainTheme.warningBrain,
+                                      size: 12,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    BrainTheme.neuralPulse(
+                                      color: BrainTheme.warningBrain,
+                                      size: 10,
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -423,26 +499,53 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
                           onTapDown: (_) => _onScreenTap(),
                           child: Container(
                             width: double.infinity,
-                            height: 200,
+                            height: 160,
                             decoration: BoxDecoration(
-                              color: Colors.green,
+                              gradient: LinearGradient(
+                                colors: [
+                                  BrainTheme.successBrain,
+                                  BrainTheme.successBrain.withOpacity(0.8),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.green.withValues(alpha: 0.3),
-                                  blurRadius: 20,
-                                  spreadRadius: 5,
+                                  color: BrainTheme.successBrain.withOpacity(
+                                    0.4,
+                                  ),
+                                  blurRadius: 15,
+                                  spreadRadius: 3,
                                 ),
                               ],
                             ),
-                            child: const Center(
-                              child: Text(
-                                'TAP NOW!',
-                                style: TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  BrainTheme.neuralPulse(
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'TAP NOW!',
+                                    style: BrainTheme.brainTitle.copyWith(
+                                      fontSize: 24,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Neural Response Required',
+                                    style: BrainTheme.brainSubtitle.copyWith(
+                                      fontSize: 12,
+                                      color: Colors.white.withOpacity(0.9),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -451,99 +554,204 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
                       // Results
                       if (_state == GameState.result)
                         Container(
-                          padding: const EdgeInsets.all(24),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: _reactionTime == -1
-                                ? Colors.red[50]
-                                : Colors.blue[50],
+                            gradient: LinearGradient(
+                              colors: _reactionTime == -1
+                                  ? [
+                                      BrainTheme.errorBrain.withOpacity(0.1),
+                                      BrainTheme.errorBrain.withOpacity(0.05),
+                                    ]
+                                  : [
+                                      BrainTheme.primaryBrain.withOpacity(0.1),
+                                      BrainTheme.primaryBrain.withOpacity(0.05),
+                                    ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
                             borderRadius: BorderRadius.circular(16),
-                            border: _reactionTime == -1
-                                ? Border.all(color: Colors.red[200]!)
-                                : null,
+                            boxShadow: [
+                              BoxShadow(
+                                color:
+                                    (_reactionTime == -1
+                                            ? BrainTheme.errorBrain
+                                            : BrainTheme.primaryBrain)
+                                        .withOpacity(0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
                           ),
                           child: Column(
                             children: [
-                              Icon(
-                                _reactionTime == -1
-                                    ? Icons.error_outline
-                                    : Icons.timer,
-                                size: 48,
-                                color: _reactionTime == -1
-                                    ? Colors.red[400]
-                                    : Colors.blue[400],
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: _reactionTime == -1
+                                        ? [
+                                            BrainTheme.errorBrain,
+                                            BrainTheme.errorBrain.withOpacity(
+                                              0.8,
+                                            ),
+                                          ]
+                                        : [
+                                            BrainTheme.primaryBrain,
+                                            BrainTheme.primaryBrain.withOpacity(
+                                              0.8,
+                                            ),
+                                          ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  _reactionTime == -1
+                                      ? Icons.error_outline
+                                      : Icons.timer,
+                                  size: 28,
+                                  color: Colors.white,
+                                ),
                               ),
-                              const Gap(20),
+                              const Gap(16),
                               if (_reactionTime == -1) ...[
                                 Text(
-                                  'Game Over',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.red[800],
+                                  'Neural Overload',
+                                  style: BrainTheme.brainTitle.copyWith(
+                                    fontSize: 18,
+                                    color: BrainTheme.errorBrain,
                                   ),
                                 ),
-                                const Gap(8),
+                                const Gap(6),
                                 Text(
                                   'Wait for green to appear',
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.red[600],
+                                  style: BrainTheme.brainSubtitle.copyWith(
+                                    fontSize: 13,
+                                    color: BrainTheme.errorBrain,
                                   ),
                                 ),
                               ] else ...[
                                 Text(
-                                  'Your Reaction Time',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.grey[800],
+                                  'Neural Response Time',
+                                  style: BrainTheme.brainTitle.copyWith(
+                                    fontSize: 16,
+                                    color: BrainTheme.primaryBrain,
                                   ),
                                 ),
-                                const Gap(16),
+                                const Gap(12),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    gradient: BrainTheme.brainGradient,
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: BrainTheme.primaryBrain
+                                            .withOpacity(0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    '${_reactionTime}ms',
+                                    style: BrainTheme.brainScore.copyWith(
+                                      fontSize: 28,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                const Gap(6),
                                 Text(
-                                  '${_reactionTime}ms',
-                                  style: TextStyle(
-                                    fontSize: 36,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue[600],
+                                  _getPerformanceText(_reactionTime!),
+                                  style: BrainTheme.brainSubtitle.copyWith(
+                                    fontSize: 12,
+                                    color: BrainTheme.primaryBrain,
                                   ),
                                 ),
                               ],
-                              const Gap(24),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
+                              const Gap(20),
+                              Column(
                                 children: [
-                                  ElevatedButton(
-                                    onPressed: _startGame,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: _reactionTime == -1
-                                          ? Colors.red[600]
-                                          : Colors.blue[600],
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 20,
-                                        vertical: 12,
+                                  Container(
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: _reactionTime == -1
+                                            ? [
+                                                BrainTheme.errorBrain,
+                                                BrainTheme.errorBrain
+                                                    .withOpacity(0.8),
+                                              ]
+                                            : [
+                                                BrainTheme.primaryBrain,
+                                                BrainTheme.primaryBrain
+                                                    .withOpacity(0.8),
+                                              ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
                                       ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color:
+                                              (_reactionTime == -1
+                                                      ? BrainTheme.errorBrain
+                                                      : BrainTheme.primaryBrain)
+                                                  .withOpacity(0.3),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
                                     ),
-                                    child: const Text('Try Again'),
+                                    child: ElevatedButton(
+                                      onPressed: _startGame,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.transparent,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 24,
+                                          vertical: 14,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        elevation: 0,
+                                      ),
+                                      child: const Text('Try Again'),
+                                    ),
                                   ),
-                                  OutlinedButton(
-                                    onPressed: _resetGame,
-                                    style: OutlinedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 20,
-                                        vertical: 12,
+                                  const Gap(12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton(
+                                      onPressed: _resetGame,
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor:
+                                            BrainTheme.primaryBrain,
+                                        side: BorderSide(
+                                          color: BrainTheme.primaryBrain,
+                                          width: 2,
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 24,
+                                          vertical: 14,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
                                       ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
+                                      child: const Text('New Game'),
                                     ),
-                                    child: const Text('New Game'),
                                   ),
                                 ],
                               ),
@@ -556,43 +764,26 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
 
                 const Gap(24),
                 // Stats Bar
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey[200]!),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatCard(
-                          'Best Time',
-                          _highScore == null ? '--' : '${_highScore}ms',
-                          Icons.star,
-                          Colors.amber[600]!,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildStatCard(
-                          'Tests Taken',
-                          '$_totalTests',
-                          Icons.analytics,
-                          Colors.green[600]!,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildStatCard(
-                          'Average',
-                          _averageTime == 0 ? '--' : '${_averageTime}ms',
-                          Icons.trending_up,
-                          Colors.blue[600]!,
-                        ),
-                      ),
-                    ],
-                  ),
+                GameScoreDisplay(
+                  title: 'Performance Metrics',
+                  scores: [
+                    ScoreItem(
+                      label: 'Best Time',
+                      value: _highScore == null ? '--' : '${_highScore}ms',
+                      icon: Icons.star,
+                    ),
+                    ScoreItem(
+                      label: 'Tests Taken',
+                      value: '$_totalTests',
+                      icon: Icons.analytics,
+                    ),
+                    ScoreItem(
+                      label: 'Average',
+                      value: _averageTime == 0 ? '--' : '${_averageTime}ms',
+                      icon: Icons.trending_up,
+                    ),
+                  ],
+                  primaryColor: BrainTheme.primaryBrain,
                 ),
 
                 const Gap(24),
@@ -621,65 +812,18 @@ class _ReactionTimePageState extends State<ReactionTimePage> {
     );
   }
 
-  Widget _buildPageHeader() {
-    return Row(
-      children: [
-        IconButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back, size: 24),
-          style: IconButton.styleFrom(
-            backgroundColor: Colors.grey[200],
-            padding: const EdgeInsets.all(12),
-          ),
-        ),
-        const SizedBox(width: 16),
-        const Text(
-          'Reaction Time',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(title, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-        ],
-      ),
-    );
-  }
-
   void _resetGame() {
     setState(() {
       _state = GameState.ready;
       _reactionTime = null;
     });
+  }
+
+  String _getPerformanceText(int reactionTime) {
+    if (reactionTime < 200) return 'Neural Superhuman! 🧠⚡';
+    if (reactionTime < 250) return 'Exceptional Processing! 🎯';
+    if (reactionTime < 300) return 'Strong Neural Response! 👍';
+    if (reactionTime < 400) return 'Average Cognitive Speed 📊';
+    return 'Neural Training Needed 💪';
   }
 }

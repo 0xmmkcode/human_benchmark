@@ -79,7 +79,7 @@ class QuizNavigation extends StatelessWidget {
                 children: [
                   Text(
                     onComplete != null ? 'Complete Quiz' : 'Next',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontFamily: 'Montserrat',
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -87,7 +87,7 @@ class QuizNavigation extends StatelessWidget {
                   ),
                   if (onNext != null) ...[
                     const SizedBox(width: 8),
-                    Icon(Icons.arrow_forward),
+                    const Icon(Icons.arrow_forward),
                   ],
                 ],
               ),

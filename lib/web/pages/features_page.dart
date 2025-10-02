@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
-import 'package:human_benchmark/web/constants/web_constants.dart';
 
 class FeaturesPage extends StatelessWidget {
   final VoidCallback? onBackToLanding;
@@ -683,7 +682,7 @@ class FeaturesPage extends StatelessWidget {
               _buildComingSoonCard(
                 icon: Icons.speed,
                 title: 'Speed Tests',
-                description: 'Typing speed and processing speed assessments.',
+                description: 'Reaction time and speed-based cognitive tests.',
                 eta: 'Q3 2024',
               ),
               SizedBox(width: 24),

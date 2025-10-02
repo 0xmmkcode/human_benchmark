@@ -14,6 +14,11 @@ class QuizProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Handle edge cases
+    final int safeCurrent = currentQuestion > 0 ? currentQuestion : 1;
+    final int safeTotal = totalQuestions > 0 ? totalQuestions : 1;
+    final double safeProgress = progress.clamp(0.0, 1.0);
+
     return Column(
       children: [
         // Progress text
@@ -21,7 +26,7 @@ class QuizProgressBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Question $currentQuestion of $totalQuestions',
+              'Question $safeCurrent of $safeTotal',
               style: TextStyle(
                 fontFamily: 'Montserrat',
                 fontSize: 16,
@@ -30,7 +35,7 @@ class QuizProgressBar extends StatelessWidget {
               ),
             ),
             Text(
-              '${(progress * 100).toInt()}% Complete',
+              '${(safeProgress * 100).toInt()}% Complete',
               style: TextStyle(
                 fontFamily: 'Montserrat',
                 fontSize: 16,
@@ -51,7 +56,7 @@ class QuizProgressBar extends StatelessWidget {
           ),
           child: FractionallySizedBox(
             alignment: Alignment.centerLeft,
-            widthFactor: progress,
+            widthFactor: safeProgress,
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(

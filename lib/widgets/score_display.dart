@@ -239,7 +239,6 @@ class ScoreDisplay extends StatelessWidget {
         return Icons.text_fields;
       case GameType.visualMemory:
         return Icons.visibility;
-      case GameType.typingSpeed:
         return Icons.keyboard;
       case GameType.aimTrainer:
         return Icons.gps_fixed;
@@ -264,7 +263,6 @@ class ScoreDisplay extends StatelessWidget {
         return Colors.orange.shade600;
       case GameType.visualMemory:
         return Colors.teal.shade600;
-      case GameType.typingSpeed:
         return Colors.red.shade600;
       case GameType.aimTrainer:
         return Colors.pink.shade600;

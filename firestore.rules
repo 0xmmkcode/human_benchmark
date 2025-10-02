@@ -109,6 +109,55 @@ service cloud.firestore {
         get(/databases/$(database)/documents/admin_roles/$(request.auth.uid)).data.isAdmin == true;
     }
     
+    // Web settings collection - allow public read access, admin write access
+    match /web_settings/{settingId} {
+      allow read: if true; // Anyone can read web settings (needed for landing page)
+      allow write: if request.auth != null && 
+        exists(/databases/$(database)/documents/admin_roles/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/admin_roles/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // Bug reports collection - allow authenticated users to submit and read their own reports
+    match /bug_reports/{reportId} {
+      // Users can create new bug reports (check request data for create)
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.userId;
+      
+      // Users can read their own bug reports (check resource data for read)
+      allow read: if request.auth != null && 
+        request.auth.uid == resource.data.userId;
+      
+      // Users can update their own bug reports (for status updates)
+      allow update: if request.auth != null && 
+        request.auth.uid == resource.data.userId;
+      
+      // Admins can read and update all bug reports
+      allow read, update: if request.auth != null && 
+        exists(/databases/$(database)/documents/admin_roles/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/admin_roles/$(request.auth.uid)).data.isAdmin == true;
+      
+      // Admins can delete bug reports
+      allow delete: if request.auth != null && 
+        exists(/databases/$(database)/documents/admin_roles/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/admin_roles/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // Bug report rate limits collection - allow authenticated users to update their own rate limits
+    match /bug_report_rate_limits/{rateLimitId} {
+      // Users can create and update their own rate limit records
+      allow create, update: if request.auth != null && 
+        request.auth.uid == request.resource.data.userId;
+      
+      // Users can read their own rate limit records
+      allow read: if request.auth != null && 
+        request.auth.uid == resource.data.userId;
+      
+      // Admins can read all rate limit records
+      allow read: if request.auth != null && 
+        exists(/databases/$(database)/documents/admin_roles/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/admin_roles/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
     // Default rule - deny all other access
     match /{document=**} {
       allow read, write: if false;

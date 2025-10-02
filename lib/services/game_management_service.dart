@@ -49,11 +49,11 @@ class GameManagementService {
   // Get all game management settings as a real-time stream for live updates
   static Stream<List<GameManagement>> getAllGameManagementStream() {
     try {
-      return _gameManagementCollection
-          .snapshots()
-          .map((snapshot) => snapshot.docs
-              .map((doc) => GameManagement.fromMap(doc.data()))
-              .toList());
+      return _gameManagementCollection.snapshots().map(
+        (snapshot) => snapshot.docs
+            .map((doc) => GameManagement.fromMap(doc.data()))
+            .toList(),
+      );
     } catch (e, st) {
       AppLogger.error('gameManagement.getAllGameManagementStream', e, st);
       // Return a stream with empty list on error
@@ -149,7 +149,6 @@ class GameManagementService {
         'aim_trainer',
         'verbal_memory',
         'visual_memory',
-        'typing_speed',
         'sequence_memory',
         'chimp_test',
       ];
@@ -197,13 +196,13 @@ class GameManagementService {
   // Get accessible games as a real-time stream for live updates
   static Stream<List<String>> getAccessibleGamesStream() {
     try {
-      return _gameManagementCollection
-          .snapshots()
-          .map((snapshot) => snapshot.docs
-              .map((doc) => GameManagement.fromMap(doc.data()))
-              .where((game) => game.isAccessible && !game.isBlockedTemporarily)
-              .map((game) => game.gameId)
-              .toList());
+      return _gameManagementCollection.snapshots().map(
+        (snapshot) => snapshot.docs
+            .map((doc) => GameManagement.fromMap(doc.data()))
+            .where((game) => game.isAccessible && !game.isBlockedTemporarily)
+            .map((game) => game.gameId)
+            .toList(),
+      );
     } catch (e, st) {
       AppLogger.error('gameManagement.getAccessibleGamesStream', e, st);
       // Return a stream with empty list on error
@@ -228,13 +227,13 @@ class GameManagementService {
   // Get visible games as a real-time stream for live updates
   static Stream<List<String>> getVisibleGamesStream() {
     try {
-      return _gameManagementCollection
-          .snapshots()
-          .map((snapshot) => snapshot.docs
-              .map((doc) => GameManagement.fromMap(doc.data()))
-              .where((game) => game.isActive)
-              .map((game) => game.gameId)
-              .toList());
+      return _gameManagementCollection.snapshots().map(
+        (snapshot) => snapshot.docs
+            .map((doc) => GameManagement.fromMap(doc.data()))
+            .where((game) => game.isActive)
+            .map((game) => game.gameId)
+            .toList(),
+      );
     } catch (e, st) {
       AppLogger.error('gameManagement.getVisibleGamesStream', e, st);
       // Return a stream with empty list on error
@@ -253,16 +252,15 @@ class GameManagementService {
 
       // Define the complete fixed order for ALL games
       final completeFixedOrder = [
-        'reaction_time',      // 1. Reaction Time
-        'personality_quiz',   // 2. Personality Quiz
-        'number_memory',      // 3. Number Memory
-        'chimp_test',         // 4. Chimp Test
-        'decision_making',    // 5. Decision Making
-        'aim_trainer',        // 6. Aim Trainer
-        'verbal_memory',      // 7. Verbal Memory
-        'visual_memory',      // 8. Visual Memory
-        'typing_speed',       // 9. Typing Speed
-        'sequence_memory',    // 10. Sequence Memory
+        'reaction_time', // 1. Reaction Time - Core cognitive test
+        'number_memory', // 2. Number Memory - Memory (Basic)
+        'sequence_memory', // 3. Sequence Memory - Memory (Advanced)
+        'verbal_memory', // 4. Verbal Memory - Memory (Language)
+        'visual_memory', // 5. Visual Memory - Memory (Visual)
+        'chimp_test', // 6. Chimp Test - Memory (Complex)
+        'decision_risk', // 7. Decision Risk - Decision Making
+        'aim_trainer', // 8. Aim Trainer - Motor Skills
+        'personality_quiz', // 9. Personality Quiz - Assessment
       ];
 
       // Start with games in fixed order (if they're active)
@@ -290,49 +288,54 @@ class GameManagementService {
   // Get visible games in fixed order as a real-time stream
   static Stream<List<String>> getVisibleGamesInOrderStream() {
     try {
-      return _gameManagementCollection
-          .snapshots()
-          .map((snapshot) {
-            final allGames = snapshot.docs
-                .map((doc) => GameManagement.fromMap(doc.data()))
-                .toList();
-            
-            final activeGames = allGames
-                .where((game) => game.isActive)
-                .map((game) => game.gameId)
-                .toList();
-
-            // Define the complete fixed order for ALL games
-            final completeFixedOrder = [
-              'reaction_time',      // 1. Reaction Time
-              'personality_quiz',   // 2. Personality Quiz
-              'number_memory',      // 3. Number Memory
-              'chimp_test',         // 4. Chimp Test
-              'decision_making',    // 5. Decision Making
-              'aim_trainer',        // 6. Aim Trainer
-              'verbal_memory',      // 7. Verbal Memory
-              'visual_memory',      // 8. Visual Memory
-              'typing_speed',       // 9. Typing Speed
-              'sequence_memory',    // 10. Sequence Memory
-            ];
-
-            // Start with games in fixed order (if they're active)
-            final orderedGames = <String>[];
-            for (final gameId in completeFixedOrder) {
-              if (activeGames.contains(gameId)) {
-                orderedGames.add(gameId);
+      return _gameManagementCollection.snapshots().map((snapshot) {
+        final allGames = snapshot.docs
+            .map((doc) {
+              try {
+                return GameManagement.fromMap(doc.data());
+              } catch (e) {
+                return null;
               }
-            }
+            })
+            .where((game) => game != null)
+            .cast<GameManagement>()
+            .toList();
 
-            // Add any other active games that aren't in the fixed order (future games)
-            for (final gameId in activeGames) {
-              if (!completeFixedOrder.contains(gameId)) {
-                orderedGames.add(gameId);
-              }
-            }
+        final activeGames = allGames
+            .where((game) => game.isActive)
+            .map((game) => game.gameId)
+            .toList();
 
-            return orderedGames;
-          });
+        // Define the complete fixed order for ALL games
+        final completeFixedOrder = [
+          'reaction_time', // 1. Reaction Time - Core cognitive test
+          'number_memory', // 2. Number Memory - Memory (Basic)
+          'sequence_memory', // 3. Sequence Memory - Memory (Advanced)
+          'verbal_memory', // 4. Verbal Memory - Memory (Language)
+          'visual_memory', // 5. Visual Memory - Memory (Visual)
+          'chimp_test', // 6. Chimp Test - Memory (Complex)
+          'decision_risk', // 7. Decision Risk - Decision Making
+          'aim_trainer', // 8. Aim Trainer - Motor Skills
+          'personality_quiz', // 9. Personality Quiz - Assessment
+        ];
+
+        // Start with games in fixed order (if they're active)
+        final orderedGames = <String>[];
+        for (final gameId in completeFixedOrder) {
+          if (activeGames.contains(gameId)) {
+            orderedGames.add(gameId);
+          }
+        }
+
+        // Add any other active games that aren't in the fixed order (future games)
+        for (final gameId in activeGames) {
+          if (!completeFixedOrder.contains(gameId)) {
+            orderedGames.add(gameId);
+          }
+        }
+
+        return orderedGames;
+      });
     } catch (e, st) {
       AppLogger.error('gameManagement.getVisibleGamesInOrderStream', e, st);
       // Return a stream with empty list on error
@@ -344,35 +347,35 @@ class GameManagementService {
   static int getGameOrderIndex(String gameId) {
     // Define the complete fixed order for ALL games
     final completeFixedOrder = [
-      'reaction_time',      // 0. Reaction Time
-      'personality_quiz',   // 1. Personality Quiz
-      'number_memory',      // 2. Number Memory
-      'chimp_test',         // 3. Chimp Test
-      'decision_making',    // 4. Decision Making
-      'aim_trainer',        // 5. Aim Trainer
-      'verbal_memory',      // 6. Verbal Memory
-      'visual_memory',      // 7. Visual Memory
-      'typing_speed',       // 8. Typing Speed
-      'sequence_memory',    // 9. Sequence Memory
+      'reaction_time', // 0. Reaction Time - Core cognitive test
+      'number_memory', // 1. Number Memory - Memory (Basic)
+      'sequence_memory', // 2. Sequence Memory - Memory (Advanced)
+      'verbal_memory', // 3. Verbal Memory - Memory (Language)
+      'visual_memory', // 4. Visual Memory - Memory (Visual)
+      'chimp_test', // 5. Chimp Test - Memory (Complex)
+      'decision_risk', // 6. Decision Risk - Decision Making
+      'aim_trainer', // 7. Aim Trainer - Motor Skills
+      'personality_quiz', // 8. Personality Quiz - Assessment
     ];
 
     final index = completeFixedOrder.indexOf(gameId);
-    return index >= 0 ? index : completeFixedOrder.length; // Unknown games go to the end
+    return index >= 0
+        ? index
+        : completeFixedOrder.length; // Unknown games go to the end
   }
 
   // Get the complete list of all games in order (regardless of status)
   static List<String> getAllGamesInOrder() {
     return [
-      'reaction_time',      // 0. Reaction Time
-      'personality_quiz',   // 1. Personality Quiz
-      'number_memory',      // 2. Number Memory
-      'chimp_test',         // 3. Chimp Test
-      'decision_making',    // 4. Decision Making
-      'aim_trainer',        // 5. Aim Trainer
-      'verbal_memory',      // 6. Verbal Memory
-      'visual_memory',      // 7. Visual Memory
-      'typing_speed',       // 8. Typing Speed
-      'sequence_memory',    // 9. Sequence Memory
+      'reaction_time', // 0. Reaction Time
+      'personality_quiz', // 1. Personality Quiz
+      'number_memory', // 2. Number Memory
+      'chimp_test', // 3. Chimp Test
+      'decision_making', // 4. Decision Making
+      'aim_trainer', // 5. Aim Trainer
+      'verbal_memory', // 6. Verbal Memory
+      'visual_memory', // 7. Visual Memory
+      'sequence_memory', // 9. Sequence Memory
     ];
   }
 
@@ -393,8 +396,6 @@ class GameManagementService {
         return 'Verbal Memory';
       case 'visual_memory':
         return 'Visual Memory';
-      case 'typing_speed':
-        return 'Typing Speed';
       case 'sequence_memory':
         return 'Sequence Memory';
       case 'chimp_test':

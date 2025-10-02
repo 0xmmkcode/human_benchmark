@@ -1,14 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:human_benchmark/ad_helper.dart';
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import '../providers/decision_providers.dart';
 import '../widgets/decision/decision_trial_card.dart';
 import '../models/decision_trial.dart';
+import '../widgets/game_page_header.dart';
 
-class DecisionRiskPage extends ConsumerWidget {
+class DecisionRiskPage extends ConsumerStatefulWidget {
   const DecisionRiskPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DecisionRiskPage> createState() => _DecisionRiskPageState();
+}
+
+class _DecisionRiskPageState extends ConsumerState<DecisionRiskPage> {
+  // AdMob banner ad
+  BannerAd? _bannerAd;
+  bool _isBannerAdReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBannerAd();
+  }
+
+  @override
+  void dispose() {
+    _bannerAd?.dispose();
+    super.dispose();
+  }
+
+  void _loadBannerAd() {
+    if (!kReleaseMode) return;
+    _bannerAd = BannerAd(
+      adUnitId: AdHelper.bannerAdUnitId,
+      request: const AdRequest(),
+      size: AdSize.banner,
+      listener: BannerAdListener(
+        onAdLoaded: (_) {
+          if (!mounted) return;
+          setState(() {
+            _isBannerAdReady = true;
+          });
+        },
+        onAdFailedToLoad: (ad, err) {
+          ad.dispose();
+        },
+      ),
+    );
+    _bannerAd!.load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final trialsAsync = ref.watch(decisionTrialsProvider);
     final session = ref.watch(decisionSessionProvider);
     final controller = ref.read(decisionSessionProvider.notifier);
@@ -114,56 +160,21 @@ class DecisionRiskPage extends ConsumerWidget {
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(24.0),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.blue.shade200),
-                    ),
-                    child: Column(
-                      children: [
-                        // Back button and game name header
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              icon: Icon(Icons.arrow_back, size: 24),
-                              style: IconButton.styleFrom(
-                                backgroundColor: Colors.grey[200],
-                                padding: EdgeInsets.all(12),
-                              ),
+                  GamePageHeader(
+                    title: 'Decision-Making Speed & Risk',
+                    subtitle:
+                        'Make quick decisions under time pressure. Choose the option that maximizes your expected value. This test evaluates your risk assessment and decision-making patterns under various scenarios.',
+                    additionalContent: trial != null
+                        ? Text(
+                            'Answer quickly. You have ${trial.timeLimitSeconds}s for each dilemma.',
+                            style: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 14,
+                              color: Colors.blue.shade600,
                             ),
-                            SizedBox(width: 16),
-                            Expanded(
-                              child: Text(
-                                'Decision-Making Speed & Risk',
-                                style: TextStyle(
-                                  fontFamily: 'Montserrat',
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey[800],
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          trial == null
-                              ? 'No trials available.'
-                              : 'Answer quickly. You have ${trial.timeLimitSeconds}s for each dilemma.',
-                          style: TextStyle(
-                            fontFamily: 'Montserrat',
-                            fontSize: 14,
-                            color: Colors.blue.shade600,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
+                            textAlign: TextAlign.center,
+                          )
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   if (trial != null)
@@ -186,6 +197,17 @@ class DecisionRiskPage extends ConsumerWidget {
                           trials.length,
                         );
                       },
+                    ),
+
+                  // Banner Ad at bottom
+                  if (kReleaseMode && _isBannerAdReady && _bannerAd != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: SizedBox(
+                        height: _bannerAd!.size.height.toDouble(),
+                        width: _bannerAd!.size.width.toDouble(),
+                        child: AdWidget(ad: _bannerAd!),
+                      ),
                     ),
                 ],
               ),

@@ -376,7 +376,6 @@ class _ComprehensiveLeaderboardPageState
         return Colors.orange.shade600;
       case GameType.visualMemory:
         return Colors.teal.shade600;
-      case GameType.typingSpeed:
         return Colors.red.shade600;
       case GameType.aimTrainer:
         return Colors.pink.shade600;
@@ -401,7 +400,6 @@ class _ComprehensiveLeaderboardPageState
         return Icons.text_fields;
       case GameType.visualMemory:
         return Icons.visibility;
-      case GameType.typingSpeed:
         return Icons.keyboard;
       case GameType.aimTrainer:
         return Icons.gps_fixed;
@@ -426,8 +424,6 @@ class _ComprehensiveLeaderboardPageState
         return 'Verbal';
       case GameType.visualMemory:
         return 'Visual';
-      case GameType.typingSpeed:
-        return 'Typing';
       case GameType.aimTrainer:
         return 'Aim';
       case GameType.sequenceMemory:

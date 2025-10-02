@@ -58,25 +58,8 @@ class QuizStateNotifier extends StateNotifier<QuizState> {
     state = const QuizState();
   }
 
-  bool get canGoNext {
-    return state.currentQuestionIndex < 49; // 50 questions total
-  }
-
-  bool get canGoPrevious {
-    return state.currentQuestionIndex > 0;
-  }
-
-  bool get isLastQuestion {
-    return state.currentQuestionIndex == 49;
-  }
-
-  int get answeredQuestions {
-    return state.answers.length;
-  }
-
-  double get progress {
-    return answeredQuestions / 50.0;
-  }
+  // Remove hardcoded methods that conflict with dynamic navigation
+  // These will be calculated in the UI based on actual loaded questions
 }
 
 final quizStateProvider = StateNotifierProvider<QuizStateNotifier, QuizState>((

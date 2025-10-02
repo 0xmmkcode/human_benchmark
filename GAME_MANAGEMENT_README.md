@@ -40,7 +40,6 @@ The system will automatically create game management records when an admin first
 - Aim Trainer
 - Verbal Memory
 - Visual Memory
-- Typing Speed
 - Sequence Memory
 - Chimp Test
 

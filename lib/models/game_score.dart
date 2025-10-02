@@ -128,8 +128,6 @@ class GameScore {
         return 'Verbal Memory';
       case GameType.visualMemory:
         return 'Visual Memory';
-      case GameType.typingSpeed:
-        return 'Typing Speed';
       case GameType.aimTrainer:
         return 'Aim Trainer';
       case GameType.sequenceMemory:
@@ -154,8 +152,6 @@ class GameScore {
         return score.toString();
       case GameType.visualMemory:
         return score.toString();
-      case GameType.typingSpeed:
-        return '${score} WPM';
       case GameType.aimTrainer:
         return '${score}ms';
       case GameType.sequenceMemory:

@@ -8,6 +8,8 @@ import 'number_memory_page.dart';
 import 'decision_risk_page.dart';
 import 'personality_quiz_page.dart';
 import 'chimp_test_page.dart';
+import 'about_page.dart';
+import 'bug_report_page.dart';
 
 class GameGridPage extends ConsumerStatefulWidget {
   const GameGridPage({super.key});
@@ -23,7 +25,7 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: Text(
-          'Games',
+          'Cognitive Tests',
           style: GoogleFonts.montserrat(
             fontWeight: FontWeight.bold,
             fontSize: 24,
@@ -32,6 +34,28 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const BugReportPage()),
+              );
+            },
+            icon: const Icon(Icons.bug_report_outlined),
+            tooltip: 'Report a Bug',
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AboutPage()),
+              );
+            },
+            icon: const Icon(Icons.info_outline),
+            tooltip: 'About Human Benchmark',
+          ),
+        ],
       ),
       body: StreamBuilder<List<String>>(
         stream: GameManagementService.getVisibleGamesInOrderStream(),
@@ -57,6 +81,7 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
                       fontSize: 18,
                       color: Colors.grey.shade600,
                     ),
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
@@ -68,16 +93,15 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
           // Fallback games if no games are initialized yet
           final fallbackGames = visibleGames.isEmpty
               ? [
-                  'reaction_time', // 1. Reaction Time
-                  'personality_quiz', // 2. Personality Quiz
-                  'number_memory', // 3. Number Memory
-                  'chimp_test', // 4. Chimp Test
-                  'decision_making', // 5. Decision Making
-                  'aim_trainer', // 6. Aim Trainer
-                  'verbal_memory', // 7. Verbal Memory
-                  'visual_memory', // 8. Visual Memory
-                  'typing_speed', // 9. Typing Speed
-                  'sequence_memory', // 10. Sequence Memory
+                  'reaction_time', // 1. Reaction Time - Core cognitive test
+                  'number_memory', // 2. Number Memory - Memory (Basic)
+                  'sequence_memory', // 3. Sequence Memory - Memory (Advanced)
+                  'verbal_memory', // 4. Verbal Memory - Memory (Language)
+                  'visual_memory', // 5. Visual Memory - Memory (Visual)
+                  'chimp_test', // 6. Chimp Test - Memory (Complex)
+                  'decision_risk', // 7. Decision Risk - Decision Making
+                  'aim_trainer', // 8. Aim Trainer - Motor Skills
+                  'personality_quiz', // 9. Personality Quiz - Assessment
                 ]
               : visibleGames;
 
@@ -218,7 +242,7 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
           MaterialPageRoute(builder: (context) => NumberMemoryPage()),
         );
         break;
-      case 'decision_making':
+      case 'decision_risk':
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => DecisionRiskPage()),
@@ -263,15 +287,6 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
           ),
         );
         break;
-      case 'typing_speed':
-        // TODO: Add TypingSpeedPage when available
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Typing Speed coming soon!'),
-            backgroundColor: Colors.blue,
-          ),
-        );
-        break;
       case 'sequence_memory':
         // TODO: Add SequenceMemoryPage when available
         ScaffoldMessenger.of(context).showSnackBar(
@@ -309,7 +324,7 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
           icon: Icons.memory,
           color: Color(0xFF8B5CF6), // Purple
         );
-      case 'decision_making':
+      case 'decision_risk':
         return GameData(
           name: 'Decision Risk',
           subtitle: 'Make choices',
@@ -350,13 +365,6 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
           subtitle: 'Remember patterns',
           icon: Icons.visibility,
           color: Color(0xFF84CC16), // Lime
-        );
-      case 'typing_speed':
-        return GameData(
-          name: 'Typing Speed',
-          subtitle: 'Test your typing',
-          icon: Icons.keyboard,
-          color: Color(0xFF7C3AED), // Violet
         );
       case 'sequence_memory':
         return GameData(

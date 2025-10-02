@@ -4,9 +4,13 @@ import 'package:gap/gap.dart';
 import 'package:human_benchmark/services/local_storage_service.dart';
 import 'package:human_benchmark/services/auth_service.dart';
 import 'package:human_benchmark/services/score_service.dart';
-import 'package:human_benchmark/models/user_score.dart';
-import 'package:human_benchmark/models/game_score.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:human_benchmark/ad_helper.dart';
+import 'package:flutter/foundation.dart' show kReleaseMode;
+import 'package:human_benchmark/widgets/game_page_header.dart';
+import 'package:human_benchmark/widgets/game_score_display.dart';
+import 'package:human_benchmark/widgets/brain_theme.dart';
 import 'dart:math';
 
 class NumberMemoryPage extends StatefulWidget {
@@ -20,6 +24,10 @@ class _NumberMemoryPageState extends State<NumberMemoryPage>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _scaleController;
+
+  // AdMob banner ad
+  BannerAd? _bannerAd;
+  bool _isBannerAdReady = false;
 
   GameState _gameState = GameState.ready;
   int _currentLevel = 1;
@@ -45,6 +53,7 @@ class _NumberMemoryPageState extends State<NumberMemoryPage>
       vsync: this,
     );
     _loadBestScore();
+    _loadBannerAd();
   }
 
   @override
@@ -53,6 +62,7 @@ class _NumberMemoryPageState extends State<NumberMemoryPage>
     _scaleController.dispose();
     _inputController.dispose();
     _inputFocusNode.dispose();
+    _bannerAd?.dispose();
     super.dispose();
   }
 
@@ -67,6 +77,27 @@ class _NumberMemoryPageState extends State<NumberMemoryPage>
     } catch (e) {
       print('Failed to load best score: $e');
     }
+  }
+
+  void _loadBannerAd() {
+    if (!kReleaseMode) return;
+    _bannerAd = BannerAd(
+      adUnitId: AdHelper.bannerAdUnitId,
+      request: const AdRequest(),
+      size: AdSize.banner,
+      listener: BannerAdListener(
+        onAdLoaded: (_) {
+          if (!mounted) return;
+          setState(() {
+            _isBannerAdReady = true;
+          });
+        },
+        onAdFailedToLoad: (ad, err) {
+          ad.dispose();
+        },
+      ),
+    );
+    _bannerAd!.load();
   }
 
   void _startGame() {
@@ -304,87 +335,62 @@ class _NumberMemoryPageState extends State<NumberMemoryPage>
         // Authenticated user - show the game
         return Scaffold(
           backgroundColor: Colors.grey[50],
-          appBar: AppBar(
-            title: Text(
-              'Number Memory',
-              style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
-            ),
-            backgroundColor: Colors.white,
-            elevation: 0,
-            foregroundColor: Colors.grey[800],
-          ),
           body: SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
+                  GamePageHeader(
+                    title: 'Number Memory Test',
+                    subtitle:
+                        'Number memory exercises help improve working memory, attention span, and cognitive flexibility. Regular practice can enhance your ability to process and retain information, which is valuable for learning, problem-solving, and daily tasks.',
+                    primaryColor: BrainTheme.accentBrain,
+                  ),
+                  const Gap(24),
+
                   // Score Display
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildScoreCard(
-                        'Level',
-                        '$_currentLevel',
-                        Icons.trending_up,
+                  GameScoreDisplay(
+                    title: 'Memory Performance',
+                    scores: [
+                      ScoreItem(
+                        label: 'Level',
+                        value: '$_currentLevel',
+                        icon: Icons.trending_up,
                       ),
-                      _buildScoreCard('Score', '$_currentScore', Icons.star),
-                      _buildScoreCard(
-                        'Best',
-                        '$_bestScore',
-                        Icons.emoji_events,
+                      ScoreItem(
+                        label: 'Score',
+                        value: '$_currentScore',
+                        icon: Icons.star,
+                      ),
+                      ScoreItem(
+                        label: 'Best',
+                        value: '$_bestScore',
+                        icon: Icons.emoji_events,
                       ),
                     ],
+                    primaryColor: BrainTheme.accentBrain,
                   ),
-                  const Gap(32),
+                  const Gap(24),
 
                   // Game Area
                   Expanded(child: _buildGameArea()),
+
+                  // Banner Ad at bottom
+                  if (kReleaseMode && _isBannerAdReady && _bannerAd != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: SizedBox(
+                        height: _bannerAd!.size.height.toDouble(),
+                        width: _bannerAd!.size.width.toDouble(),
+                        child: AdWidget(ad: _bannerAd!),
+                      ),
+                    ),
                 ],
               ),
             ),
           ),
         );
       },
-    );
-  }
-
-  Widget _buildScoreCard(String title, String value, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: Colors.blue[600], size: 24),
-          const Gap(8),
-          Text(
-            value,
-            style: GoogleFonts.montserrat(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.blue[600],
-            ),
-          ),
-          const Gap(4),
-          Text(
-            title,
-            style: GoogleFonts.montserrat(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -403,58 +409,121 @@ class _NumberMemoryPageState extends State<NumberMemoryPage>
 
   Widget _buildReadyState() {
     return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey[200]!),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.all(16),
+      decoration: BrainTheme.brainCard,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.memory, size: 80, color: Colors.blue[600]),
-          const Gap(24),
+          BrainTheme.brainIcon(size: 60, color: BrainTheme.accentBrain),
+          const Gap(16),
           Text(
-            'Ready to test your memory?',
-            style: GoogleFonts.montserrat(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
+            'Ready to Test Your Neural Memory?',
+            style: BrainTheme.brainTitle.copyWith(
+              fontSize: 20,
+              color: BrainTheme.accentBrain,
             ),
+            textAlign: TextAlign.center,
+          ),
+          const Gap(12),
+          Text(
+            'You\'ll see a number for a few seconds.\nThen type it back from memory.\n\nEach level completed adds to your total score!\nThe game continues until you make a mistake.',
+            style: BrainTheme.brainSubtitle.copyWith(fontSize: 14),
             textAlign: TextAlign.center,
           ),
           const Gap(16),
-          Text(
-            'You\'ll see a number for a few seconds.\nThen type it back from memory.\n\nEach level completed adds to your total score!\nThe game continues until you make a mistake.',
-            style: GoogleFonts.montserrat(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const Gap(32),
-          ElevatedButton(
-            onPressed: _startGame,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue[600],
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  BrainTheme.accentBrain.withOpacity(0.1),
+                  BrainTheme.accentBrain.withOpacity(0.05),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: BrainTheme.accentBrain.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: Text(
-              'Start Game',
-              style: GoogleFonts.montserrat(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    BrainTheme.neuralPulse(
+                      color: BrainTheme.accentBrain,
+                      size: 12,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Neural Memory Training',
+                      style: BrainTheme.brainLabel.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: BrainTheme.accentBrain,
+                      ),
+                    ),
+                  ],
+                ),
+                const Gap(6),
+                Text(
+                  'Number memory exercises help improve working memory, attention span, and cognitive flexibility. Regular practice can enhance your ability to process and retain information, which is valuable for learning, problem-solving, and daily tasks.',
+                  style: BrainTheme.brainSubtitle.copyWith(
+                    fontSize: 12,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Gap(20),
+          Container(
+            decoration: BoxDecoration(
+              gradient: BrainTheme.brainGradient,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: BrainTheme.accentBrain.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ElevatedButton(
+              onPressed: _startGame,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  BrainTheme.neuralPulse(color: Colors.white, size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Start Neural Training',
+                    style: BrainTheme.brainTitle.copyWith(
+                      fontSize: 18,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  BrainTheme.neuralPulse(color: Colors.white, size: 16),
+                ],
               ),
             ),
           ),
@@ -465,59 +534,93 @@ class _NumberMemoryPageState extends State<NumberMemoryPage>
 
   Widget _buildShowingState() {
     return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey[200]!),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.all(16),
+      decoration: BrainTheme.brainCard,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            'Remember this number:',
-            style: GoogleFonts.montserrat(
-              fontSize: 18,
-              color: Colors.grey[600],
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              BrainTheme.neuralPulse(color: BrainTheme.accentBrain, size: 12),
+              const SizedBox(width: 6),
+              Text(
+                'Neural Memory Input',
+                style: BrainTheme.brainLabel.copyWith(
+                  fontSize: 16,
+                  color: BrainTheme.accentBrain,
+                ),
+              ),
+              const SizedBox(width: 6),
+              BrainTheme.neuralPulse(color: BrainTheme.accentBrain, size: 12),
+            ],
+          ),
+          const Gap(16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  BrainTheme.accentBrain.withOpacity(0.1),
+                  BrainTheme.accentBrain.withOpacity(0.05),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: BrainTheme.accentBrain.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Text(
+              _currentNumber,
+              style: BrainTheme.brainTitle.copyWith(
+                fontSize: 36,
+                fontWeight: FontWeight.bold,
+                color: BrainTheme.accentBrain,
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
           const Gap(24),
           Container(
-            padding: const EdgeInsets.all(32),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.blue[600]!.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.blue[600]!.withOpacity(0.3),
-                width: 2,
+              gradient: LinearGradient(
+                colors: [
+                  BrainTheme.accentBrain.withOpacity(0.1),
+                  BrainTheme.accentBrain.withOpacity(0.05),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: BrainTheme.accentBrain.withOpacity(0.08),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: Text(
-              _currentNumber,
-              style: GoogleFonts.montserrat(
-                fontSize: 48,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue[600],
-              ),
-            ),
-          ),
-          const Gap(24),
-          const CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-          ),
-          const Gap(16),
-          Text(
-            'Memorizing...',
-            style: GoogleFonts.montserrat(
-              fontSize: 16,
-              color: Colors.grey[600],
+            child: Column(
+              children: [
+                const CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF06B6D4)),
+                ),
+                const Gap(16),
+                Text(
+                  'Neural Processing...',
+                  style: BrainTheme.brainSubtitle.copyWith(
+                    fontSize: 16,
+                    color: BrainTheme.accentBrain,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -527,30 +630,28 @@ class _NumberMemoryPageState extends State<NumberMemoryPage>
 
   Widget _buildInputState() {
     return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey[200]!),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.all(16),
+      decoration: BrainTheme.brainCard,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            'Type the number you remember:',
-            style: GoogleFonts.montserrat(
-              fontSize: 18,
-              color: Colors.grey[600],
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              BrainTheme.neuralPulse(color: BrainTheme.accentBrain, size: 12),
+              const SizedBox(width: 6),
+              Text(
+                'Neural Memory Recall',
+                style: BrainTheme.brainLabel.copyWith(
+                  fontSize: 16,
+                  color: BrainTheme.accentBrain,
+                ),
+              ),
+              const SizedBox(width: 6),
+              BrainTheme.neuralPulse(color: BrainTheme.accentBrain, size: 12),
+            ],
           ),
-          const Gap(24),
+          const Gap(16),
           TextField(
             controller: _inputController,
             focusNode: _inputFocusNode,
@@ -560,42 +661,87 @@ class _NumberMemoryPageState extends State<NumberMemoryPage>
               });
             },
             onSubmitted: (_) => _checkAnswer(),
-            style: GoogleFonts.montserrat(
-              fontSize: 24,
+            style: BrainTheme.brainTitle.copyWith(
+              fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
             textAlign: TextAlign.center,
             decoration: InputDecoration(
               hintText: 'Enter number...',
+              hintStyle: BrainTheme.brainSubtitle.copyWith(
+                fontSize: 14,
+                color: Colors.grey[400],
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderSide: BorderSide.none,
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.blue[600]!, width: 2),
+                borderSide: BorderSide(color: BrainTheme.accentBrain, width: 2),
               ),
-              contentPadding: const EdgeInsets.all(20),
+              filled: true,
+              fillColor: Colors.grey[50],
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
             ),
             keyboardType: TextInputType.number,
             autofocus: true,
           ),
           const Gap(24),
-          ElevatedButton(
-            onPressed: _userInput.isNotEmpty ? _checkAnswer : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue[600],
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+          Container(
+            decoration: BoxDecoration(
+              gradient: _userInput.isNotEmpty
+                  ? BrainTheme.brainGradient
+                  : LinearGradient(
+                      colors: [Colors.grey[400]!, Colors.grey[300]!],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: _userInput.isNotEmpty
+                  ? [
+                      BoxShadow(
+                        color: BrainTheme.accentBrain.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : null,
             ),
-            child: Text(
-              'Submit Answer',
-              style: GoogleFonts.montserrat(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+            child: ElevatedButton(
+              onPressed: _userInput.isNotEmpty ? _checkAnswer : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (_userInput.isNotEmpty)
+                    BrainTheme.neuralPulse(color: Colors.white, size: 16),
+                  if (_userInput.isNotEmpty) const SizedBox(width: 8),
+                  Text(
+                    'Submit Neural Response',
+                    style: BrainTheme.brainTitle.copyWith(
+                      fontSize: 18,
+                      color: Colors.white,
+                    ),
+                  ),
+                  if (_userInput.isNotEmpty) const SizedBox(width: 8),
+                  if (_userInput.isNotEmpty)
+                    BrainTheme.neuralPulse(color: Colors.white, size: 16),
+                ],
               ),
             ),
           ),
@@ -605,141 +751,229 @@ class _NumberMemoryPageState extends State<NumberMemoryPage>
   }
 
   Widget _buildResultState() {
+    final resultColor = _isCorrect
+        ? BrainTheme.successBrain
+        : BrainTheme.errorBrain;
+
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey[200]!),
+        gradient: LinearGradient(
+          colors: [resultColor.withOpacity(0.1), resultColor.withOpacity(0.05)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: resultColor.withOpacity(0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: resultColor.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            _isCorrect ? Icons.check_circle : Icons.cancel,
-            size: 80,
-            color: _isCorrect ? Colors.green : Colors.red,
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [resultColor, resultColor.withOpacity(0.8)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              _isCorrect ? Icons.check_circle : Icons.cancel,
+              size: 36,
+              color: Colors.white,
+            ),
           ),
-          const Gap(24),
+          const Gap(16),
           Text(
             _message,
-            style: GoogleFonts.montserrat(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: _isCorrect ? Colors.green : Colors.red,
+            style: BrainTheme.brainTitle.copyWith(
+              fontSize: 20,
+              color: resultColor,
             ),
             textAlign: TextAlign.center,
           ),
           const Gap(16),
           if (_isCorrect) ...[
-            Text(
-              'Level $_currentLevel completed!',
-              style: GoogleFonts.montserrat(
-                fontSize: 18,
-                color: Colors.green[600],
-                fontWeight: FontWeight.bold,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    BrainTheme.successBrain.withOpacity(0.2),
+                    BrainTheme.successBrain.withOpacity(0.1),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Neural Level $_currentLevel Completed!',
+                style: BrainTheme.brainLabel.copyWith(
+                  fontSize: 18,
+                  color: BrainTheme.successBrain,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             const Gap(8),
             Text(
-              'Total Score: $_currentScore',
-              style: GoogleFonts.montserrat(
+              'Total Neural Score: $_currentScore',
+              style: BrainTheme.brainSubtitle.copyWith(
                 fontSize: 16,
-                color: Colors.green[600],
+                color: BrainTheme.successBrain,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const Gap(8),
             Text(
-              'Next level in 2 seconds...',
-              style: GoogleFonts.montserrat(
+              'Neural processing next level...',
+              style: BrainTheme.brainSubtitle.copyWith(
                 fontSize: 14,
-                color: Colors.grey[600],
+                color: BrainTheme.successBrain,
                 fontStyle: FontStyle.italic,
               ),
             ),
             const Gap(24),
-            ElevatedButton(
-              onPressed: _nextLevel,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    BrainTheme.successBrain,
+                    BrainTheme.successBrain.withOpacity(0.8),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: BrainTheme.successBrain.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: Text(
-                'Next Level Now',
-                style: GoogleFonts.montserrat(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+              child: ElevatedButton(
+                onPressed: _nextLevel,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    BrainTheme.neuralPulse(color: Colors.white, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Advance Neural Level',
+                      style: BrainTheme.brainTitle.copyWith(
+                        fontSize: 18,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    BrainTheme.neuralPulse(color: Colors.white, size: 16),
+                  ],
                 ),
               ),
             ),
           ] else ...[
             Text(
-              'Game Over!',
-              style: GoogleFonts.montserrat(
+              'Neural Overload!',
+              style: BrainTheme.brainTitle.copyWith(
                 fontSize: 20,
-                color: Colors.red[600],
-                fontWeight: FontWeight.bold,
+                color: BrainTheme.errorBrain,
               ),
             ),
             const Gap(8),
             Text(
-              'Your final score: $_currentScore',
-              style: GoogleFonts.montserrat(
+              'Final Neural Score: $_currentScore',
+              style: BrainTheme.brainSubtitle.copyWith(
                 fontSize: 18,
-                color: Colors.grey[600],
+                color: BrainTheme.errorBrain,
               ),
             ),
             const Gap(8),
             Text(
-              'Level reached: $_currentLevel',
-              style: GoogleFonts.montserrat(
+              'Neural Level reached: $_currentLevel',
+              style: BrainTheme.brainSubtitle.copyWith(
                 fontSize: 16,
-                color: Colors.grey[600],
+                color: BrainTheme.errorBrain,
               ),
             ),
             const Gap(8),
             Text(
-              'Best score: $_bestScore',
-              style: GoogleFonts.montserrat(
+              'Best Neural Score: $_bestScore',
+              style: BrainTheme.brainSubtitle.copyWith(
                 fontSize: 16,
-                color: Colors.blue[600],
+                color: BrainTheme.accentBrain,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const Gap(24),
-            ElevatedButton(
-              onPressed: _restartGame,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue[600],
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+            Container(
+              decoration: BoxDecoration(
+                gradient: BrainTheme.brainGradient,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: BrainTheme.primaryBrain.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: Text(
-                'Try Again',
-                style: GoogleFonts.montserrat(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+              child: ElevatedButton(
+                onPressed: _restartGame,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    BrainTheme.neuralPulse(color: Colors.white, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Retrain Neural Network',
+                      style: BrainTheme.brainTitle.copyWith(
+                        fontSize: 18,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    BrainTheme.neuralPulse(color: Colors.white, size: 16),
+                  ],
                 ),
               ),
             ),

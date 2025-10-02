@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:human_benchmark/ad_helper.dart';
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import '../models/personality_question.dart';
 import '../models/personality_scale.dart';
 import '../models/personality_result.dart';
@@ -12,6 +15,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/personality/personality_radar_chart.dart';
 import '../widgets/personality/trait_score_card.dart';
 import '../widgets/personality_leaderboard.dart';
+import '../widgets/game_page_header.dart';
+import '../widgets/brain_theme.dart';
 
 class PersonalityQuizPage extends ConsumerStatefulWidget {
   const PersonalityQuizPage({super.key});
@@ -22,7 +27,44 @@ class PersonalityQuizPage extends ConsumerStatefulWidget {
 }
 
 class _PersonalityQuizPageState extends ConsumerState<PersonalityQuizPage> {
+  // AdMob banner ad
+  BannerAd? _bannerAd;
+  bool _isBannerAdReady = false;
+
   PersonalityResult? _lastResult;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBannerAd();
+  }
+
+  @override
+  void dispose() {
+    _bannerAd?.dispose();
+    super.dispose();
+  }
+
+  void _loadBannerAd() {
+    if (!kReleaseMode) return;
+    _bannerAd = BannerAd(
+      adUnitId: AdHelper.bannerAdUnitId,
+      request: const AdRequest(),
+      size: AdSize.banner,
+      listener: BannerAdListener(
+        onAdLoaded: (_) {
+          if (!mounted) return;
+          setState(() {
+            _isBannerAdReady = true;
+          });
+        },
+        onAdFailedToLoad: (ad, err) {
+          ad.dispose();
+        },
+      ),
+    );
+    _bannerAd!.load();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,12 +156,13 @@ class _PersonalityQuizPageState extends ConsumerState<PersonalityQuizPage> {
         final quizState = ref.watch(quizStateProvider);
 
         // Derive totals and navigation flags safely based on loaded questions
-        final int totalQuestions = questionsAsync.asData?.value.length ?? 20;
+        final int totalQuestions = questionsAsync.asData?.value.length ?? 0;
         final int currentIndex = quizState.currentQuestionIndex;
         final int maxIndex = (totalQuestions > 0) ? totalQuestions - 1 : 0;
-        final bool canGoPrevious = currentIndex > 0;
-        final bool canGoNext = currentIndex < maxIndex;
-        final bool isLastQuestion = currentIndex == maxIndex;
+        final bool canGoPrevious = currentIndex > 0 && totalQuestions > 0;
+        final bool canGoNext = currentIndex < maxIndex && totalQuestions > 0;
+        final bool isLastQuestion =
+            currentIndex == maxIndex && totalQuestions > 0;
         final double progress = totalQuestions > 0
             ? (quizState.answers.length.clamp(0, totalQuestions) /
                   totalQuestions)
@@ -138,6 +181,14 @@ class _PersonalityQuizPageState extends ConsumerState<PersonalityQuizPage> {
           );
         }
 
+        // Show loading state if no questions loaded yet
+        if (totalQuestions == 0 && questionsAsync.isLoading) {
+          return const Scaffold(
+            backgroundColor: Colors.white,
+            body: SafeArea(child: Center(child: CircularProgressIndicator())),
+          );
+        }
+
         return Scaffold(
           backgroundColor: Colors.white,
           body: SafeArea(
@@ -146,55 +197,11 @@ class _PersonalityQuizPageState extends ConsumerState<PersonalityQuizPage> {
               child: Column(
                 children: [
                   // Header
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(24.0),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.blue.shade200),
-                    ),
-                    child: Column(
-                      children: [
-                        // Back button and game name header
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              icon: Icon(Icons.arrow_back, size: 24),
-                              style: IconButton.styleFrom(
-                                backgroundColor: Colors.grey[200],
-                                padding: EdgeInsets.all(12),
-                              ),
-                            ),
-                            SizedBox(width: 16),
-                            Expanded(
-                              child: Text(
-                                'Big Five Personality Assessment',
-                                style: TextStyle(
-                                  fontFamily: 'Montserrat',
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey[800],
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Discover your personality traits through this scientifically validated assessment',
-                          style: TextStyle(
-                            fontFamily: 'Montserrat',
-                            fontSize: 16,
-                            color: Colors.blue.shade600,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        // Intentionally hide logged-in user details on this page
-                      ],
-                    ),
+                  GamePageHeader(
+                    title: 'Big Five Personality Assessment',
+                    subtitle:
+                        'Discover your personality traits through this scientifically validated Big Five assessment. The Big Five personality traits are: Openness (creativity and openness to new experiences), Conscientiousness (organization and self-discipline), Extraversion (social energy and assertiveness), Agreeableness (cooperation and trust), and Neuroticism (emotional stability and stress response).',
+                    primaryColor: BrainTheme.primaryBrain,
                   ),
                   const SizedBox(height: 24),
 
@@ -223,14 +230,27 @@ class _PersonalityQuizPageState extends ConsumerState<PersonalityQuizPage> {
                     ),
                   ),
 
-                  // Navigation
-                  if (questionsAsync.hasValue && scaleAsync.hasValue)
+                  // Navigation - only show when questions are loaded
+                  if (questionsAsync.hasValue &&
+                      scaleAsync.hasValue &&
+                      totalQuestions > 0)
                     QuizNavigation(
                       onPrevious: canGoPrevious ? _goToPrevious : null,
                       onNext: canGoNext ? _goToNext : null,
                       onComplete: isLastQuestion ? _completeQuiz : null,
                       currentQuestion: currentIndex + 1,
                       totalQuestions: totalQuestions,
+                    ),
+
+                  // Banner Ad at bottom
+                  if (kReleaseMode && _isBannerAdReady && _bannerAd != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: SizedBox(
+                        height: _bannerAd!.size.height.toDouble(),
+                        width: _bannerAd!.size.width.toDouble(),
+                        child: AdWidget(ad: _bannerAd!),
+                      ),
                     ),
                 ],
               ),
@@ -247,30 +267,42 @@ class _PersonalityQuizPageState extends ConsumerState<PersonalityQuizPage> {
   ) {
     final quizNotifier = ref.read(quizStateProvider.notifier);
     final quizState = ref.read(quizStateProvider);
+
     if (questions.isEmpty) {
-      return const Center(child: Text('No questions available.'));
+      return const Center(
+        child: Text(
+          'No questions available.',
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
+      );
     }
 
     final int maxIndex = questions.length - 1;
     final int currentIndex = quizState.currentQuestionIndex;
+
+    // Ensure current index is within bounds
     final int safeIndex = currentIndex < 0
         ? 0
         : (currentIndex > maxIndex ? maxIndex : currentIndex);
+
+    // Update state if index was out of bounds
+    if (safeIndex != currentIndex) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        quizNotifier.setCurrentQuestion(safeIndex);
+      });
+    }
+
     final currentQuestion = questions[safeIndex];
 
-    return Column(
-      children: [
-        Expanded(
-          child: QuestionCard(
-            question: currentQuestion,
-            scale: scale,
-            selectedAnswer: quizState.answers[currentQuestion.id],
-            onAnswerSelected: (answer) {
-              quizNotifier.setAnswer(currentQuestion.id, answer);
-            },
-          ),
-        ),
-      ],
+    return SingleChildScrollView(
+      child: QuestionCard(
+        question: currentQuestion,
+        scale: scale,
+        selectedAnswer: quizState.answers[currentQuestion.id],
+        onAnswerSelected: (answer) {
+          quizNotifier.setAnswer(currentQuestion.id, answer);
+        },
+      ),
     );
   }
 
@@ -318,6 +350,10 @@ class _PersonalityQuizPageState extends ConsumerState<PersonalityQuizPage> {
   void _goToPrevious() {
     final quizNotifier = ref.read(quizStateProvider.notifier);
     final quizState = ref.read(quizStateProvider);
+    final questions = ref.read(questionsProvider).asData?.value;
+
+    if (questions == null || questions.isEmpty) return;
+
     final int currentIndex = quizState.currentQuestionIndex;
     final int newIndex = currentIndex > 0 ? currentIndex - 1 : 0;
     quizNotifier.setCurrentQuestion(newIndex);
@@ -327,7 +363,9 @@ class _PersonalityQuizPageState extends ConsumerState<PersonalityQuizPage> {
     final quizNotifier = ref.read(quizStateProvider.notifier);
     final quizState = ref.read(quizStateProvider);
     final questions = ref.read(questionsProvider).asData?.value;
+
     if (questions == null || questions.isEmpty) return;
+
     final int maxIndex = questions.length - 1;
     final int currentIndex = quizState.currentQuestionIndex;
     final int newIndex = currentIndex < maxIndex ? currentIndex + 1 : maxIndex;
@@ -338,7 +376,15 @@ class _PersonalityQuizPageState extends ConsumerState<PersonalityQuizPage> {
     final questionsAsync = ref.read(questionsProvider);
     final scaleAsync = ref.read(scaleProvider);
 
-    if (!questionsAsync.hasValue || !scaleAsync.hasValue) return;
+    if (!questionsAsync.hasValue || !scaleAsync.hasValue) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Quiz data not loaded. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     final questions = questionsAsync.value!;
     final scale = scaleAsync.value!;
@@ -348,11 +394,13 @@ class _PersonalityQuizPageState extends ConsumerState<PersonalityQuizPage> {
     // Ensure all questions are answered
     final int totalQuestions = questions.length;
     final bool allAnswered = questions.every((q) => answers.containsKey(q.id));
+
     if (!allAnswered) {
+      final unansweredCount = totalQuestions - answers.length;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Please answer all questions before completing the quiz.',
+            'Please answer all questions before completing the quiz. ($unansweredCount remaining)',
           ),
           backgroundColor: Colors.orange,
         ),

@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:gap/gap.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
 import 'package:human_benchmark/web/constants/web_constants.dart';
+import 'package:human_benchmark/services/web_settings_service.dart';
+import 'package:human_benchmark/models/web_settings.dart';
 import 'dart:html' as html;
 
 class LandingPage extends StatefulWidget {
@@ -244,28 +246,45 @@ class _LandingPageState extends State<LandingPage>
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        widget.onStartApp();
-                      },
-                      style: WebTheme.largePrimaryButton.copyWith(
-                        elevation: MaterialStateProperty.all(8),
-                        shadowColor: MaterialStateProperty.all(
-                          WebTheme.primaryBlue.withOpacity(0.3),
+                  StreamBuilder<WebSettings>(
+                    stream: WebSettingsService.getWebSettingsStream(),
+                    builder: (context, snapshot) {
+                      final webSettings =
+                          snapshot.data ?? WebSettings.defaultSettings;
+
+                      return SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            if (webSettings.webGameEnabled) {
+                              // Web game is enabled - go to web app
+                              widget.onStartApp();
+                            } else {
+                              // Web game is disabled - go to Play Store
+                              final url =
+                                  webSettings.playStoreLink ??
+                                  'https://play.google.com/store/apps/details?id=xyz.mmkcode.focusflow';
+                              html.window.open(url, '_blank');
+                            }
+                          },
+                          style: WebTheme.largePrimaryButton.copyWith(
+                            elevation: MaterialStateProperty.all(8),
+                            shadowColor: MaterialStateProperty.all(
+                              WebTheme.primaryBlue.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Text(
+                            'Get Started Now',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        'Get Started Now',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -448,18 +467,37 @@ class _LandingPageState extends State<LandingPage>
                   ),
                   SizedBox(width: isMobile ? 12 : 16),
                 ],
-                _buildAnimatedButton(
-                  onPressed: widget.onStartApp,
-                  child: Text(
-                    isMobile ? 'Start' : 'Get Started',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: isMobile ? 14 : 16,
-                    ),
-                  ),
-                  isPrimary: true,
-                  delay: 800,
+                StreamBuilder<WebSettings>(
+                  stream: WebSettingsService.getWebSettingsStream(),
+                  builder: (context, snapshot) {
+                    final webSettings =
+                        snapshot.data ?? WebSettings.defaultSettings;
+
+                    return _buildAnimatedButton(
+                      onPressed: () {
+                        if (webSettings.webGameEnabled) {
+                          // Web game is enabled - go to web app
+                          widget.onStartApp();
+                        } else {
+                          // Web game is disabled - go to Play Store
+                          final url =
+                              webSettings.playStoreLink ??
+                              'https://play.google.com/store/apps/details?id=xyz.mmkcode.focusflow';
+                          html.window.open(url, '_blank');
+                        }
+                      },
+                      child: Text(
+                        isMobile ? 'Start' : 'Get Started',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: isMobile ? 14 : 16,
+                        ),
+                      ),
+                      isPrimary: true,
+                      delay: 800,
+                    );
+                  },
                 ),
               ],
             ),
@@ -584,11 +622,31 @@ class _LandingPageState extends State<LandingPage>
                   isTiny
                       ? Column(
                           children: [
-                            _buildHeroButton(
-                              onPressed: widget.onStartApp,
-                              text: 'Start Testing Now',
-                              isPrimary: true,
-                              delay: 400,
+                            StreamBuilder<WebSettings>(
+                              stream: WebSettingsService.getWebSettingsStream(),
+                              builder: (context, snapshot) {
+                                final webSettings =
+                                    snapshot.data ??
+                                    WebSettings.defaultSettings;
+
+                                return _buildHeroButton(
+                                  onPressed: () {
+                                    if (webSettings.webGameEnabled) {
+                                      // Web game is enabled - go to web app
+                                      widget.onStartApp();
+                                    } else {
+                                      // Web game is disabled - go to Play Store
+                                      final url =
+                                          webSettings.playStoreLink ??
+                                          'https://play.google.com/store/apps/details?id=xyz.mmkcode.focusflow';
+                                      html.window.open(url, '_blank');
+                                    }
+                                  },
+                                  text: 'Start Testing Now',
+                                  isPrimary: true,
+                                  delay: 400,
+                                );
+                              },
                             ),
                             SizedBox(height: 16),
                             _buildHeroButton(
@@ -602,11 +660,31 @@ class _LandingPageState extends State<LandingPage>
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _buildHeroButton(
-                              onPressed: widget.onStartApp,
-                              text: 'Start Testing Now',
-                              isPrimary: true,
-                              delay: 400,
+                            StreamBuilder<WebSettings>(
+                              stream: WebSettingsService.getWebSettingsStream(),
+                              builder: (context, snapshot) {
+                                final webSettings =
+                                    snapshot.data ??
+                                    WebSettings.defaultSettings;
+
+                                return _buildHeroButton(
+                                  onPressed: () {
+                                    if (webSettings.webGameEnabled) {
+                                      // Web game is enabled - go to web app
+                                      widget.onStartApp();
+                                    } else {
+                                      // Web game is disabled - go to Play Store
+                                      final url =
+                                          webSettings.playStoreLink ??
+                                          'https://play.google.com/store/apps/details?id=xyz.mmkcode.focusflow';
+                                      html.window.open(url, '_blank');
+                                    }
+                                  },
+                                  text: 'Start Testing Now',
+                                  isPrimary: true,
+                                  delay: 400,
+                                );
+                              },
                             ),
                             SizedBox(width: isMobile ? 12 : 20),
                             _buildHeroButton(
@@ -699,11 +777,31 @@ class _LandingPageState extends State<LandingPage>
                         // Animated Buttons
                         Row(
                           children: [
-                            _buildHeroButton(
-                              onPressed: widget.onStartApp,
-                              text: 'Start Testing Now',
-                              isPrimary: true,
-                              delay: 400,
+                            StreamBuilder<WebSettings>(
+                              stream: WebSettingsService.getWebSettingsStream(),
+                              builder: (context, snapshot) {
+                                final webSettings =
+                                    snapshot.data ??
+                                    WebSettings.defaultSettings;
+
+                                return _buildHeroButton(
+                                  onPressed: () {
+                                    if (webSettings.webGameEnabled) {
+                                      // Web game is enabled - go to web app
+                                      widget.onStartApp();
+                                    } else {
+                                      // Web game is disabled - go to Play Store
+                                      final url =
+                                          webSettings.playStoreLink ??
+                                          'https://play.google.com/store/apps/details?id=xyz.mmkcode.focusflow';
+                                      html.window.open(url, '_blank');
+                                    }
+                                  },
+                                  text: 'Start Testing Now',
+                                  isPrimary: true,
+                                  delay: 400,
+                                );
+                              },
                             ),
                             SizedBox(width: 20),
                             _buildHeroButton(
@@ -1886,30 +1984,51 @@ class _LandingPageState extends State<LandingPage>
                                     ),
                                   ),
                                   SizedBox(height: isTiny ? 12 : 16),
-                                  OutlinedButton(
-                                    onPressed: widget.onStartApp,
-                                    style: WebTheme.secondaryButton.copyWith(
-                                      padding: MaterialStateProperty.all(
-                                        EdgeInsets.symmetric(
-                                          horizontal: isTiny ? 20 : 24,
-                                          vertical: isTiny ? 14 : 16,
+                                  StreamBuilder<WebSettings>(
+                                    stream:
+                                        WebSettingsService.getWebSettingsStream(),
+                                    builder: (context, snapshot) {
+                                      final webSettings =
+                                          snapshot.data ??
+                                          WebSettings.defaultSettings;
+
+                                      // Only show "Play on Web" button if web game is enabled
+                                      if (!webSettings.webGameEnabled) {
+                                        return SizedBox.shrink();
+                                      }
+
+                                      return OutlinedButton(
+                                        onPressed: widget.onStartApp,
+                                        style: WebTheme.secondaryButton
+                                            .copyWith(
+                                              padding:
+                                                  MaterialStateProperty.all(
+                                                    EdgeInsets.symmetric(
+                                                      horizontal: isTiny
+                                                          ? 20
+                                                          : 24,
+                                                      vertical: isTiny
+                                                          ? 14
+                                                          : 16,
+                                                    ),
+                                                  ),
+                                              side: MaterialStateProperty.all(
+                                                BorderSide(
+                                                  color: WebTheme.primaryBlue,
+                                                  width: 2,
+                                                ),
+                                              ),
+                                            ),
+                                        child: Text(
+                                          'Play on Web',
+                                          style: WebTheme.bodyLarge.copyWith(
+                                            fontSize: isTiny ? 14 : 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: WebTheme.primaryBlue,
+                                          ),
                                         ),
-                                      ),
-                                      side: MaterialStateProperty.all(
-                                        BorderSide(
-                                          color: WebTheme.primaryBlue,
-                                          width: 2,
-                                        ),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      'Play on Web',
-                                      style: WebTheme.bodyLarge.copyWith(
-                                        fontSize: isTiny ? 14 : 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: WebTheme.primaryBlue,
-                                      ),
-                                    ),
+                                      );
+                                    },
                                   ),
                                 ],
                               )
@@ -1942,30 +2061,47 @@ class _LandingPageState extends State<LandingPage>
                                       ),
                                     ),
                                   ),
-                                  OutlinedButton(
-                                    onPressed: widget.onStartApp,
-                                    style: WebTheme.secondaryButton.copyWith(
-                                      padding: MaterialStateProperty.all(
-                                        EdgeInsets.symmetric(
-                                          horizontal: 24,
-                                          vertical: 16,
+                                  StreamBuilder<WebSettings>(
+                                    stream:
+                                        WebSettingsService.getWebSettingsStream(),
+                                    builder: (context, snapshot) {
+                                      final webSettings =
+                                          snapshot.data ??
+                                          WebSettings.defaultSettings;
+
+                                      // Only show "Play on Web" button if web game is enabled
+                                      if (!webSettings.webGameEnabled) {
+                                        return SizedBox.shrink();
+                                      }
+
+                                      return OutlinedButton(
+                                        onPressed: widget.onStartApp,
+                                        style: WebTheme.secondaryButton
+                                            .copyWith(
+                                              padding:
+                                                  MaterialStateProperty.all(
+                                                    EdgeInsets.symmetric(
+                                                      horizontal: 24,
+                                                      vertical: 16,
+                                                    ),
+                                                  ),
+                                              side: MaterialStateProperty.all(
+                                                BorderSide(
+                                                  color: WebTheme.primaryBlue,
+                                                  width: 2,
+                                                ),
+                                              ),
+                                            ),
+                                        child: Text(
+                                          'Play on Web',
+                                          style: WebTheme.bodyLarge.copyWith(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: WebTheme.primaryBlue,
+                                          ),
                                         ),
-                                      ),
-                                      side: MaterialStateProperty.all(
-                                        BorderSide(
-                                          color: WebTheme.primaryBlue,
-                                          width: 2,
-                                        ),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      'Play on Web',
-                                      style: WebTheme.bodyLarge.copyWith(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: WebTheme.primaryBlue,
-                                      ),
-                                    ),
+                                      );
+                                    },
                                   ),
                                 ],
                               ),
@@ -2048,6 +2184,40 @@ class _LandingPageState extends State<LandingPage>
                         ),
                         SizedBox(height: isTiny ? 20 : 24),
 
+                        // Educational content
+                        Container(
+                          padding: EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.blue.shade200),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                'About Cognitive Testing',
+                                style: WebTheme.bodyLarge.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue.shade800,
+                                  fontSize: isTiny ? 14 : 16,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'Our tests are based on established psychological research and help you understand your cognitive abilities. Regular practice can improve mental performance and provide insights into your strengths.',
+                                style: WebTheme.bodyLarge.copyWith(
+                                  color: Colors.blue.shade700,
+                                  fontSize: isTiny ? 12 : 14,
+                                  height: 1.4,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: isTiny ? 20 : 24),
+
                         // Links
                         Column(
                           children: [
@@ -2114,6 +2284,26 @@ class _LandingPageState extends State<LandingPage>
                         ),
                         Row(
                           children: [
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.blue.shade200),
+                              ),
+                              child: Text(
+                                'Scientifically-based cognitive assessments',
+                                style: WebTheme.bodyLarge.copyWith(
+                                  color: Colors.blue.shade700,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            Gap(20),
                             TextButton(
                               onPressed: () => context.go('/privacy'),
                               child: Text(

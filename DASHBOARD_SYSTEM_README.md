@@ -86,7 +86,6 @@ await ScoreService.submitGameScore(
 - `numberMemory` - Number memory sequence length
 - `verbalMemory` - Verbal memory score
 - `visualMemory` - Visual memory score
-- `typingSpeed` - Words per minute
 - `aimTrainer` - Aim accuracy in milliseconds
 - `sequenceMemory` - Sequence memory length
 - `chimpTest` - Chimp test score
