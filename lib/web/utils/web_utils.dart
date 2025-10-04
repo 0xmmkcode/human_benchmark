@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/web_theme.dart';
 
 class WebUtils {
   // Icon mapping for navigation items
@@ -98,7 +99,7 @@ class WebUtils {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: WebTheme.grey50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[200]!),
       ),

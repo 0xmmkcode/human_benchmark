@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
+import 'package:human_benchmark/web/widgets/page_header.dart';
 import 'package:go_router/go_router.dart';
 
 const String kTermsLastUpdated = String.fromEnvironment(
@@ -94,20 +95,10 @@ class TermsOfServicePage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Terms of Service',
-                        style: TextStyle(
-                          fontSize: 35,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Last updated: $kTermsLastUpdated',
-                        style: WebTheme.bodyLarge.copyWith(
-                          color: Colors.grey[600],
-                        ),
+                      PageHeader(
+                        title: 'Terms of Service',
+                        subtitle: 'Last updated: $kTermsLastUpdated',
+                        showBackButton: false,
                       ),
                       const SizedBox(height: 32),
 

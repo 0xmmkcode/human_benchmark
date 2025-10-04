@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:gap/gap.dart';
 import 'package:human_benchmark/services/local_storage_service.dart';
 import 'package:human_benchmark/services/auth_service.dart';
 import 'package:human_benchmark/services/score_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:human_benchmark/ad_helper.dart';
 import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:human_benchmark/widgets/game_page_header.dart';
 import 'package:human_benchmark/widgets/game_score_display.dart';
 import 'package:human_benchmark/widgets/brain_theme.dart';
+import 'package:human_benchmark/widgets/auth_required_wrapper.dart';
 import 'dart:math';
 
 class NumberMemoryPage extends StatefulWidget {
@@ -251,146 +250,67 @@ class _NumberMemoryPageState extends State<NumberMemoryPage>
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: AuthService.authStateChanges,
-      builder: (context, snapshot) {
-        final bool isAuthenticated = snapshot.data != null;
-        if (!isAuthenticated) {
-          return Scaffold(
-            backgroundColor: Colors.white,
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 520),
-                  padding: const EdgeInsets.all(24.0),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.lock_outline,
-                        size: 64,
-                        color: Colors.blue.shade600,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Sign in required',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade800,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Please sign in to play Number Memory and save your scores.',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.montserrat(
-                          fontSize: 16,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          icon: const Icon(Icons.login),
-                          label: const Text('Sign in with Google'),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            backgroundColor: Colors.blue.shade600,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: () async {
-                            final cred = await AuthService.signInWithGoogle();
-                            if (mounted && cred != null) {
-                              setState(() {});
-                            }
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
+    return AuthRequiredWrapper(
+      title: 'Number Memory Test',
+      subtitle:
+          'Sign in to play Number Memory and save your scores to track your progress.',
+      child: Scaffold(
+        backgroundColor: Colors.grey[50],
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                GamePageHeader(
+                  title: 'Number Memory Test',
+                  subtitle:
+                      'Number memory exercises help improve working memory, attention span, and cognitive flexibility. Regular practice can enhance your ability to process and retain information, which is valuable for learning, problem-solving, and daily tasks.',
+                  primaryColor: BrainTheme.accentBrain,
                 ),
-              ),
-            ),
-          );
-        }
+                const Gap(24),
 
-        // Authenticated user - show the game
-        return Scaffold(
-          backgroundColor: Colors.grey[50],
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  GamePageHeader(
-                    title: 'Number Memory Test',
-                    subtitle:
-                        'Number memory exercises help improve working memory, attention span, and cognitive flexibility. Regular practice can enhance your ability to process and retain information, which is valuable for learning, problem-solving, and daily tasks.',
-                    primaryColor: BrainTheme.accentBrain,
-                  ),
-                  const Gap(24),
-
-                  // Score Display
-                  GameScoreDisplay(
-                    title: 'Memory Performance',
-                    scores: [
-                      ScoreItem(
-                        label: 'Level',
-                        value: '$_currentLevel',
-                        icon: Icons.trending_up,
-                      ),
-                      ScoreItem(
-                        label: 'Score',
-                        value: '$_currentScore',
-                        icon: Icons.star,
-                      ),
-                      ScoreItem(
-                        label: 'Best',
-                        value: '$_bestScore',
-                        icon: Icons.emoji_events,
-                      ),
-                    ],
-                    primaryColor: BrainTheme.accentBrain,
-                  ),
-                  const Gap(24),
-
-                  // Game Area
-                  Expanded(child: _buildGameArea()),
-
-                  // Banner Ad at bottom
-                  if (kReleaseMode && _isBannerAdReady && _bannerAd != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16),
-                      child: SizedBox(
-                        height: _bannerAd!.size.height.toDouble(),
-                        width: _bannerAd!.size.width.toDouble(),
-                        child: AdWidget(ad: _bannerAd!),
-                      ),
+                // Score Display
+                GameScoreDisplay(
+                  title: 'Memory Performance',
+                  scores: [
+                    ScoreItem(
+                      label: 'Level',
+                      value: '$_currentLevel',
+                      icon: Icons.trending_up,
                     ),
-                ],
-              ),
+                    ScoreItem(
+                      label: 'Score',
+                      value: '$_currentScore',
+                      icon: Icons.star,
+                    ),
+                    ScoreItem(
+                      label: 'Best',
+                      value: '$_bestScore',
+                      icon: Icons.emoji_events,
+                    ),
+                  ],
+                  primaryColor: BrainTheme.accentBrain,
+                ),
+                const Gap(24),
+
+                // Game Area
+                Expanded(child: _buildGameArea()),
+
+                // Banner Ad at bottom
+                if (kReleaseMode && _isBannerAdReady && _bannerAd != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: SizedBox(
+                      height: _bannerAd!.size.height.toDouble(),
+                      width: _bannerAd!.size.width.toDouble(),
+                      child: AdWidget(ad: _bannerAd!),
+                    ),
+                  ),
+              ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 

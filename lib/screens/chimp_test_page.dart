@@ -10,7 +10,7 @@ import 'package:human_benchmark/services/user_profile_service.dart';
 import 'package:human_benchmark/models/user_score.dart';
 import 'package:human_benchmark/services/app_logger.dart';
 import 'package:human_benchmark/widgets/game_page_header.dart';
-import 'package:human_benchmark/widgets/game_score_display.dart';
+import 'package:human_benchmark/widgets/auth_required_wrapper.dart';
 
 class ChimpTestPage extends StatefulWidget {
   const ChimpTestPage({super.key});
@@ -217,32 +217,37 @@ class _ChimpTestPageState extends State<ChimpTestPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              GamePageHeader(
-                title: 'Chimp Test',
-                subtitle:
-                    'This test is based on research showing that chimpanzees can outperform humans in certain working memory tasks. Working memory is crucial for reasoning, learning, and decision-making. Training it can improve cognitive performance across many areas.',
-              ),
-              const SizedBox(height: 24),
-              Expanded(child: _buildGameContent()),
-
-              // Banner Ad at bottom
-              if (kReleaseMode && _isBannerAdReady && _bannerAd != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: SizedBox(
-                    height: _bannerAd!.size.height.toDouble(),
-                    width: _bannerAd!.size.width.toDouble(),
-                    child: AdWidget(ad: _bannerAd!),
-                  ),
+    return AuthRequiredWrapper(
+      title: 'Chimp Test',
+      subtitle:
+          'Sign in to play the Chimp Test and save your scores to track your progress.',
+      child: Scaffold(
+        backgroundColor: Colors.grey[50],
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                GamePageHeader(
+                  title: 'Chimp Test',
+                  subtitle:
+                      'This test is based on research showing that chimpanzees can outperform humans in certain working memory tasks. Working memory is crucial for reasoning, learning, and decision-making. Training it can improve cognitive performance across many areas.',
                 ),
-            ],
+                const SizedBox(height: 24),
+                Expanded(child: _buildGameContent()),
+
+                // Banner Ad at bottom
+                if (kReleaseMode && _isBannerAdReady && _bannerAd != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: SizedBox(
+                      height: _bannerAd!.size.height.toDouble(),
+                      width: _bannerAd!.size.width.toDouble(),
+                      child: AdWidget(ad: _bannerAd!),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -267,13 +272,6 @@ class _ChimpTestPageState extends State<ChimpTestPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
         ),
         child: Column(
           children: [
@@ -409,27 +407,8 @@ class _ChimpTestPageState extends State<ChimpTestPage> {
   Widget _buildGame() {
     return Column(
       children: [
-        // Stats
-        GameScoreDisplay(
-          scores: [
-            ScoreItem(
-              label: 'Level',
-              value: '$_currentLevel',
-              icon: Icons.trending_up,
-            ),
-            ScoreItem(
-              label: 'Score',
-              value: '$_currentScore',
-              icon: Icons.star,
-            ),
-            ScoreItem(
-              label: 'Best',
-              value: '$_bestScore',
-              icon: Icons.emoji_events,
-            ),
-          ],
-          primaryColor: Colors.amber[600],
-        ),
+        // Stats - Nice cards without borders
+        _buildScoreCards(),
         const SizedBox(height: 20),
 
         // Game Grid
@@ -439,13 +418,6 @@ class _ChimpTestPageState extends State<ChimpTestPage> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
             ),
             child: Column(
               children: [
@@ -524,13 +496,6 @@ class _ChimpTestPageState extends State<ChimpTestPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
         ),
         child: Column(
           children: [
@@ -649,6 +614,110 @@ class _ChimpTestPageState extends State<ChimpTestPage> {
           style: const TextStyle(fontSize: 14, color: Colors.black54),
         ),
       ],
+    );
+  }
+
+  Widget _buildScoreCards() {
+    return Row(
+      children: [
+        // Level Card
+        Expanded(
+          child: _buildScoreCard(
+            icon: Icons.trending_up,
+            label: 'Level',
+            value: '$_currentLevel',
+            color: Colors.blue,
+            isHighlighted: true,
+          ),
+        ),
+        const SizedBox(width: 12),
+
+        // Score Card
+        Expanded(
+          child: _buildScoreCard(
+            icon: Icons.star,
+            label: 'Score',
+            value: '$_currentScore',
+            color: Colors.amber,
+            isHighlighted: false,
+          ),
+        ),
+        const SizedBox(width: 12),
+
+        // Best Card
+        Expanded(
+          child: _buildScoreCard(
+            icon: Icons.emoji_events,
+            label: 'Best',
+            value: '$_bestScore',
+            color: Colors.purple,
+            isHighlighted: false,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildScoreCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+    required bool isHighlighted,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isHighlighted
+              ? [color.withOpacity(0.15), color.withOpacity(0.08)]
+              : [color.withOpacity(0.08), color.withOpacity(0.04)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          // Icon with background
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [color, color.withOpacity(0.8)],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: Colors.white, size: 24),
+          ),
+          const SizedBox(height: 12),
+
+          // Value
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: color.withOpacity(0.9),
+            ),
+          ),
+          const SizedBox(height: 4),
+
+          // Label
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color.withOpacity(0.7),
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

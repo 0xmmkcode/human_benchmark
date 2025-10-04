@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
+import 'package:human_benchmark/web/widgets/page_header.dart';
 import 'package:human_benchmark/services/game_management_service.dart';
 import 'package:human_benchmark/models/game_management.dart';
 import 'package:human_benchmark/services/admin_service.dart';
@@ -116,7 +117,11 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildPageHeader(),
+                    PageHeader(
+                      title: 'Game Management',
+                      subtitle:
+                          'Control game availability and visibility across the platform.',
+                    ),
                     const Gap(32),
                     _buildQuickStats(games),
                     const Gap(24),
@@ -128,27 +133,6 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
           );
         },
       ),
-    );
-  }
-
-  Widget _buildPageHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Game Management',
-          style: TextStyle(
-            fontSize: 35,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Control game availability and visibility across the platform.',
-          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-        ),
-      ],
     );
   }
 

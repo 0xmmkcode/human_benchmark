@@ -10,7 +10,7 @@ import 'package:human_benchmark/web/pages/landing_page.dart';
 import 'package:human_benchmark/web/pages/about_page.dart';
 import 'package:human_benchmark/web/pages/features_page.dart';
 import 'package:human_benchmark/web/pages/reaction_time_page.dart';
-import 'package:human_benchmark/web/components/web_sidebar.dart';
+import 'package:human_benchmark/web/components/web_sidebar_toggle.dart';
 import 'package:human_benchmark/web/pages/privacy_policy_page.dart';
 import 'package:human_benchmark/web/pages/terms_of_service_page.dart';
 import 'package:human_benchmark/screens/personality_quiz_page.dart';
@@ -82,7 +82,10 @@ void main() async {
 
 // Create dynamic router based on Firebase game management settings
 Future<GoRouter> _createDynamicRouter() async {
-  final routes = await FirebaseNavigationService.getAllRoutes();
+  final isSignedIn = AuthService.currentUser != null;
+  final routes = await FirebaseNavigationService.getAllRoutes(
+    isSignedIn: isSignedIn,
+  );
 
   return GoRouter(
     initialLocation: '/',
@@ -437,29 +440,21 @@ class _WebAppShellState extends State<_WebAppShell> {
         final location = GoRouterState.of(context).uri.toString();
         final selectedIndex = _getSelectedIndex(location, navigationItems);
 
-        return Scaffold(
-          body: Row(
-            children: [
-              WebSidebar(
-                selectedIndex: selectedIndex,
-                onIndexChanged: (int idx) {
-                  final item = navigationItems.firstWhere(
-                    (item) => item['index'] == idx,
-                    orElse: () => <String, dynamic>{},
-                  );
+        return WebSidebarToggle(
+          selectedIndex: selectedIndex,
+          onIndexChanged: (int idx) {
+            final item = navigationItems.firstWhere(
+              (item) => item['index'] == idx,
+              orElse: () => <String, dynamic>{},
+            );
 
-                  final route = item['path'] as String?;
-                  if (route != null) {
-                    context.go(route);
-                  }
-                },
-                onBackToLanding: () => context.go('/'),
-              ),
-              Expanded(
-                child: Container(color: Colors.white, child: widget.child),
-              ),
-            ],
-          ),
+            final route = item['path'] as String?;
+            if (route != null) {
+              context.go(route);
+            }
+          },
+          onBackToLanding: () => context.go('/'),
+          child: widget.child,
         );
       },
     );

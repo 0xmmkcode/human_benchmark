@@ -126,7 +126,7 @@ class MaintenancePage extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'support@humanbenchmark.com',
+                          'contact@mmkcode.xyz',
                           style: WebTheme.bodyMedium.copyWith(
                             color: WebTheme.primaryBlue,
                             decoration: TextDecoration.underline,

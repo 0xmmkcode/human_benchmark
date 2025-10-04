@@ -6,6 +6,7 @@ import '../../services/auth_service.dart';
 import '../../services/app_logger.dart';
 import '../../models/user_profile.dart';
 import '../../models/user_score.dart';
+import '../widgets/page_header.dart';
 
 class AdminUsersPage extends ConsumerStatefulWidget {
   const AdminUsersPage({super.key});
@@ -430,18 +431,9 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Page Header
-              Text(
-                'Admin Users',
-                style: TextStyle(
-                  fontSize: 35,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Manage user accounts and permissions.',
-                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              PageHeader(
+                title: 'Admin Users',
+                subtitle: 'Manage user accounts and permissions.',
               ),
               const SizedBox(height: 40),
 
@@ -524,18 +516,9 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Page Header
-          Text(
-            'Admin Users',
-            style: TextStyle(
-              fontSize: 35,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Manage user accounts and permissions.',
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+          PageHeader(
+            title: 'Admin Users',
+            subtitle: 'Manage user accounts and permissions.',
           ),
           const SizedBox(height: 24),
 

@@ -28,7 +28,7 @@ async function setupWebSettings() {
     // Default web settings
     const defaultSettings = {
       webGameEnabled: true, // Enable web game by default
-      playStoreLink: 'https://play.google.com/store/apps/details?id=xyz.mmkcode.focusflow',
+      playStoreLink: 'https://play.google.com/store/apps/details?id=xyz.mmkcode.humanbenchmark.human_benchmark',
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedBy: 'system'
     };

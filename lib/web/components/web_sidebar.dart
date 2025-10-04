@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
+import 'package:human_benchmark/web/theme/web_theme.dart';
 import 'package:human_benchmark/web/utils/web_utils.dart';
 import 'package:human_benchmark/web/components/web_navigation_item.dart';
 import 'package:human_benchmark/services/auth_service.dart';
@@ -10,12 +12,14 @@ class WebSidebar extends StatefulWidget {
   final int selectedIndex;
   final Function(int) onIndexChanged;
   final VoidCallback? onBackToLanding;
+  final VoidCallback? onMinimize;
 
   const WebSidebar({
     Key? key,
     required this.selectedIndex,
     required this.onIndexChanged,
     this.onBackToLanding,
+    this.onMinimize,
   }) : super(key: key);
 
   @override
@@ -42,13 +46,13 @@ class _WebSidebarState extends State<WebSidebar> {
           Container(
             padding: EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: WebTheme.grey50,
               // Removed bottom border
             ),
             child: Column(
               children: [
                 // Back to Landing Button
-                if (widget.onBackToLanding != null)
+                /*if (widget.onBackToLanding != null)
                   Row(
                     children: [
                       IconButton(
@@ -59,8 +63,8 @@ class _WebSidebarState extends State<WebSidebar> {
                       Spacer(),
                     ],
                   ),
-
-                // Logo and Title
+*/
+                // Logo and Title with Minimize Button
                 Row(
                   children: [
                     Image.asset(
@@ -90,6 +94,24 @@ class _WebSidebarState extends State<WebSidebar> {
                         ],
                       ),
                     ),
+                    // Minimize Button
+                    if (widget.onMinimize != null)
+                      IconButton(
+                        onPressed: widget.onMinimize,
+                        icon: Icon(
+                          Icons.minimize,
+                          color: Colors.grey[600],
+                          size: 20,
+                        ),
+                        tooltip: 'Minimize Sidebar',
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.grey[100],
+                          padding: EdgeInsets.all(8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ],
@@ -98,115 +120,135 @@ class _WebSidebarState extends State<WebSidebar> {
 
           // Navigation Items
           Expanded(
-            child: StreamBuilder<List<Map<String, dynamic>>>(
-              stream: FirebaseNavigationService.getAllNavigationItemsStream(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return ListView(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+            child: StreamBuilder<User?>(
+              stream: AuthService.authStateChanges,
+              builder: (context, authSnapshot) {
+                final bool isSignedIn = authSnapshot.data != null;
+                return StreamBuilder<List<Map<String, dynamic>>>(
+                  stream: FirebaseNavigationService.getAllNavigationItemsStream(
+                    isSignedIn: isSignedIn,
+                  ),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return ListView(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                                SizedBox(width: 12),
+                                Text(
+                                  'Loading navigation...',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
                             ),
-                            SizedBox(width: 12),
-                            Text(
-                              'Loading navigation...',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
+                          ),
+                        ],
+                      );
+                    }
+
+                    if (snapshot.hasError) {
+                      return ListView(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.error,
+                                  color: Colors.red[400],
+                                  size: 16,
+                                ),
+                                SizedBox(width: 12),
+                                Text(
+                                  'Error loading navigation: ${snapshot.error}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.red[600],
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  );
-                }
+                          ),
+                        ],
+                      );
+                    }
 
-                if (snapshot.hasError) {
-                  return ListView(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            Icon(Icons.error, color: Colors.red[400], size: 16),
-                            SizedBox(width: 12),
-                            Text(
-                              'Error loading navigation: ${snapshot.error}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.red[600],
-                              ),
+                    final navigationItems = snapshot.data ?? [];
+
+                    if (navigationItems.isEmpty) {
+                      return ListView(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.info,
+                                  color: Colors.blue[400],
+                                  size: 16,
+                                ),
+                                SizedBox(width: 12),
+                                Text(
+                                  'No navigation items available',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.blue[600],
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  );
-                }
+                          ),
+                        ],
+                      );
+                    }
 
-                final navigationItems = snapshot.data ?? [];
-
-                if (navigationItems.isEmpty) {
-                  return ListView(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            Icon(Icons.info, color: Colors.blue[400], size: 16),
-                            SizedBox(width: 12),
-                            Text(
-                              'No navigation items available',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.blue[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  );
-                }
-
-                return ListView(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  children: navigationItems.map((item) {
-                    return WebNavigationItem(
-                      icon: WebUtils.getIconFromString(item['icon']),
-                      title: item['title'],
-                      subtitle: item['subtitle'],
-                      isSelected: widget.selectedIndex == item['index'],
-                      isMaintenance: item['isMaintenance'] ?? false,
-                      isBlocked: item['isBlocked'] ?? false,
-                      isActive: item['isActive'] ?? true,
-                      onTap: () => widget.onIndexChanged(item['index']),
+                    return ListView(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      children: navigationItems.map((item) {
+                        return WebNavigationItem(
+                          icon: WebUtils.getIconFromString(item['icon']),
+                          title: item['title'],
+                          subtitle: item['subtitle'],
+                          isSelected: widget.selectedIndex == item['index'],
+                          isMaintenance: item['isMaintenance'] ?? false,
+                          isBlocked: item['isBlocked'] ?? false,
+                          isActive: item['isActive'] ?? true,
+                          onTap: () => widget.onIndexChanged(item['index']),
+                        );
+                      }).toList(),
                     );
-                  }).toList(),
+                  },
                 );
               },
             ),
           ),
-
+          Gap(16),
           // Footer
-          StreamBuilder<List<Map<String, dynamic>>>(
-            stream: FirebaseNavigationService.getAllNavigationItemsStream(),
-            builder: (context, navSnapshot) {
-              return StreamBuilder<User?>(
-                stream: AuthService.authStateChanges,
-                builder: (context, authSnapshot) {
-                  final User? user = authSnapshot.data;
-                  final bool isSignedIn = user != null;
+          StreamBuilder<User?>(
+            stream: AuthService.authStateChanges,
+            builder: (context, authSnapshot) {
+              final User? user = authSnapshot.data;
+              final bool isSignedIn = user != null;
+              return StreamBuilder<List<Map<String, dynamic>>>(
+                stream: FirebaseNavigationService.getAllNavigationItemsStream(
+                  isSignedIn: isSignedIn,
+                ),
+                builder: (context, navSnapshot) {
                   final navigationItems = navSnapshot.data ?? [];
                   final bool isAdmin = navigationItems.any(
                     (item) =>
@@ -216,7 +258,7 @@ class _WebSidebarState extends State<WebSidebar> {
                   return Container(
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: WebTheme.grey50,
                       // Removed top border
                     ),
                     child: Row(

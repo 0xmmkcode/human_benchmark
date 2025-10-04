@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:gap/gap.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
+import 'package:human_benchmark/web/widgets/page_header.dart';
+import 'package:human_benchmark/web/widgets/auth_required_wrapper.dart';
 import 'package:human_benchmark/services/auth_service.dart';
 import 'package:human_benchmark/services/score_service.dart';
 import 'package:human_benchmark/services/user_profile_service.dart';
@@ -269,27 +271,13 @@ class _WebProfilePageState extends State<WebProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: WebTheme.grey50,
-      body: StreamBuilder<User?>(
-        stream: AuthService.authStateChanges,
-        builder: (context, snapshot) {
-          final bool isAuthenticated = snapshot.data != null;
-
-          if (!isAuthenticated) {
-            return _buildSignInPrompt();
-          }
-
-          if (_isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (_error != null) {
-            return _buildErrorState();
-          }
-
-          return _buildProfileContent(snapshot.data!);
-        },
+    return AuthRequiredWrapper(
+      title: 'Profile',
+      subtitle:
+          'Sign in to view and manage your profile, scores, and game statistics.',
+      child: Scaffold(
+        backgroundColor: WebTheme.grey50,
+        body: _buildProfileContent(),
       ),
     );
   }
@@ -389,29 +377,20 @@ class _WebProfilePageState extends State<WebProfilePage> {
     );
   }
 
-  Widget _buildPageHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Profile',
-          style: TextStyle(
-            fontSize: 35,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'View your statistics and achievements.',
-          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-        ),
-        const SizedBox(height: 40),
-      ],
-    );
-  }
+  Widget _buildProfileContent() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-  Widget _buildProfileContent(User user) {
+    if (_error != null) {
+      return _buildErrorState();
+    }
+
+    final user = AuthService.currentUser;
+    if (user == null) {
+      return const Center(child: Text('No user found'));
+    }
+
     return RefreshIndicator(
       onRefresh: () async {
         await Future.wait([
@@ -429,7 +408,10 @@ class _WebProfilePageState extends State<WebProfilePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Page Header
-                _buildPageHeader(),
+                PageHeader(
+                  title: 'Profile',
+                  subtitle: 'View your statistics and achievements.',
+                ),
 
                 // Profile Header
                 _buildProfileHeader(user),

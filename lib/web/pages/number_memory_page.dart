@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
+import 'package:human_benchmark/web/widgets/page_header.dart';
+import 'package:human_benchmark/web/widgets/auth_required_wrapper.dart';
 import 'package:human_benchmark/services/auth_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:human_benchmark/services/score_service.dart';
 import 'dart:math';
 
@@ -213,160 +214,62 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: AuthService.authStateChanges,
-      builder: (context, snapshot) {
-        final bool isAuthenticated = snapshot.data != null;
-        if (!isAuthenticated) {
-          return Scaffold(
-            backgroundColor: WebTheme.grey50,
-            body: Center(
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 600),
-                padding: const EdgeInsets.all(24),
-                child: Container(
-                  padding: const EdgeInsets.all(40),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.lock_outline,
-                        size: 80,
-                        color: WebTheme.primaryBlue,
-                      ),
-                      const Gap(24),
-                      Text(
-                        'Sign in required',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const Gap(16),
-                      Text(
-                        'Please sign in to play Number Memory and save your scores.',
-                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                        textAlign: TextAlign.center,
-                      ),
-                      const Gap(32),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          icon: const Icon(Icons.login),
-                          label: const Text('Sign in with Google'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: WebTheme.primaryBlue,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: () async {
-                            final cred = await AuthService.signInWithGoogle();
-                            if (mounted && cred != null) {
-                              setState(() {});
-                            }
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
+    return AuthRequiredWrapper(
+      title: 'Number Memory Test',
+      subtitle:
+          'Sign in to play Number Memory and save your scores to track your progress.',
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Page Header
+                PageHeader(
+                  title: 'Number Memory Test',
+                  subtitle: 'Remember the number sequence and type it back',
                 ),
-              ),
-            ),
-          );
-        }
+                SizedBox(height: 24),
 
-        // Authenticated user - show the game
-        return Scaffold(
-          backgroundColor: WebTheme.grey50,
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Back button and game name header
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: Icon(Icons.arrow_back, size: 24),
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.grey[200],
-                          padding: EdgeInsets.all(12),
-                        ),
+                // Score Display (equal widths)
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildScoreCard(
+                        'Level',
+                        '$_currentLevel',
+                        Icons.trending_up,
                       ),
-                      SizedBox(width: 16),
-                      Text(
-                        'Number Memory Test',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
-                        ),
+                    ),
+                    SizedBox(width: 24),
+                    Expanded(
+                      child: _buildScoreCard(
+                        'Score',
+                        '$_currentScore',
+                        Icons.star,
                       ),
-                    ],
-                  ),
-                  SizedBox(height: 24),
-                  Text(
-                    'Remember the number sequence and type it back',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  ),
-                  SizedBox(height: 24),
+                    ),
+                    SizedBox(width: 24),
+                    Expanded(
+                      child: _buildScoreCard(
+                        'Best',
+                        '$_bestScore',
+                        Icons.emoji_events,
+                      ),
+                    ),
+                  ],
+                ),
+                const Gap(40),
 
-                  // Score Display (equal widths)
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildScoreCard(
-                          'Level',
-                          '$_currentLevel',
-                          Icons.trending_up,
-                        ),
-                      ),
-                      SizedBox(width: 24),
-                      Expanded(
-                        child: _buildScoreCard(
-                          'Score',
-                          '$_currentScore',
-                          Icons.star,
-                        ),
-                      ),
-                      SizedBox(width: 24),
-                      Expanded(
-                        child: _buildScoreCard(
-                          'Best',
-                          '$_bestScore',
-                          Icons.emoji_events,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Gap(40),
-
-                  // Game Area fills remaining space and is centered
-                  Expanded(child: Center(child: _buildGameArea())),
-                ],
-              ),
+                // Game Area fills remaining space and is centered
+                Expanded(child: Center(child: _buildGameArea())),
+              ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 

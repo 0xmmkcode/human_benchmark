@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:human_benchmark/services/web_settings_service.dart';
 import 'package:human_benchmark/models/web_settings.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
+import 'package:human_benchmark/web/widgets/page_header.dart';
 import 'package:human_benchmark/services/admin_service.dart';
 
 class AdminWebSettingsPage extends StatefulWidget {
@@ -128,19 +129,10 @@ class _AdminWebSettingsPageState extends State<AdminWebSettingsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Header
-                  Text(
-                    'Manage Web Game Access',
-                    style: WebTheme.headingLarge.copyWith(
-                      color: WebTheme.primaryBlue,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Control whether users can access the web game or be redirected to the mobile app',
-                    style: WebTheme.bodyLarge.copyWith(
-                      color: Colors.grey[600],
-                    ),
+                  PageHeader(
+                    title: 'Manage Web Game Access',
+                    subtitle:
+                        'Control whether users can access the web game or be redirected to the mobile app',
                   ),
                   const SizedBox(height: 32),
 
@@ -184,10 +176,14 @@ class _AdminWebSettingsPageState extends State<AdminWebSettingsPage> {
                           const SizedBox(height: 24),
                           SwitchListTile(
                             title: Text(
-                              _webGameEnabled ? 'Web Game Enabled' : 'Web Game Disabled',
+                              _webGameEnabled
+                                  ? 'Web Game Enabled'
+                                  : 'Web Game Disabled',
                               style: WebTheme.bodyLarge.copyWith(
                                 fontWeight: FontWeight.w600,
-                                color: _webGameEnabled ? Colors.green[700] : Colors.red[700],
+                                color: _webGameEnabled
+                                    ? Colors.green[700]
+                                    : Colors.red[700],
                               ),
                             ),
                             subtitle: Text(
@@ -254,7 +250,8 @@ class _AdminWebSettingsPageState extends State<AdminWebSettingsPage> {
                             controller: _playStoreLinkController,
                             decoration: InputDecoration(
                               labelText: 'Play Store Link',
-                              hintText: 'https://play.google.com/store/apps/details?id=...',
+                              hintText:
+                                  'https://play.google.com/store/apps/details?id=...',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -296,8 +293,12 @@ class _AdminWebSettingsPageState extends State<AdminWebSettingsPage> {
                             const SizedBox(height: 16),
                             _buildStatusRow(
                               'Web Game Status',
-                              _currentSettings!.webGameEnabled ? 'Enabled' : 'Disabled',
-                              _currentSettings!.webGameEnabled ? Colors.green : Colors.red,
+                              _currentSettings!.webGameEnabled
+                                  ? 'Enabled'
+                                  : 'Disabled',
+                              _currentSettings!.webGameEnabled
+                                  ? Colors.green
+                                  : Colors.red,
                             ),
                             _buildStatusRow(
                               'Play Store Link',
@@ -327,7 +328,9 @@ class _AdminWebSettingsPageState extends State<AdminWebSettingsPage> {
                     child: ElevatedButton(
                       onPressed: _isSaving ? null : _saveWebSettings,
                       style: WebTheme.largePrimaryButton.copyWith(
-                        backgroundColor: MaterialStateProperty.all(WebTheme.primaryBlue),
+                        backgroundColor: MaterialStateProperty.all(
+                          WebTheme.primaryBlue,
+                        ),
                         padding: MaterialStateProperty.all(
                           const EdgeInsets.symmetric(vertical: 16),
                         ),
@@ -338,7 +341,9 @@ class _AdminWebSettingsPageState extends State<AdminWebSettingsPage> {
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             )
                           : Text(
@@ -391,4 +396,3 @@ class _AdminWebSettingsPageState extends State<AdminWebSettingsPage> {
     return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
   }
 }
-

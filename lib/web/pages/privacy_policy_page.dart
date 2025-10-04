@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:gap/gap.dart';
 import '../components/web_sidebar.dart';
+import '../widgets/page_header.dart';
 
 class PrivacyPolicyPage extends StatelessWidget {
   const PrivacyPolicyPage({super.key});
@@ -32,7 +33,12 @@ class PrivacyPolicyPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildHeader(),
+                    PageHeader(
+                      title: 'Privacy Policy',
+                      subtitle:
+                          'Your privacy is important to us. Learn how we collect, use, and protect your information.',
+                      showBackButton: false,
+                    ),
                     const Gap(32),
                     _buildIntroduction(),
                     const Gap(24),
@@ -68,7 +74,7 @@ class PrivacyPolicyPage extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeaderOld() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(32),
@@ -790,9 +796,8 @@ class PrivacyPolicyPage extends StatelessWidget {
             ),
           ),
           const Gap(12),
-          _buildContactItem('Email: privacy@humanbenchmark.com'),
-          _buildContactItem('Website: humanbenchmark.com/contact'),
-          _buildContactItem('Address: [Your Business Address]'),
+          _buildContactItem('Email: contact@mmkcode.xyz'),
+          _buildContactItem('Website: humanbenchmark.xyz'),
           const Gap(16),
           Text(
             'We will respond to your inquiry within 30 days of receipt.',

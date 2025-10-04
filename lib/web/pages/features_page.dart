@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
+import 'package:human_benchmark/web/widgets/page_header.dart';
 
 class FeaturesPage extends StatelessWidget {
   final VoidCallback? onBackToLanding;
@@ -21,7 +22,15 @@ class FeaturesPage extends StatelessWidget {
               child: Column(
                 children: [
                   // Header
-                  _buildHeader(context),
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: PageHeader(
+                      title: 'Features',
+                      subtitle:
+                          'Discover all the powerful tools and features that make Human Benchmark the ultimate cognitive testing platform.',
+                      showBackButton: false,
+                    ),
+                  ),
 
                   // Core Features
                   _buildCoreFeatures(context),
@@ -73,31 +82,6 @@ class FeaturesPage extends StatelessWidget {
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 80),
-      child: Column(
-        children: [
-          Text(
-            'Features',
-            style: TextStyle(
-              fontSize: 35,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Discover all the powerful tools and features that make Human Benchmark the ultimate cognitive testing platform.',
-            style: WebTheme.bodyLarge.copyWith(fontSize: 18, height: 1.6),
-            textAlign: TextAlign.center,
           ),
         ],
       ),

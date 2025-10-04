@@ -26,6 +26,15 @@ class FirebaseNavigationService {
     },
   ];
 
+  // Get end navigation items based on authentication status
+  static List<Map<String, dynamic>> getEndNavigationItems(bool isSignedIn) {
+    if (isSignedIn) {
+      return endNavigationItems;
+    } else {
+      return []; // No profile for signed out users
+    }
+  }
+
   // Admin navigation items
   static const List<Map<String, dynamic>> adminNavigationItems = [
     {
@@ -65,7 +74,9 @@ class FirebaseNavigationService {
   };
 
   // Get all navigation items based on Firebase settings
-  static Future<List<Map<String, dynamic>>> getAllNavigationItems() async {
+  static Future<List<Map<String, dynamic>>> getAllNavigationItems({
+    bool isSignedIn = false,
+  }) async {
     final visibleGames = await GameManagementService.getVisibleGamesInOrder();
     final isAdmin = await AdminService.isCurrentUserAdmin();
 
@@ -93,7 +104,7 @@ class FirebaseNavigationService {
     }
 
     // Add end items
-    for (final item in endNavigationItems) {
+    for (final item in getEndNavigationItems(isSignedIn)) {
       allItems.add({...item, 'index': currentIndex});
       currentIndex++;
     }
@@ -110,7 +121,9 @@ class FirebaseNavigationService {
   }
 
   // Get navigation items stream for real-time updates
-  static Stream<List<Map<String, dynamic>>> getAllNavigationItemsStream() {
+  static Stream<List<Map<String, dynamic>>> getAllNavigationItemsStream({
+    bool isSignedIn = false,
+  }) {
     return GameManagementService.getAllGameManagementStream().asyncMap((
       allGames,
     ) async {
@@ -188,7 +201,7 @@ class FirebaseNavigationService {
       }
 
       // Add end items
-      for (final item in endNavigationItems) {
+      for (final item in getEndNavigationItems(isSignedIn)) {
         allItems.add({...item, 'index': currentIndex});
         currentIndex++;
       }
@@ -251,7 +264,9 @@ class FirebaseNavigationService {
   }
 
   // Get all routes that should be registered
-  static Future<List<Map<String, dynamic>>> getAllRoutes() async {
+  static Future<List<Map<String, dynamic>>> getAllRoutes({
+    bool isSignedIn = false,
+  }) async {
     final visibleGames = await GameManagementService.getVisibleGamesInOrder();
     final isAdmin = await AdminService.isCurrentUserAdmin();
 
@@ -272,7 +287,7 @@ class FirebaseNavigationService {
     }
 
     // Add end routes
-    for (final item in endNavigationItems) {
+    for (final item in getEndNavigationItems(isSignedIn)) {
       routes.add({'path': item['path'], 'type': item['type']});
     }
 

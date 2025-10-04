@@ -3,8 +3,8 @@ import 'package:gap/gap.dart';
 import 'package:human_benchmark/models/user_score.dart';
 import 'package:human_benchmark/models/game_score.dart';
 import 'package:human_benchmark/services/dashboard_service.dart';
-import 'package:human_benchmark/widgets/score_display.dart';
-import 'package:human_benchmark/screens/comprehensive_leaderboard_page.dart';
+import 'package:human_benchmark/web/theme/web_theme.dart';
+import 'package:human_benchmark/web/widgets/page_header.dart';
 
 class WebDashboardPage extends StatefulWidget {
   const WebDashboardPage({super.key});
@@ -13,102 +13,30 @@ class WebDashboardPage extends StatefulWidget {
   State<WebDashboardPage> createState() => _WebDashboardPageState();
 }
 
-class _WebDashboardPageState extends State<WebDashboardPage>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  String _sortBy = 'overallScore';
-  bool _sortDescending = true;
-  String _searchQuery = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
+class _WebDashboardPageState extends State<WebDashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: WebTheme.grey50,
       body: Column(
         children: [
           // Page Header
-          Container(
-            width: double.infinity,
+          Padding(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Back button and game name header
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: Icon(Icons.arrow_back, size: 24),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.grey[200],
-                        padding: EdgeInsets.all(12),
-                      ),
-                    ),
-                    SizedBox(width: 16),
-                    Text(
-                      'Dashboard',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[800],
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 24),
-                Text(
-                  'Monitor game statistics and player activity.',
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 24),
-                TabBar(
-                  controller: _tabController,
-                  labelColor: Colors.blue.shade600,
-                  unselectedLabelColor: Colors.grey.shade600,
-                  indicatorColor: Colors.blue.shade600,
-                  tabs: const [
-                    Tab(text: 'Overview'),
-                    Tab(text: 'Players'),
-                    Tab(text: 'Games'),
-                  ],
-                ),
-              ],
+            child: PageHeader(
+              title: 'Statistics',
+              subtitle: 'Monitor game statistics and player activity.',
             ),
           ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildOverviewTab(),
-                _buildPlayersTab(),
-                _buildGamesTab(),
-              ],
-            ),
-          ),
+          Expanded(child: _buildStatisticsPage()),
         ],
       ),
     );
   }
 
-  Widget _buildOverviewTab() {
-    return FutureBuilder<DashboardOverview>(
-      future: DashboardService.getDashboardOverview(),
+  Widget _buildStatisticsPage() {
+    return StreamBuilder<DashboardOverview>(
+      stream: DashboardService.getDashboardOverviewStream(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -125,12 +53,17 @@ class _WebDashboardPageState extends State<WebDashboardPage>
                   color: Colors.grey.shade400,
                 ),
                 const Gap(16),
-                const Text(
-                  'Failed to load dashboard',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 18,
-                    color: Colors.grey,
+                Text(
+                  'Failed to load statistics',
+                  style: WebTheme.headingMedium.copyWith(
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const Gap(8),
+                Text(
+                  'Please try again later',
+                  style: WebTheme.bodyMedium.copyWith(
+                    color: Colors.grey.shade500,
                   ),
                 ),
               ],
@@ -138,67 +71,35 @@ class _WebDashboardPageState extends State<WebDashboardPage>
           );
         }
 
-        final overview = snapshot.data ?? DashboardOverview.empty();
-
+        final overview = snapshot.data!;
         return SingleChildScrollView(
           padding: const EdgeInsets.all(32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Stats Cards
+              // Main Statistics Cards
+              _buildMainStatsCards(overview),
+              const Gap(32),
+
+              // Recent Activity and Players Row
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Recent Activity
                   Expanded(
-                    child: _buildStatCard(
-                      'Total Players',
-                      '${overview.totalUsers}',
-                      Icons.people,
-                      Colors.blue.shade600,
-                    ),
+                    child: _buildRecentActivityCard(overview.recentActivity),
                   ),
                   const Gap(24),
+                  // Recent Players
                   Expanded(
-                    child: _buildStatCard(
-                      'Games Played',
-                      '${overview.totalGamesPlayed}',
-                      Icons.games,
-                      Colors.green.shade600,
-                    ),
+                    child: _buildRecentPlayersCard(overview.topPerformers),
                   ),
                 ],
               ),
-              const Gap(40),
+              const Gap(32),
 
-              // Top Performers
-              Text(
-                'Top Performers',
-                style: TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade800,
-                ),
-              ),
-              const Gap(24),
-              ...overview.topPerformers
-                  .take(5)
-                  .map((player) => _buildPlayerCard(player)),
-              const Gap(40),
-
-              // Recent Activity
-              Text(
-                'Recent Activity',
-                style: TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade800,
-                ),
-              ),
-              const Gap(24),
-              ...overview.recentActivity
-                  .take(5)
-                  .map((activity) => _buildActivityCard(activity)),
+              // Game Statistics
+              _buildGameStatsSection(overview.gameStatistics),
             ],
           ),
         );
@@ -206,223 +107,57 @@ class _WebDashboardPageState extends State<WebDashboardPage>
     );
   }
 
-  Widget _buildPlayersTab() {
+  Widget _buildMainStatsCards(DashboardOverview overview) {
     return Column(
       children: [
-        // Search and Sort Controls
-        Container(
-          padding: const EdgeInsets.all(32),
-          color: Colors.white,
-          child: Column(
-            children: [
-              // Search Bar
-              TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search players...',
-                  prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 16,
-                  ),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                  });
-                },
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                'Total Players',
+                '${overview.totalUsers}',
+                Icons.people,
+                Colors.blue,
+                'Registered users',
               ),
-              const Gap(24),
-
-              // Sort Controls
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _sortBy,
-                      decoration: InputDecoration(
-                        labelText: 'Sort by',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'overallScore',
-                          child: Text('Overall Score'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'totalGames',
-                          child: Text('Total Games'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'lastPlayed',
-                          child: Text('Last Played'),
-                        ),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          _sortBy = value ?? 'overallScore';
-                        });
-                      },
-                    ),
-                  ),
-                  const Gap(16),
-                  IconButton(
-                    onPressed: () {
-                      setState(() {
-                        _sortDescending = !_sortDescending;
-                      });
-                    },
-                    icon: Icon(
-                      _sortDescending
-                          ? Icons.arrow_downward
-                          : Icons.arrow_upward,
-                      color: Colors.blue.shade600,
-                      size: 28,
-                    ),
-                  ),
-                ],
+            ),
+            const Gap(16),
+            Expanded(
+              child: _buildStatCard(
+                'Games Played',
+                '${overview.totalGamesPlayed}',
+                Icons.games,
+                Colors.green,
+                'Total games completed',
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-
-        // Players List
-        Expanded(
-          child: StreamBuilder<List<PlayerDashboardData>>(
-            stream: _searchQuery.isNotEmpty
-                ? DashboardService.searchPlayers(_searchQuery)
-                : DashboardService.getAllPlayers(
-                    sortBy: _sortBy,
-                    descending: _sortDescending,
-                  ),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (snapshot.hasError) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: 64,
-                        color: Colors.grey.shade400,
-                      ),
-                      const Gap(16),
-                      const Text(
-                        'Failed to load players',
-                        style: TextStyle(
-                          fontFamily: 'Montserrat',
-                          fontSize: 18,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              final players = snapshot.data ?? [];
-
-              if (players.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.people_outline,
-                        size: 64,
-                        color: Colors.grey.shade400,
-                      ),
-                      const Gap(16),
-                      Text(
-                        _searchQuery.isNotEmpty
-                            ? 'No players found'
-                            : 'No players yet',
-                        style: TextStyle(
-                          fontFamily: 'Montserrat',
-                          fontSize: 18,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              return ListView.builder(
-                padding: const EdgeInsets.all(32),
-                itemCount: players.length,
-                itemBuilder: (context, index) {
-                  final player = players[index];
-                  return _buildPlayerCard(player, showRank: true);
-                },
-              );
-            },
-          ),
+        const Gap(16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                'Active Today',
+                '${overview.activeUsersToday}',
+                Icons.trending_up,
+                Colors.orange,
+                'Players active today',
+              ),
+            ),
+            const Gap(16),
+            Expanded(
+              child: _buildStatCard(
+                'Avg Score',
+                '${_calculateAverageScore(overview)}',
+                Icons.star,
+                Colors.purple,
+                'Average player score',
+              ),
+            ),
+          ],
         ),
       ],
-    );
-  }
-
-  Widget _buildGamesTab() {
-    return FutureBuilder<DashboardOverview>(
-      future: DashboardService.getDashboardOverview(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final overview = snapshot.data ?? DashboardOverview.empty();
-        final gameStats = overview.gameStatistics;
-
-        if (gameStats.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.games_outlined,
-                  size: 64,
-                  color: Colors.grey.shade400,
-                ),
-                const Gap(16),
-                const Text(
-                  'No game statistics yet',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 18,
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(32),
-          itemCount: gameStats.length,
-          itemBuilder: (context, index) {
-            final gameType = gameStats.keys.elementAt(index);
-            final stats = gameStats[gameType]!;
-            return _buildGameStatsCard(stats);
-          },
-        );
-      },
     );
   }
 
@@ -431,629 +166,404 @@ class _WebDashboardPageState extends State<WebDashboardPage>
     String value,
     IconData icon,
     Color color,
+    String subtitle,
   ) {
     return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 48),
-          const Gap(20),
-          Text(
-            value,
-            style: TextStyle(
-              fontFamily: 'Montserrat',
-              fontSize: 36,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          Text(
-            title,
-            style: TextStyle(
-              fontFamily: 'Montserrat',
-              fontSize: 16,
-              color: Colors.grey.shade600,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlayerCard(PlayerDashboardData player, {bool showRank = false}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(20),
-        leading: showRank
-            ? Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: _getRankColor(player.rank),
-                  borderRadius: BorderRadius.circular(25),
-                ),
-                child: Center(
-                  child: Text(
-                    '${player.rank}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
-                  ),
-                ),
-              )
-            : CircleAvatar(
-                radius: 25,
-                backgroundColor: Colors.blue.shade100,
-                child: Icon(
-                  Icons.person,
-                  size: 30,
-                  color: Colors.blue.shade600,
-                ),
-              ),
-        title: Text(
-          player.displayName,
-          style: TextStyle(
-            fontFamily: 'Montserrat',
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-          ),
-        ),
-        subtitle: Text(
-          '${player.totalGamesPlayed} games • Last played: ${_formatDate(player.lastPlayedAt)}',
-          style: TextStyle(
-            fontFamily: 'Montserrat',
-            color: Colors.grey.shade600,
-            fontSize: 14,
-          ),
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              '${player.overallScore}',
-              style: TextStyle(
-                fontFamily: 'Montserrat',
-                fontWeight: FontWeight.bold,
-                fontSize: 24,
-                color: Colors.blue.shade600,
-              ),
-            ),
-            Text(
-              'Overall',
-              style: TextStyle(
-                fontFamily: 'Montserrat',
-                fontSize: 14,
-                color: Colors.grey.shade500,
-              ),
-            ),
-          ],
-        ),
-        onTap: () => _showPlayerDetails(player),
-      ),
-    );
-  }
-
-  Widget _buildActivityCard(RecentActivity activity) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: activity.isHighScore
-              ? Colors.amber.shade300
-              : Colors.grey.shade200,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            _getGameIcon(activity.gameType),
-            color: _getGameColor(activity.gameType),
-            size: 24,
-          ),
-          const Gap(16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${activity.displayName} scored ${GameScore.getScoreDisplay(activity.gameType, activity.score)}',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  'in ${GameScore.getDisplayName(activity.gameType)}',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (activity.isHighScore)
-            Icon(Icons.star, color: Colors.amber.shade600, size: 20),
-          const Gap(12),
-          Text(
-            _formatDate(activity.playedAt),
-            style: TextStyle(
-              fontFamily: 'Montserrat',
-              fontSize: 14,
-              color: Colors.grey.shade500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGameStatsCard(GameStatistics stats) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
-                _getGameIcon(stats.gameType),
-                color: _getGameColor(stats.gameType),
-                size: 32,
-              ),
-              const Gap(16),
-              Text(
-                stats.gameName,
-                style: TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade800,
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const Spacer(),
+              Icon(
+                Icons.trending_up,
+                color: color.withValues(alpha: 0.6),
+                size: 20,
               ),
             ],
           ),
-          const Gap(24),
-          Row(
-            children: [
-              Expanded(
-                child: _buildGameStatItem('Top Score', stats.topScoreDisplay),
-              ),
-              Expanded(
-                child: _buildGameStatItem('Average', stats.averageScoreDisplay),
-              ),
-              Expanded(
-                child: _buildGameStatItem('Players', '${stats.playerCount}'),
-              ),
-            ],
+          const Gap(16),
+          Text(
+            value,
+            style: WebTheme.headingLarge.copyWith(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const Gap(8),
+          Text(
+            title,
+            style: WebTheme.bodyLarge.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[800],
+            ),
+          ),
+          const Gap(4),
+          Text(
+            subtitle,
+            style: WebTheme.bodyMedium.copyWith(color: Colors.grey[600]),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildGameStatItem(String label, String value) {
+  Widget _buildRecentActivityCard(List<RecentActivity> activities) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.history, color: WebTheme.primaryBlue, size: 24),
+              const Gap(12),
+              Text(
+                'Recent Activity',
+                style: WebTheme.headingMedium.copyWith(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: WebTheme.primaryBlue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${activities.length}',
+                  style: WebTheme.bodySmall.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: WebTheme.primaryBlue,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Gap(16),
+          if (activities.isEmpty)
+            Center(
+              child: Column(
+                children: [
+                  Icon(Icons.inbox, size: 48, color: Colors.grey[400]),
+                  const Gap(12),
+                  Text(
+                    'No recent activity',
+                    style: WebTheme.bodyLarge.copyWith(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            )
+          else
+            ...activities
+                .take(5)
+                .map((activity) => _buildActivityItem(activity)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentPlayersCard(List<PlayerDashboardData> players) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.people, color: Colors.green, size: 24),
+              const Gap(12),
+              Text(
+                'Top Players',
+                style: WebTheme.headingMedium.copyWith(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${players.length}',
+                  style: WebTheme.bodySmall.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.green,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Gap(16),
+          if (players.isEmpty)
+            Center(
+              child: Column(
+                children: [
+                  Icon(Icons.people_outline, size: 48, color: Colors.grey[400]),
+                  const Gap(12),
+                  Text(
+                    'No players yet',
+                    style: WebTheme.bodyLarge.copyWith(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            )
+          else
+            ...players.take(5).map((player) => _buildPlayerItem(player)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGameStatsSection(Map<GameType, GameStatistics> gameStats) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          value,
-          style: TextStyle(
-            fontFamily: 'Montserrat',
+          'Game Statistics',
+          style: WebTheme.headingMedium.copyWith(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Colors.blue.shade600,
+            color: Colors.grey[800],
           ),
         ),
-        Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Montserrat',
-            fontSize: 14,
-            color: Colors.grey.shade600,
+        const Gap(16),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            childAspectRatio: 1.2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
           ),
+          itemCount: gameStats.length,
+          itemBuilder: (context, index) {
+            final gameType = gameStats.keys.elementAt(index);
+            final stats = gameStats[gameType]!;
+            return _buildGameStatCard(gameType, stats);
+          },
         ),
       ],
     );
   }
 
-  void _showPlayerDetails(PlayerDashboardData player) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => WebPlayerDetailPage(playerId: player.userId),
-      ),
-    );
-  }
+  Widget _buildGameStatCard(GameType gameType, GameStatistics stats) {
+    final color = _getGameColor(gameType);
+    final icon = _getGameIcon(gameType);
 
-  Color _getRankColor(int rank) {
-    switch (rank) {
-      case 1:
-        return Colors.amber.shade600; // Gold
-      case 2:
-        return Colors.grey.shade400; // Silver
-      case 3:
-        return Colors.orange.shade600; // Bronze
-      default:
-        return Colors.blue.shade600;
-    }
-  }
-
-  Color _getGameColor(GameType gameType) {
-    switch (gameType) {
-      case GameType.reactionTime:
-        return Colors.blue.shade600;
-      case GameType.decisionRisk:
-        return Colors.purple.shade600;
-      case GameType.personalityQuiz:
-        return Colors.indigo.shade600;
-      case GameType.numberMemory:
-        return Colors.green.shade600;
-      case GameType.verbalMemory:
-        return Colors.orange.shade600;
-      case GameType.visualMemory:
-        return Colors.teal.shade600;
-        return Colors.red.shade600;
-      case GameType.aimTrainer:
-        return Colors.pink.shade600;
-      case GameType.sequenceMemory:
-        return Colors.cyan.shade600;
-      case GameType.chimpTest:
-        return Colors.amber.shade600;
-    }
-  }
-
-  IconData _getGameIcon(GameType gameType) {
-    switch (gameType) {
-      case GameType.reactionTime:
-        return Icons.timer;
-      case GameType.decisionRisk:
-        return Icons.psychology;
-      case GameType.personalityQuiz:
-        return Icons.person;
-      case GameType.numberMemory:
-        return Icons.numbers;
-      case GameType.verbalMemory:
-        return Icons.text_fields;
-      case GameType.visualMemory:
-        return Icons.visibility;
-        return Icons.keyboard;
-      case GameType.aimTrainer:
-        return Icons.gps_fixed;
-      case GameType.sequenceMemory:
-        return Icons.format_list_numbered;
-      case GameType.chimpTest:
-        return Icons.psychology;
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays == 0) {
-      return 'Today';
-    } else if (difference.inDays == 1) {
-      return 'Yesterday';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} days ago';
-    } else {
-      return '${date.day}/${date.month}/${date.year}';
-    }
-  }
-}
-
-// Web Player Detail Page
-class WebPlayerDetailPage extends StatelessWidget {
-  final String playerId;
-
-  const WebPlayerDetailPage({super.key, required this.playerId});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        title: const Text(
-          'Player Details',
-          style: TextStyle(
-            fontFamily: 'Montserrat',
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: FutureBuilder<PlayerDetailData?>(
-        future: DashboardService.getPlayerDetails(playerId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError || snapshot.data == null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Colors.grey.shade400,
-                  ),
-                  const Gap(16),
-                  const Text(
-                    'Failed to load player details',
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 18,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final playerData = snapshot.data!;
-          final userScore = playerData.userScore;
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Player Profile Card
-                Container(
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.blue.shade100,
-                        child: Icon(
-                          Icons.person,
-                          size: 50,
-                          color: Colors.blue.shade600,
-                        ),
-                      ),
-                      const Gap(24),
-                      Text(
-                        userScore.userName ??
-                            'Player ${userScore.userId.substring(0, 6)}',
-                        style: TextStyle(
-                          fontFamily: 'Montserrat',
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade800,
-                        ),
-                      ),
-                      const Gap(12),
-                      Text(
-                        'Member since ${_formatDate(userScore.createdAt)}',
-                        style: TextStyle(
-                          fontFamily: 'Montserrat',
-                          fontSize: 16,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Gap(32),
-
-                // Score Display
-                ScoreDisplay(
-                  userScore: userScore,
-                  onViewLeaderboard: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            const ComprehensiveLeaderboardPage(),
-                      ),
-                    );
-                  },
-                ),
-                const Gap(32),
-
-                // Recent Scores
-                Text(
-                  'Recent Scores',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade800,
-                  ),
-                ),
-                const Gap(24),
-                ...playerData.recentScores
-                    .take(10)
-                    .map((score) => _buildRecentScoreCard(score)),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildRecentScoreCard(GameScore score) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: score.isHighScore
-              ? Colors.amber.shade300
-              : Colors.grey.shade200,
-        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            _getGameIcon(score.gameType),
-            color: _getGameColor(score.gameType),
-            size: 24,
-          ),
-          const Gap(16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  GameScore.getDisplayName(score.gameType),
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                Text(
-                  GameScore.getScoreDisplay(score.gameType, score.score),
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade600,
-                  ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const Spacer(),
+              Text(
+                '${stats.playerCount}',
+                style: WebTheme.headingMedium.copyWith(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: color,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          if (score.isHighScore)
-            Icon(Icons.star, color: Colors.amber.shade600, size: 20),
           const Gap(12),
           Text(
-            _formatDate(score.playedAt),
-            style: TextStyle(
-              fontFamily: 'Montserrat',
-              fontSize: 14,
-              color: Colors.grey.shade500,
+            GameScore.getDisplayName(gameType),
+            style: WebTheme.bodyLarge.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[800],
             ),
+          ),
+          const Gap(4),
+          Text(
+            'Top: ${stats.topScoreDisplay}',
+            style: WebTheme.bodyMedium.copyWith(color: Colors.grey[600]),
           ),
         ],
       ),
     );
   }
 
+  Widget _buildPlayerItem(PlayerDashboardData player) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: Colors.green.withValues(alpha: 0.1),
+            child: Text(
+              player.userName?.substring(0, 1).toUpperCase() ?? 'G',
+              style: WebTheme.bodyLarge.copyWith(
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const Gap(12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  player.userName ?? 'Guest',
+                  style: WebTheme.bodyLarge.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                Text(
+                  '${player.overallScore} pts',
+                  style: WebTheme.bodyMedium.copyWith(color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.star, color: Colors.amber, size: 18),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivityItem(RecentActivity activity) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Icon(
+            _getGameIcon(activity.gameType),
+            color: _getGameColor(activity.gameType),
+            size: 20,
+          ),
+          const Gap(12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${activity.displayName} scored ${activity.scoreDisplay}',
+                  style: WebTheme.bodyLarge.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  'in ${activity.gameDisplayName}',
+                  style: WebTheme.bodyMedium.copyWith(color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+          if (activity.isHighScore)
+            Icon(Icons.star, color: Colors.amber, size: 16),
+          const Gap(8),
+          Text(
+            activity.timeAgo,
+            style: WebTheme.bodySmall.copyWith(color: Colors.grey[500]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  int _calculateAverageScore(DashboardOverview overview) {
+    if (overview.topPerformers.isEmpty) return 0;
+    final total = overview.topPerformers.fold(
+      0,
+      (sum, player) => sum + player.overallScore,
+    );
+    return (total / overview.topPerformers.length).round();
+  }
+
   Color _getGameColor(GameType gameType) {
     switch (gameType) {
       case GameType.reactionTime:
-        return Colors.blue.shade600;
+        return Colors.blue;
       case GameType.decisionRisk:
-        return Colors.purple.shade600;
+        return Colors.purple;
       case GameType.personalityQuiz:
-        return Colors.indigo.shade600;
+        return Colors.pink;
       case GameType.numberMemory:
-        return Colors.green.shade600;
+        return Colors.green;
       case GameType.verbalMemory:
-        return Colors.orange.shade600;
+        return Colors.orange;
       case GameType.visualMemory:
-        return Colors.teal.shade600;
-        return Colors.red.shade600;
+        return Colors.teal;
       case GameType.aimTrainer:
-        return Colors.pink.shade600;
+        return Colors.red;
       case GameType.sequenceMemory:
-        return Colors.cyan.shade600;
+        return Colors.indigo;
       case GameType.chimpTest:
-        return Colors.amber.shade600;
+        return Colors.amber;
     }
   }
 
   IconData _getGameIcon(GameType gameType) {
     switch (gameType) {
       case GameType.reactionTime:
-        return Icons.timer;
+        return Icons.speed;
       case GameType.decisionRisk:
         return Icons.psychology;
       case GameType.personalityQuiz:
-        return Icons.person;
+        return Icons.quiz;
       case GameType.numberMemory:
         return Icons.numbers;
       case GameType.verbalMemory:
         return Icons.text_fields;
       case GameType.visualMemory:
         return Icons.visibility;
-        return Icons.keyboard;
       case GameType.aimTrainer:
         return Icons.gps_fixed;
       case GameType.sequenceMemory:
-        return Icons.format_list_numbered;
+        return Icons.view_list;
       case GameType.chimpTest:
-        return Icons.psychology;
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays == 0) {
-      return 'Today';
-    } else if (difference.inDays == 1) {
-      return 'Yesterday';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} days ago';
-    } else {
-      return '${date.day}/${date.month}/${date.year}';
+        return Icons.pets;
     }
   }
 }

@@ -46,6 +46,7 @@ class DashboardService {
         final results = await Future.wait([
           _getTotalUsers(),
           _getTotalGamesPlayed(),
+          _getActiveUsersToday(),
           _getRecentActivity(),
           _getTopPerformers(),
           _getGameStatistics(),
@@ -54,14 +55,16 @@ class DashboardService {
         return DashboardOverview(
           totalUsers: results[0] as int,
           totalGamesPlayed: results[1] as int,
-          recentActivity: results[2] as List<RecentActivity>,
-          topPerformers: results[3] as List<PlayerDashboardData>,
-          gameStatistics: results[4] as Map<GameType, GameStatistics>,
+          activeUsersToday: results[2] as int,
+          recentActivity: results[3] as List<RecentActivity>,
+          topPerformers: results[4] as List<PlayerDashboardData>,
+          gameStatistics: results[5] as Map<GameType, GameStatistics>,
         );
       } else {
         // Web implementation (sequential for compatibility)
         final totalUsers = await _getTotalUsers();
         final totalGames = await _getTotalGamesPlayed();
+        final activeToday = await _getActiveUsersToday();
         final recentActivity = await _getRecentActivity();
         final topPerformers = await _getTopPerformers();
         final gameStats = await _getGameStatistics();
@@ -69,6 +72,7 @@ class DashboardService {
         return DashboardOverview(
           totalUsers: totalUsers,
           totalGamesPlayed: totalGames,
+          activeUsersToday: activeToday,
           recentActivity: recentActivity,
           topPerformers: topPerformers,
           gameStatistics: gameStats,
@@ -77,6 +81,107 @@ class DashboardService {
     } catch (e, st) {
       AppLogger.error('dashboard.overview', e, st);
       return DashboardOverview.empty();
+    }
+  }
+
+  // Get dashboard overview data as a real-time stream
+  static Stream<DashboardOverview> getDashboardOverviewStream() {
+    try {
+      return Stream.periodic(const Duration(seconds: 5))
+          .asyncMap((_) async {
+            return await getDashboardOverview();
+          })
+          .distinct(
+            (prev, next) =>
+                prev.totalUsers == next.totalUsers &&
+                prev.totalGamesPlayed == next.totalGamesPlayed &&
+                prev.activeUsersToday == next.activeUsersToday &&
+                prev.recentActivity.length == next.recentActivity.length &&
+                prev.topPerformers.length == next.topPerformers.length,
+          );
+    } catch (e, st) {
+      AppLogger.error('dashboard.overviewStream', e, st);
+      return Stream.value(DashboardOverview.empty());
+    }
+  }
+
+  // Get recent activity as a real-time stream
+  static Stream<List<RecentActivity>> getRecentActivityStream({
+    int limit = 10,
+  }) {
+    try {
+      if (!_isFirebaseAvailable) {
+        return Stream.value(<RecentActivity>[]);
+      }
+
+      return Stream.periodic(const Duration(seconds: 3))
+          .asyncMap((_) async {
+            return await _getRecentActivity(limit: limit);
+          })
+          .distinct((prev, next) {
+            if (prev.length != next.length) return false;
+
+            // Check if any activity has changed
+            for (int i = 0; i < prev.length; i++) {
+              if (i >= next.length) return false;
+              final prevActivity = prev[i];
+              final nextActivity = next[i];
+
+              if (prevActivity.userId != nextActivity.userId ||
+                  prevActivity.gameType != nextActivity.gameType ||
+                  prevActivity.score != nextActivity.score ||
+                  prevActivity.playedAt != nextActivity.playedAt) {
+                return false;
+              }
+            }
+            return true;
+          });
+    } catch (e, st) {
+      AppLogger.error('dashboard.recentActivityStream', e, st);
+      return Stream.value(<RecentActivity>[]);
+    }
+  }
+
+  // Get recent activity for a specific game
+  static Future<List<RecentActivity>> getRecentActivityForGame(
+    GameType gameType, {
+    int limit = 5,
+  }) async {
+    try {
+      if (!_isFirebaseAvailable) {
+        return <RecentActivity>[];
+      }
+
+      final snapshot = await _gameScoresCollection
+          .where('gameType', isEqualTo: gameType.name)
+          .orderBy('playedAt', descending: true)
+          .limit(limit)
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        return <RecentActivity>[];
+      }
+
+      // Parse game scores
+      final gameScores = <GameScore>[];
+      for (final doc in snapshot.docs) {
+        try {
+          final gameScore = GameScore.fromMap(doc.data());
+          gameScores.add(gameScore);
+        } catch (e) {
+          AppLogger.error('dashboard.parse_game_score_for_game', e, null);
+        }
+      }
+
+      if (gameScores.isEmpty) {
+        return <RecentActivity>[];
+      }
+
+      // Resolve user information for better display
+      return await _resolveUserInformation(gameScores);
+    } catch (e, st) {
+      AppLogger.error('dashboard.getRecentActivityForGame', e, st);
+      return <RecentActivity>[];
     }
   }
 
@@ -331,6 +436,37 @@ class DashboardService {
     }
   }
 
+  static Future<int> _getActiveUsersToday() async {
+    try {
+      final now = DateTime.now();
+      final startOfDay = DateTime(now.year, now.month, now.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+
+      final snapshot = await _gameScoresCollection
+          .where(
+            'playedAt',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
+          )
+          .where('playedAt', isLessThan: Timestamp.fromDate(endOfDay))
+          .get();
+
+      // Get unique user IDs from today's games
+      final uniqueUserIds = <String>{};
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final userId = data['userId'] as String?;
+        if (userId != null) {
+          uniqueUserIds.add(userId);
+        }
+      }
+
+      return uniqueUserIds.length;
+    } catch (e, st) {
+      AppLogger.error('dashboard._getActiveUsersToday', e, st);
+      return 0;
+    }
+  }
+
   static Future<List<RecentActivity>> _getRecentActivity({
     int limit = 10,
   }) async {
@@ -343,22 +479,96 @@ class DashboardService {
           .limit(optimizedLimit)
           .get();
 
-      return snapshot.docs
-          .map((doc) {
-            try {
-              final gameScore = GameScore.fromMap(doc.data());
-              return RecentActivity.fromGameScore(gameScore);
-            } catch (e) {
-              AppLogger.error('dashboard.parse_recent_activity', e, null);
-              return null;
-            }
-          })
-          .where((activity) => activity != null)
-          .cast<RecentActivity>()
-          .toList(growable: false);
+      if (snapshot.docs.isEmpty) {
+        return <RecentActivity>[];
+      }
+
+      // Parse game scores
+      final gameScores = <GameScore>[];
+      for (final doc in snapshot.docs) {
+        try {
+          final gameScore = GameScore.fromMap(doc.data());
+          gameScores.add(gameScore);
+        } catch (e) {
+          AppLogger.error('dashboard.parse_game_score', e, null);
+        }
+      }
+
+      if (gameScores.isEmpty) {
+        return <RecentActivity>[];
+      }
+
+      // Resolve user information for better display
+      final recentActivities = await _resolveUserInformation(gameScores);
+
+      return recentActivities;
     } catch (e, st) {
       AppLogger.error('dashboard._getRecentActivity', e, st);
       return <RecentActivity>[];
+    }
+  }
+
+  // Resolve user information for recent activities
+  static Future<List<RecentActivity>> _resolveUserInformation(
+    List<GameScore> gameScores,
+  ) async {
+    try {
+      // Group by user ID to minimize Firestore calls
+      final userIds = gameScores.map((score) => score.userId).toSet().toList();
+
+      // Batch fetch user profiles
+      final userProfiles = <String, Map<String, dynamic>>{};
+
+      if (userIds.isNotEmpty) {
+        try {
+          // Get user profiles efficiently
+          final userRefs = userIds.map((uid) => _userScoresCollection.doc(uid));
+
+          // Get user profiles
+          final userSnapshots = await Future.wait(
+            userRefs.map((ref) => ref.get()),
+          );
+
+          for (int i = 0; i < userSnapshots.length; i++) {
+            final snapshot = userSnapshots[i];
+            if (snapshot.exists) {
+              userProfiles[userIds[i]] = snapshot.data()!;
+            }
+          }
+        } catch (e) {
+          AppLogger.error('dashboard.resolve_users', e, null);
+          // Continue without user profiles
+        }
+      }
+
+      // Create recent activities with resolved user info
+      return gameScores.map((gameScore) {
+        final userProfile = userProfiles[gameScore.userId];
+        final userName =
+            gameScore.userName ??
+            userProfile?['displayName'] as String? ??
+            userProfile?['email'] as String?;
+        final userEmail = userProfile?['email'] as String?;
+        final userPhotoUrl = userProfile?['photoURL'] as String?;
+
+        return RecentActivity(
+          userId: gameScore.userId,
+          userName: userName,
+          userEmail: userEmail,
+          userPhotoUrl: userPhotoUrl,
+          gameType: gameScore.gameType,
+          score: gameScore.score,
+          playedAt: gameScore.playedAt,
+          isHighScore: gameScore.isHighScore,
+          gameData: gameScore.gameData?['context'] as String?,
+        );
+      }).toList();
+    } catch (e, st) {
+      AppLogger.error('dashboard.resolve_user_info', e, st);
+      // Fallback to basic recent activities
+      return gameScores
+          .map((gameScore) => RecentActivity.fromGameScore(gameScore))
+          .toList();
     }
   }
 
@@ -663,6 +873,7 @@ class DashboardService {
 class DashboardOverview {
   final int totalUsers;
   final int totalGamesPlayed;
+  final int activeUsersToday;
   final List<RecentActivity> recentActivity;
   final List<PlayerDashboardData> topPerformers;
   final Map<GameType, GameStatistics> gameStatistics;
@@ -670,6 +881,7 @@ class DashboardOverview {
   const DashboardOverview({
     required this.totalUsers,
     required this.totalGamesPlayed,
+    required this.activeUsersToday,
     required this.recentActivity,
     required this.topPerformers,
     required this.gameStatistics,
@@ -679,6 +891,7 @@ class DashboardOverview {
     return const DashboardOverview(
       totalUsers: 0,
       totalGamesPlayed: 0,
+      activeUsersToday: 0,
       recentActivity: [],
       topPerformers: [],
       gameStatistics: {},
@@ -720,7 +933,8 @@ class PlayerDashboardData {
     );
   }
 
-  String get displayName => userName ?? 'Player ${userId.substring(0, 6)}';
+  String get displayName =>
+      (userName != null && userName!.isNotEmpty) ? userName! : 'Guest';
 
   int getHighScore(GameType gameType) => highScores[gameType] ?? 0;
 }
@@ -740,32 +954,130 @@ class PlayerDetailData {
 class RecentActivity {
   final String userId;
   final String? userName;
+  final String? userEmail;
+  final String? userPhotoUrl;
   final GameType gameType;
   final int score;
   final DateTime playedAt;
   final bool isHighScore;
+  final String? gameData; // Additional context like level, difficulty, etc.
 
   const RecentActivity({
     required this.userId,
     this.userName,
+    this.userEmail,
+    this.userPhotoUrl,
     required this.gameType,
     required this.score,
     required this.playedAt,
     required this.isHighScore,
+    this.gameData,
   });
 
   factory RecentActivity.fromGameScore(GameScore gameScore) {
     return RecentActivity(
       userId: gameScore.userId,
       userName: gameScore.userName,
+      userEmail: null, // Will be resolved separately
+      userPhotoUrl: null, // Will be resolved separately
       gameType: gameScore.gameType,
       score: gameScore.score,
       playedAt: gameScore.playedAt,
       isHighScore: gameScore.isHighScore,
+      gameData: gameScore.gameData?['context'] as String?,
     );
   }
 
-  String get displayName => userName ?? 'Player ${userId.substring(0, 6)}';
+  factory RecentActivity.fromMap(Map<String, dynamic> data) {
+    return RecentActivity(
+      userId: data['userId'] as String,
+      userName: data['userName'] as String?,
+      userEmail: data['userEmail'] as String?,
+      userPhotoUrl: data['userPhotoUrl'] as String?,
+      gameType: GameType.values.firstWhere(
+        (e) => e.name == data['gameType'],
+        orElse: () => GameType.reactionTime,
+      ),
+      score: data['score'] as int,
+      playedAt: (data['playedAt'] as Timestamp).toDate(),
+      isHighScore: data['isHighScore'] as bool? ?? false,
+      gameData: data['gameData'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'userId': userId,
+      'userName': userName,
+      'userEmail': userEmail,
+      'userPhotoUrl': userPhotoUrl,
+      'gameType': gameType.name,
+      'score': score,
+      'playedAt': Timestamp.fromDate(playedAt),
+      'isHighScore': isHighScore,
+      'gameData': gameData,
+    };
+  }
+
+  RecentActivity copyWith({
+    String? userId,
+    String? userName,
+    String? userEmail,
+    String? userPhotoUrl,
+    GameType? gameType,
+    int? score,
+    DateTime? playedAt,
+    bool? isHighScore,
+    String? gameData,
+  }) {
+    return RecentActivity(
+      userId: userId ?? this.userId,
+      userName: userName ?? this.userName,
+      userEmail: userEmail ?? this.userEmail,
+      userPhotoUrl: userPhotoUrl ?? this.userPhotoUrl,
+      gameType: gameType ?? this.gameType,
+      score: score ?? this.score,
+      playedAt: playedAt ?? this.playedAt,
+      isHighScore: isHighScore ?? this.isHighScore,
+      gameData: gameData ?? this.gameData,
+    );
+  }
+
+  String get displayName {
+    if (userName != null && userName!.isNotEmpty) {
+      return userName!;
+    }
+    if (userEmail != null && userEmail!.isNotEmpty) {
+      return userEmail!.split('@').first;
+    }
+    return 'Guest';
+  }
+
+  String get shortUserId =>
+      userId.length > 8 ? '${userId.substring(0, 8)}...' : userId;
+
+  String get gameDisplayName => GameScore.getDisplayName(gameType);
+
+  String get scoreDisplay => GameScore.getScoreDisplay(gameType, score);
+
+  String get timeAgo {
+    final now = DateTime.now();
+    final difference = now.difference(playedAt);
+
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inHours < 1) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inDays < 1) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays}d ago';
+    } else {
+      return '${(difference.inDays / 7).floor()}w ago';
+    }
+  }
+
+  bool get isGuest => userName == null || userName!.isEmpty;
 }
 
 class GameStatistics {

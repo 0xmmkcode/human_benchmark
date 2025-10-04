@@ -47,10 +47,10 @@ class WebSettings {
 
   // Default settings
   static WebSettings get defaultSettings => WebSettings(
-        webGameEnabled: true,
-        playStoreLink: 'https://play.google.com/store/apps/details?id=xyz.mmkcode.focusflow',
-        updatedAt: DateTime.now(),
-        updatedBy: 'system',
-      );
+    webGameEnabled: true,
+    playStoreLink:
+        'https://play.google.com/store/apps/details?id=xyz.mmkcode.humanbenchmark.human_benchmark',
+    updatedAt: DateTime.now(),
+    updatedBy: 'system',
+  );
 }
-

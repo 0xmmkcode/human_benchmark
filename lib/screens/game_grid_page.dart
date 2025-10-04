@@ -24,16 +24,23 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: Text(
-          'Cognitive Tests',
-          style: GoogleFonts.montserrat(
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.games),
+            const SizedBox(width: 8),
+            Text(
+              'Games',
+              style: GoogleFonts.montserrat(
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+              ),
+            ),
+          ],
         ),
         backgroundColor: Colors.white,
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
         actions: [
           IconButton(
             onPressed: () {
@@ -44,16 +51,6 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
             },
             icon: const Icon(Icons.bug_report_outlined),
             tooltip: 'Report a Bug',
-          ),
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AboutPage()),
-              );
-            },
-            icon: const Icon(Icons.info_outline),
-            tooltip: 'About Human Benchmark',
           ),
         ],
       ),
@@ -134,21 +131,161 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
 
           return Padding(
             padding: const EdgeInsets.all(16),
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1.2,
-              ),
-              itemCount: fallbackGames.length,
-              itemBuilder: (context, index) {
-                final gameId = fallbackGames[index];
-                return _buildGameCard(gameId);
-              },
-            ),
+            child: fallbackGames.length == 1
+                ? _buildSingleGameLayout(fallbackGames[0])
+                : GridView.builder(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: 1.2,
+                        ),
+                    itemCount: fallbackGames.length,
+                    itemBuilder: (context, index) {
+                      final gameId = fallbackGames[index];
+                      return _buildGameCard(gameId);
+                    },
+                  ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildSingleGameLayout(String gameId) {
+    final gameData = _getGameData(gameId);
+
+    return GestureDetector(
+      onTap: () => _navigateToGame(gameId),
+      child: Container(
+        width: double.infinity,
+        height: 200,
+        decoration: BoxDecoration(
+          color: gameData.color,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: gameData.color.withValues(alpha: 0.3),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            // Background pattern
+            Positioned(
+              top: -20,
+              right: -20,
+              child: Icon(
+                gameData.icon,
+                size: 120,
+                color: Colors.white.withValues(alpha: 0.1),
+              ),
+            ),
+            // Content
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Row(
+                children: [
+                  // Left side - Icon and text
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(gameData.icon, size: 48, color: Colors.white),
+                        const Gap(16),
+                        Text(
+                          gameData.name,
+                          style: GoogleFonts.montserrat(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const Gap(8),
+                        Text(
+                          gameData.subtitle,
+                          style: GoogleFonts.montserrat(
+                            fontSize: 16,
+                            color: Colors.white.withValues(alpha: 0.9),
+                          ),
+                        ),
+                        const Gap(16),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.play_arrow,
+                                size: 20,
+                                color: Colors.white,
+                              ),
+                              const Gap(8),
+                              Text(
+                                'Tap to Play',
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Right side - Additional visual elements
+                  Expanded(
+                    flex: 1,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              width: 2,
+                            ),
+                          ),
+                          child: Icon(
+                            gameData.icon,
+                            size: 40,
+                            color: Colors.white.withValues(alpha: 0.7),
+                          ),
+                        ),
+                        const Gap(16),
+                        Text(
+                          'Available',
+                          style: GoogleFonts.montserrat(
+                            fontSize: 12,
+                            color: Colors.white.withValues(alpha: 0.8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

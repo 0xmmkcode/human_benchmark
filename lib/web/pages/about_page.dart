@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
+import 'package:human_benchmark/web/widgets/page_header.dart';
 import 'dart:html' as html;
 
 class AboutPage extends StatelessWidget {
@@ -26,7 +27,18 @@ class AboutPage extends StatelessWidget {
               child: Column(
                 children: [
                   // Header
-                  _buildHeader(context, isMobile, isTablet),
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isMobile ? 16.0 : (isTablet ? 24.0 : 32.0),
+                      vertical: isMobile ? 40.0 : (isTablet ? 60.0 : 80.0),
+                    ),
+                    child: PageHeader(
+                      title: 'About',
+                      subtitle:
+                          'Learn about our mission and the science behind cognitive testing.',
+                      showBackButton: false,
+                    ),
+                  ),
 
                   // Mission Section
                   _buildMissionSection(context, isMobile, isTablet),
@@ -75,39 +87,6 @@ class AboutPage extends StatelessWidget {
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context, bool isMobile, bool isTablet) {
-    final horizontalPadding = isMobile ? 16.0 : (isTablet ? 24.0 : 32.0);
-    final verticalPadding = isMobile ? 40.0 : (isTablet ? 60.0 : 80.0);
-    final titleSize = isMobile ? 28.0 : (isTablet ? 32.0 : 35.0);
-    final subtitleSize = isMobile ? 14.0 : (isTablet ? 15.0 : 16.0);
-
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: horizontalPadding,
-        vertical: verticalPadding,
-      ),
-      child: Column(
-        children: [
-          Text(
-            'About',
-            style: TextStyle(
-              fontSize: titleSize,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: isMobile ? 6 : 8),
-          Text(
-            'Learn about our mission and the science behind cognitive testing.',
-            style: TextStyle(fontSize: subtitleSize, color: Colors.grey[600]),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -332,7 +311,7 @@ class AboutPage extends StatelessWidget {
                       ),
                       SizedBox(height: 16),
                       Text(
-                        'Based in Morocco, we\'re committed to making cognitive testing accessible to people worldwide through innovative technology and user-centered design.',
+                        'We\'re committed to making cognitive testing accessible to people worldwide through innovative technology and user-centered design.',
                         style: WebTheme.bodyLarge.copyWith(
                           fontSize: textSize,
                           height: 1.6,
@@ -378,7 +357,7 @@ class AboutPage extends StatelessWidget {
                             ),
                             SizedBox(height: 24),
                             Text(
-                              'Based in Morocco, we\'re committed to making cognitive testing accessible to people worldwide through innovative technology and user-centered design.',
+                              'We\'re committed to making cognitive testing accessible to people worldwide through innovative technology and user-centered design.',
                               style: WebTheme.bodyLarge.copyWith(
                                 fontSize: textSize,
                                 height: 1.6,
@@ -713,19 +692,11 @@ class AboutPage extends StatelessWidget {
                         context: context,
                         icon: Icons.web,
                         title: 'Website',
-                        value: 'mmkcode.com',
+                        value: 'humanbenchmark.xyz',
                         onTap: () {
-                          final url = 'https://mmkcode.com';
+                          final url = 'https://humanbenchmark.xyz';
                           html.window.open(url, '_blank');
                         },
-                      ),
-                      SizedBox(height: 16),
-                      _buildContactItem(
-                        context: context,
-                        icon: Icons.location_on,
-                        title: 'Location',
-                        value: 'Casablanca, Morocco',
-                        onTap: null,
                       ),
                     ],
                   )
@@ -746,18 +717,11 @@ class AboutPage extends StatelessWidget {
                         context: context,
                         icon: Icons.web,
                         title: 'Website',
-                        value: 'mmkcode.com',
+                        value: 'humanbenchmark.xyz',
                         onTap: () {
-                          final url = 'https://mmkcode.com';
+                          final url = 'https://humanbenchmark.xyz';
                           html.window.open(url, '_blank');
                         },
-                      ),
-                      _buildContactItem(
-                        context: context,
-                        icon: Icons.location_on,
-                        title: 'Location',
-                        value: 'Casablanca, Morocco',
-                        onTap: null,
                       ),
                     ],
                   ),

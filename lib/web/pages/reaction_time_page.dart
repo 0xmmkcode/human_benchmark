@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:human_benchmark/web/components/web_banner_ad.dart';
+import 'package:human_benchmark/web/widgets/page_header.dart';
 import 'package:human_benchmark/services/score_service.dart';
 import 'package:human_benchmark/services/local_storage_service.dart';
 import 'package:human_benchmark/services/auth_service.dart';
@@ -179,32 +180,10 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Back button and game name header
-          Row(
-            children: [
-              IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: Icon(Icons.arrow_back, size: 24),
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.grey[200],
-                  padding: EdgeInsets.all(12),
-                ),
-              ),
-              SizedBox(width: 16),
-              Text(
-                'Reaction Time Test',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 24),
-          Text(
-            'Test your reflexes! Click when the screen turns green.',
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+          // Page Header
+          PageHeader(
+            title: 'Reaction Time Test',
+            subtitle: 'Test your reflexes! Click when the screen turns green.',
           ),
           SizedBox(height: 40),
 

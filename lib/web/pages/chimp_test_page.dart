@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
+import 'package:human_benchmark/web/widgets/page_header.dart';
+import 'package:human_benchmark/web/widgets/auth_required_wrapper.dart';
 
 import 'package:human_benchmark/services/auth_service.dart';
 import 'package:human_benchmark/services/user_profile_service.dart';
@@ -184,47 +186,35 @@ class _WebChimpTestPageState extends State<WebChimpTestPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: SingleChildScrollView(
-        child: Padding(
+    return AuthRequiredWrapper(
+      title: 'Chimp Test',
+      subtitle:
+          'Sign in to play the Chimp Test and save your scores to track your progress.',
+      child: Scaffold(
+        backgroundColor: Colors.grey[50],
+        body: Container(
           padding: const EdgeInsets.all(32),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _buildPageHeader(),
+              PageHeader(
+                title: 'Chimp Test',
+                subtitle:
+                    'Test your working memory with this challenging sequence game.',
+              ),
               const Gap(32),
-              Container(
-                constraints: const BoxConstraints(maxWidth: 800),
-                child: _buildGameContent(),
+              Expanded(
+                child: Container(
+                  child: _buildGameContent(),
+                  width: double.infinity,
+                  height: double.infinity,
+                ),
               ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildPageHeader() {
-    return Row(
-      children: [
-        IconButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back, size: 24),
-          style: IconButton.styleFrom(
-            backgroundColor: Colors.grey[200],
-            padding: const EdgeInsets.all(12),
-          ),
-        ),
-        const SizedBox(width: 16),
-        const Text(
-          'Chimp Test',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-      ],
     );
   }
 
@@ -245,13 +235,6 @@ class _WebChimpTestPageState extends State<WebChimpTestPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         children: [
@@ -340,25 +323,11 @@ class _WebChimpTestPageState extends State<WebChimpTestPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         children: [
-          // Level and Score
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildStatItem('Level', '$_currentLevel'),
-              _buildStatItem('Score', '$_currentScore'),
-              _buildStatItem('Best', '$_bestScore'),
-            ],
-          ),
+          // Level and Score - Nice cards without borders
+          _buildScoreCards(),
           const Gap(32),
 
           // Game Grid
@@ -431,13 +400,6 @@ class _WebChimpTestPageState extends State<WebChimpTestPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         children: [
@@ -526,25 +488,6 @@ class _WebChimpTestPageState extends State<WebChimpTestPage> {
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 14, color: Colors.black54),
-        ),
-      ],
-    );
-  }
-
   Widget _buildResultItem(String label, String value, Color color) {
     return Column(
       children: [
@@ -569,6 +512,103 @@ class _WebChimpTestPageState extends State<WebChimpTestPage> {
           style: const TextStyle(fontSize: 16, color: Colors.black54),
         ),
       ],
+    );
+  }
+
+  Widget _buildScoreCards() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        // Level Card
+        _buildScoreCard(
+          icon: Icons.trending_up,
+          label: 'Level',
+          value: '$_currentLevel',
+          color: Colors.blue,
+          isHighlighted: true,
+        ),
+
+        // Score Card
+        _buildScoreCard(
+          icon: Icons.star,
+          label: 'Score',
+          value: '$_currentScore',
+          color: Colors.amber,
+          isHighlighted: false,
+        ),
+
+        // Best Card
+        _buildScoreCard(
+          icon: Icons.emoji_events,
+          label: 'Best',
+          value: '$_bestScore',
+          color: Colors.purple,
+          isHighlighted: false,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildScoreCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+    required bool isHighlighted,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isHighlighted
+              ? [color.withOpacity(0.15), color.withOpacity(0.08)]
+              : [color.withOpacity(0.08), color.withOpacity(0.04)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        children: [
+          // Icon with background
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [color, color.withOpacity(0.8)],
+              ),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(icon, color: Colors.white, size: 28),
+          ),
+          const Gap(16),
+
+          // Value
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: color.withOpacity(0.9),
+            ),
+          ),
+          const Gap(6),
+
+          // Label
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: color.withOpacity(0.7),
+              letterSpacing: 0.8,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -264,7 +264,7 @@ class _LandingPageState extends State<LandingPage>
                               // Web game is disabled - go to Play Store
                               final url =
                                   webSettings.playStoreLink ??
-                                  'https://play.google.com/store/apps/details?id=xyz.mmkcode.focusflow';
+                                  'https://play.google.com/store/apps/details?id=xyz.mmkcode.humanbenchmark.human_benchmark';
                               html.window.open(url, '_blank');
                             }
                           },
@@ -482,7 +482,7 @@ class _LandingPageState extends State<LandingPage>
                           // Web game is disabled - go to Play Store
                           final url =
                               webSettings.playStoreLink ??
-                              'https://play.google.com/store/apps/details?id=xyz.mmkcode.focusflow';
+                              'https://play.google.com/store/apps/details?id=xyz.mmkcode.humanbenchmark.human_benchmark';
                           html.window.open(url, '_blank');
                         }
                       },
@@ -638,7 +638,7 @@ class _LandingPageState extends State<LandingPage>
                                       // Web game is disabled - go to Play Store
                                       final url =
                                           webSettings.playStoreLink ??
-                                          'https://play.google.com/store/apps/details?id=xyz.mmkcode.focusflow';
+                                          'https://play.google.com/store/apps/details?id=xyz.mmkcode.humanbenchmark.human_benchmark';
                                       html.window.open(url, '_blank');
                                     }
                                   },
@@ -676,7 +676,7 @@ class _LandingPageState extends State<LandingPage>
                                       // Web game is disabled - go to Play Store
                                       final url =
                                           webSettings.playStoreLink ??
-                                          'https://play.google.com/store/apps/details?id=xyz.mmkcode.focusflow';
+                                          'https://play.google.com/store/apps/details?id=xyz.mmkcode.humanbenchmark.human_benchmark';
                                       html.window.open(url, '_blank');
                                     }
                                   },
@@ -793,7 +793,7 @@ class _LandingPageState extends State<LandingPage>
                                       // Web game is disabled - go to Play Store
                                       final url =
                                           webSettings.playStoreLink ??
-                                          'https://play.google.com/store/apps/details?id=xyz.mmkcode.focusflow';
+                                          'https://play.google.com/store/apps/details?id=xyz.mmkcode.humanbenchmark.human_benchmark';
                                       html.window.open(url, '_blank');
                                     }
                                   },
@@ -1908,210 +1908,8 @@ class _LandingPageState extends State<LandingPage>
           ),
           SizedBox(height: isTiny ? 40 : (isMobile ? 50 : 60)),
 
-          // Simplified centered download CTA (no phone mockup)
-          TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: Duration(milliseconds: 1000),
-            curve: Curves.easeOutCubic,
-            builder: (context, value, child) {
-              return Transform.translate(
-                offset: Offset(0, 20 * (1 - value)),
-                child: Opacity(
-                  opacity: value,
-                  child: Container(
-                    padding: EdgeInsets.all(isTiny ? 24 : (isMobile ? 32 : 40)),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(
-                        isTiny ? 16 : (isMobile ? 20 : 24),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: WebTheme.primaryBlue.withOpacity(0.12),
-                          blurRadius: 30,
-                          offset: Offset(0, 16),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Download Now',
-                          textAlign: TextAlign.center,
-                          style: WebTheme.headingMedium.copyWith(
-                            fontSize: isTiny ? 24 : (isMobile ? 28 : 32),
-                            fontWeight: FontWeight.bold,
-                            color: WebTheme.primaryBlue,
-                          ),
-                        ),
-                        SizedBox(height: isTiny ? 12 : 16),
-                        Text(
-                          'Free to play • Track progress • Compete globally • Cross‑platform sync',
-                          textAlign: TextAlign.center,
-                          style: WebTheme.bodyLarge.copyWith(
-                            fontSize: isTiny ? 14 : (isMobile ? 16 : 18),
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                        SizedBox(height: isTiny ? 20 : 28),
-                        isSmall
-                            ? Column(
-                                children: [
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      final url =
-                                          'https://play.google.com/store/apps/details?id=xyz.mmkcode.focusflow';
-                                      html.window.open(url, '_blank');
-                                    },
-                                    style: WebTheme.primaryButton.copyWith(
-                                      padding: MaterialStateProperty.all(
-                                        EdgeInsets.symmetric(
-                                          horizontal: isTiny ? 20 : 24,
-                                          vertical: isTiny ? 14 : 16,
-                                        ),
-                                      ),
-                                      elevation: MaterialStateProperty.all(8),
-                                    ),
-                                    child: Text(
-                                      'Get Mobile App',
-                                      style: WebTheme.bodyLarge.copyWith(
-                                        fontSize: isTiny ? 14 : 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(height: isTiny ? 12 : 16),
-                                  StreamBuilder<WebSettings>(
-                                    stream:
-                                        WebSettingsService.getWebSettingsStream(),
-                                    builder: (context, snapshot) {
-                                      final webSettings =
-                                          snapshot.data ??
-                                          WebSettings.defaultSettings;
-
-                                      // Only show "Play on Web" button if web game is enabled
-                                      if (!webSettings.webGameEnabled) {
-                                        return SizedBox.shrink();
-                                      }
-
-                                      return OutlinedButton(
-                                        onPressed: widget.onStartApp,
-                                        style: WebTheme.secondaryButton
-                                            .copyWith(
-                                              padding:
-                                                  MaterialStateProperty.all(
-                                                    EdgeInsets.symmetric(
-                                                      horizontal: isTiny
-                                                          ? 20
-                                                          : 24,
-                                                      vertical: isTiny
-                                                          ? 14
-                                                          : 16,
-                                                    ),
-                                                  ),
-                                              side: MaterialStateProperty.all(
-                                                BorderSide(
-                                                  color: WebTheme.primaryBlue,
-                                                  width: 2,
-                                                ),
-                                              ),
-                                            ),
-                                        child: Text(
-                                          'Play on Web',
-                                          style: WebTheme.bodyLarge.copyWith(
-                                            fontSize: isTiny ? 14 : 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: WebTheme.primaryBlue,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              )
-                            : Wrap(
-                                alignment: WrapAlignment.center,
-                                spacing: 16,
-                                runSpacing: 12,
-                                children: [
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      final url =
-                                          'https://play.google.com/store/apps/details?id=xyz.mmkcode.focusflow';
-                                      html.window.open(url, '_blank');
-                                    },
-                                    style: WebTheme.primaryButton.copyWith(
-                                      padding: MaterialStateProperty.all(
-                                        EdgeInsets.symmetric(
-                                          horizontal: 24,
-                                          vertical: 16,
-                                        ),
-                                      ),
-                                      elevation: MaterialStateProperty.all(8),
-                                    ),
-                                    child: Text(
-                                      'Get Mobile App',
-                                      style: WebTheme.bodyLarge.copyWith(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                  StreamBuilder<WebSettings>(
-                                    stream:
-                                        WebSettingsService.getWebSettingsStream(),
-                                    builder: (context, snapshot) {
-                                      final webSettings =
-                                          snapshot.data ??
-                                          WebSettings.defaultSettings;
-
-                                      // Only show "Play on Web" button if web game is enabled
-                                      if (!webSettings.webGameEnabled) {
-                                        return SizedBox.shrink();
-                                      }
-
-                                      return OutlinedButton(
-                                        onPressed: widget.onStartApp,
-                                        style: WebTheme.secondaryButton
-                                            .copyWith(
-                                              padding:
-                                                  MaterialStateProperty.all(
-                                                    EdgeInsets.symmetric(
-                                                      horizontal: 24,
-                                                      vertical: 16,
-                                                    ),
-                                                  ),
-                                              side: MaterialStateProperty.all(
-                                                BorderSide(
-                                                  color: WebTheme.primaryBlue,
-                                                  width: 2,
-                                                ),
-                                              ),
-                                            ),
-                                        child: Text(
-                                          'Play on Web',
-                                          style: WebTheme.bodyLarge.copyWith(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: WebTheme.primaryBlue,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
+          // Redesigned Download Section with Animations
+          _buildAnimatedDownloadSection(isTiny, isMobile, isSmall),
         ],
       ),
     );
@@ -2332,6 +2130,560 @@ class _LandingPageState extends State<LandingPage>
             ),
           ),
         );
+      },
+    );
+  }
+
+  Widget _buildAnimatedDownloadSection(
+    bool isTiny,
+    bool isMobile,
+    bool isSmall,
+  ) {
+    return Container(
+      padding: EdgeInsets.all(isTiny ? 24 : (isMobile ? 32 : 40)),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.white, WebTheme.primaryBlue.withOpacity(0.02)],
+        ),
+        borderRadius: BorderRadius.circular(isTiny ? 20 : (isMobile ? 24 : 28)),
+        boxShadow: [
+          BoxShadow(
+            color: WebTheme.primaryBlue.withOpacity(0.15),
+            blurRadius: 40,
+            offset: Offset(0, 20),
+            spreadRadius: 0,
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 5),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: isSmall
+          ? _buildMobileDownloadLayout(isTiny, isMobile)
+          : _buildDesktopDownloadLayout(isTiny, isMobile),
+    );
+  }
+
+  Widget _buildMobileDownloadLayout(bool isTiny, bool isMobile) {
+    return Column(
+      children: [
+        // Text content sliding from left
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: -100.0, end: 0.0),
+          duration: Duration(milliseconds: 1200),
+          curve: Curves.easeOutCubic,
+          builder: (context, value, child) {
+            return Transform.translate(
+              offset: Offset(value, 0),
+              child: Opacity(
+                opacity: (100 + value) / 100,
+                child: Column(
+                  children: [
+                    // App icon with glow effect
+                    Container(
+                      width: isTiny ? 80 : (isMobile ? 100 : 120),
+                      height: isTiny ? 80 : (isMobile ? 100 : 120),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            WebTheme.primaryBlue.withOpacity(0.2),
+                            WebTheme.primaryBlue.withOpacity(0.05),
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: WebTheme.primaryBlue.withOpacity(0.3),
+                            blurRadius: 30,
+                            spreadRadius: 5,
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Icon(
+                          Icons.psychology,
+                          size: isTiny ? 40 : (isMobile ? 50 : 60),
+                          color: WebTheme.primaryBlue,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: isTiny ? 20 : 24),
+
+                    // Title with gradient text
+                    ShaderMask(
+                      shaderCallback: (bounds) => LinearGradient(
+                        colors: [
+                          WebTheme.primaryBlue,
+                          WebTheme.primaryBlueLight,
+                        ],
+                      ).createShader(bounds),
+                      child: Text(
+                        'Download Now',
+                        style: WebTheme.headingLarge.copyWith(
+                          fontSize: isTiny ? 28 : (isMobile ? 32 : 36),
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    SizedBox(height: isTiny ? 12 : 16),
+
+                    // Subtitle
+                    Text(
+                      'Free to play • Track progress • Compete globally',
+                      style: WebTheme.bodyLarge.copyWith(
+                        fontSize: isTiny ? 14 : (isMobile ? 16 : 18),
+                        color: Colors.grey[700],
+                        height: 1.4,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: isTiny ? 8 : 12),
+
+                    // Features list
+                    Text(
+                      'Cross-platform sync • Offline mode • Detailed analytics',
+                      style: WebTheme.bodyMedium.copyWith(
+                        fontSize: isTiny ? 12 : (isMobile ? 14 : 16),
+                        color: Colors.grey[600],
+                        height: 1.3,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+
+        SizedBox(height: isTiny ? 32 : 40),
+
+        // Buttons sliding from right
+        _buildDelayedAnimation(
+          delay: Duration(milliseconds: 300),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 100.0, end: 0.0),
+            duration: Duration(milliseconds: 1200),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, child) {
+              return Transform.translate(
+                offset: Offset(value, 0),
+                child: Opacity(
+                  opacity: (100 - value) / 100,
+                  child: Column(
+                    children: [
+                      // Primary download button
+                      Container(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            final url =
+                                'https://play.google.com/store/apps/details?id=xyz.mmkcode.humanbenchmark.human_benchmark';
+                            html.window.open(url, '_blank');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: WebTheme.primaryBlue,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isTiny ? 24 : 32,
+                              vertical: isTiny ? 16 : 20,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 8,
+                            shadowColor: WebTheme.primaryBlue.withOpacity(0.3),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.download_rounded,
+                                size: isTiny ? 18 : 20,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Get Mobile App',
+                                style: WebTheme.bodyLarge.copyWith(
+                                  fontSize: isTiny ? 14 : 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: isTiny ? 16 : 20),
+
+                      // Web play button (if enabled)
+                      StreamBuilder<WebSettings>(
+                        stream: WebSettingsService.getWebSettingsStream(),
+                        builder: (context, snapshot) {
+                          final webSettings =
+                              snapshot.data ?? WebSettings.defaultSettings;
+
+                          if (!webSettings.webGameEnabled) {
+                            return SizedBox.shrink();
+                          }
+
+                          return Container(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                              onPressed: widget.onStartApp,
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: WebTheme.primaryBlue,
+                                side: BorderSide(
+                                  color: WebTheme.primaryBlue,
+                                  width: 2,
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isTiny ? 24 : 32,
+                                  vertical: isTiny ? 16 : 20,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.play_circle_outline,
+                                    size: isTiny ? 18 : 20,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Play on Web',
+                                    style: WebTheme.bodyLarge.copyWith(
+                                      fontSize: isTiny ? 14 : 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopDownloadLayout(bool isTiny, bool isMobile) {
+    return Row(
+      children: [
+        // Left side - Text content sliding from left
+        Expanded(
+          flex: 1,
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: -100.0, end: 0.0),
+            duration: Duration(milliseconds: 1200),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, child) {
+              return Transform.translate(
+                offset: Offset(value, 0),
+                child: Opacity(
+                  opacity: (100 + value) / 100,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // App icon
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              WebTheme.primaryBlue.withOpacity(0.2),
+                              WebTheme.primaryBlue.withOpacity(0.05),
+                            ],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: WebTheme.primaryBlue.withOpacity(0.3),
+                              blurRadius: 30,
+                              spreadRadius: 5,
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.psychology,
+                            size: 40,
+                            color: WebTheme.primaryBlue,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 24),
+
+                      // Title
+                      ShaderMask(
+                        shaderCallback: (bounds) => LinearGradient(
+                          colors: [
+                            WebTheme.primaryBlue,
+                            WebTheme.primaryBlueLight,
+                          ],
+                        ).createShader(bounds),
+                        child: Text(
+                          'Download Now',
+                          style: WebTheme.headingLarge.copyWith(
+                            fontSize: 36,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+
+                      // Subtitle
+                      Text(
+                        'Free to play • Track progress • Compete globally',
+                        style: WebTheme.bodyLarge.copyWith(
+                          fontSize: 18,
+                          color: Colors.grey[700],
+                          height: 1.4,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+
+                      // Features
+                      Text(
+                        'Cross-platform sync • Offline mode • Detailed analytics',
+                        style: WebTheme.bodyMedium.copyWith(
+                          fontSize: 16,
+                          color: Colors.grey[600],
+                          height: 1.3,
+                        ),
+                      ),
+                      SizedBox(height: 32),
+
+                      // Buttons
+                      Wrap(
+                        spacing: 16,
+                        runSpacing: 12,
+                        children: [
+                          ElevatedButton(
+                            onPressed: () {
+                              final url =
+                                  'https://play.google.com/store/apps/details?id=xyz.mmkcode.humanbenchmark.human_benchmark';
+                              html.window.open(url, '_blank');
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: WebTheme.primaryBlue,
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 32,
+                                vertical: 16,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 8,
+                              shadowColor: WebTheme.primaryBlue.withOpacity(
+                                0.3,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.download_rounded, size: 20),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Get Mobile App',
+                                  style: WebTheme.bodyLarge.copyWith(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          StreamBuilder<WebSettings>(
+                            stream: WebSettingsService.getWebSettingsStream(),
+                            builder: (context, snapshot) {
+                              final webSettings =
+                                  snapshot.data ?? WebSettings.defaultSettings;
+
+                              if (!webSettings.webGameEnabled) {
+                                return SizedBox.shrink();
+                              }
+
+                              return OutlinedButton(
+                                onPressed: widget.onStartApp,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: WebTheme.primaryBlue,
+                                  side: BorderSide(
+                                    color: WebTheme.primaryBlue,
+                                    width: 2,
+                                  ),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 32,
+                                    vertical: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.play_circle_outline, size: 20),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Play on Web',
+                                      style: WebTheme.bodyLarge.copyWith(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+
+        SizedBox(width: 40),
+
+        // Right side - Phone mockup sliding from right
+        Expanded(
+          flex: 1,
+          child: _buildDelayedAnimation(
+            delay: Duration(milliseconds: 300),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 100.0, end: 0.0),
+              duration: Duration(milliseconds: 1200),
+              curve: Curves.easeOutCubic,
+              builder: (context, value, child) {
+                return Transform.translate(
+                  offset: Offset(value, 0),
+                  child: Opacity(
+                    opacity: (100 - value) / 100,
+                    child: Center(
+                      child: Container(
+                        width: 200,
+                        height: 400,
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 30,
+                              offset: Offset(0, 20),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(30),
+                          child: Stack(
+                            children: [
+                              // Phone screen content
+                              Container(
+                                width: double.infinity,
+                                height: double.infinity,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      WebTheme.primaryBlue.withOpacity(0.1),
+                                      WebTheme.primaryBlue.withOpacity(0.05),
+                                    ],
+                                  ),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.psychology,
+                                      size: 60,
+                                      color: WebTheme.primaryBlue,
+                                    ),
+                                    SizedBox(height: 16),
+                                    Text(
+                                      'Human Benchmark',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: WebTheme.primaryBlue,
+                                      ),
+                                    ),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      'Test Your Brain',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Phone bezel
+                              Positioned(
+                                top: 20,
+                                left: 0,
+                                right: 0,
+                                child: Container(
+                                  height: 4,
+                                  margin: EdgeInsets.symmetric(horizontal: 60),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[300],
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDelayedAnimation({
+    required Duration delay,
+    required Widget child,
+  }) {
+    return FutureBuilder<void>(
+      future: Future.delayed(delay),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          return child;
+        }
+        return SizedBox.shrink();
       },
     );
   }

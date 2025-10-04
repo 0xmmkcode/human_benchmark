@@ -3,6 +3,7 @@ import 'package:gap/gap.dart';
 import 'package:human_benchmark/services/dashboard_service.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
 import 'package:human_benchmark/web/utils/web_utils.dart';
+import 'package:human_benchmark/web/widgets/page_header.dart';
 
 class GlobalDashboardPage extends StatefulWidget {
   const GlobalDashboardPage({super.key});
@@ -30,122 +31,75 @@ class _GlobalDashboardPageState extends State<GlobalDashboardPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: WebTheme.grey50,
+      backgroundColor: Colors.white,
       body: Column(
         children: [
           // Page Header
-          Container(
-            width: double.infinity,
+          Padding(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Back button and game name header
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: Icon(Icons.arrow_back, size: 24),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.grey[200],
-                        padding: EdgeInsets.all(12),
-                      ),
-                    ),
-                    SizedBox(width: 16),
-                    Text(
-                      'Global Dashboard',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[800],
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 24),
-                Text(
-                  'View global statistics and trends.',
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 24),
-                TabBar(
-                  controller: _tabController,
-                  labelColor: WebTheme.primaryBlue,
-                  unselectedLabelColor: Colors.grey[600],
-                  indicatorColor: WebTheme.primaryBlue,
-                  tabs: const [Tab(text: 'Overview')],
-                ),
-              ],
+            child: PageHeader(
+              title: 'Global Dashboard',
+              subtitle: 'View global statistics and trends.',
             ),
           ),
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [_buildOverviewTab()],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+            child: StreamBuilder<DashboardOverview>(
+              stream: DashboardService.getDashboardOverviewStream(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-  Widget _buildOverviewTab() {
-    return FutureBuilder<DashboardOverview>(
-      future: DashboardService.getDashboardOverview(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Colors.grey[400],
+                        ),
+                        const Gap(16),
+                        const Text(
+                          'Failed to load global statistics',
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 18,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const Gap(8),
+                        const Text(
+                          'Please try again later',
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
 
-        if (snapshot.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
-                const Gap(16),
-                const Text(
-                  'Failed to load global statistics',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 18,
-                    color: Colors.grey,
-                  ),
-                ),
-                const Gap(8),
-                const Text(
-                  'Please try again later',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
+                final overview = snapshot.data ?? DashboardOverview.empty();
 
-        final overview = snapshot.data ?? DashboardOverview.empty();
-
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Welcome Section
-              Container(
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Gap(10),
+                      // Welcome Section
+                      /*Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      WebTheme.primaryBlue.withOpacity(0.1),
-                      WebTheme.primaryBlueLight.withOpacity(0.05),
+                      WebTheme.primaryBlue.withValues(alpha: 0.1),
+                      WebTheme.primaryBlueLight.withValues(alpha: 0.05),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -173,132 +127,270 @@ class _GlobalDashboardPageState extends State<GlobalDashboardPage>
                     ),
                   ],
                 ),
-              ),
-              const Gap(32),
+              ),*/
 
-              // Key Statistics
-              Text(
-                'Key Statistics',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                ),
-              ),
-              const Gap(16),
-
-              // Statistics Grid
-              Row(
-                children: [
-                  Expanded(
-                    child: WebUtils.buildStatCard(
-                      title: 'Total Players',
-                      value: '${overview.totalUsers}',
-                      icon: Icons.people,
-                      color: WebTheme.primaryBlue,
-                    ),
-                  ),
-                  const Gap(16),
-                  Expanded(
-                    child: WebUtils.buildStatCard(
-                      title: 'Games Played',
-                      value: '${overview.totalGamesPlayed}',
-                      icon: Icons.games,
-                      color: Colors.green[600]!,
-                    ),
-                  ),
-                  const Gap(16),
-                  Expanded(
-                    child: WebUtils.buildStatCard(
-                      title: 'Active Today',
-                      value: '${overview.recentActivity.length}',
-                      icon: Icons.trending_up,
-                      color: Colors.orange[600]!,
-                    ),
-                  ),
-                ],
-              ),
-              const Gap(32),
-
-              // Recent Activity
-              Text(
-                'Recent Activity',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                ),
-              ),
-              const Gap(16),
-
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!),
-                ),
-                child: Column(
-                  children: [
-                    if (overview.recentActivity.isEmpty)
-                      const Text(
-                        'No recent activity to display',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      )
-                    else
-                      ...overview.recentActivity
-                          .take(5)
-                          .map(
-                            (activity) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.circle,
-                                    size: 8,
-                                    color: WebTheme.primaryBlue,
-                                  ),
-                                  const Gap(12),
-                                  Expanded(
-                                    child: Text(
-                                      '${activity.displayName} scored ${activity.score} in ${activity.gameType.name}',
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                      // Statistics Grid
+                      Row(
+                        children: [
+                          Expanded(
+                            child: WebUtils.buildStatCard(
+                              title: 'Total Players',
+                              value: '${overview.totalUsers}',
+                              icon: Icons.people,
+                              color: WebTheme.primaryBlue,
                             ),
                           ),
-                  ],
+                          const Gap(16),
+                          Expanded(
+                            child: WebUtils.buildStatCard(
+                              title: 'Games Played',
+                              value: '${overview.totalGamesPlayed}',
+                              icon: Icons.games,
+                              color: Colors.green[600]!,
+                            ),
+                          ),
+                          const Gap(16),
+                          Expanded(
+                            child: WebUtils.buildStatCard(
+                              title: 'Active Today',
+                              value: '${overview.activeUsersToday}',
+                              icon: Icons.trending_up,
+                              color: Colors.orange[600]!,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Gap(32),
+                      // Recent Players and Activity Row
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Recent Players
+                          Expanded(
+                            child: _buildRecentPlayersCard(
+                              overview.topPerformers,
+                            ),
+                          ),
+                          const Gap(24),
+                          // Recent Activity (moved to right side)
+                          Expanded(
+                            child: _buildRecentActivityCard(
+                              overview.recentActivity,
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Game-Specific Recent Activity
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentPlayersCard(List<PlayerDashboardData> players) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: WebTheme.grey50,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.people, color: Colors.green, size: 24),
+              const Gap(12),
+              Text(
+                'Recent Players',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${players.length}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.green,
+                  ),
                 ),
               ),
             ],
           ),
-        );
-      },
+          const Gap(16),
+          if (players.isEmpty)
+            Center(
+              child: Column(
+                children: [
+                  Icon(Icons.people_outline, size: 48, color: Colors.grey[400]),
+                  const Gap(12),
+                  Text(
+                    'No players yet',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            )
+          else
+            ...players.take(5).map((player) => _buildPlayerItem(player)),
+        ],
+      ),
     );
   }
 
-  Widget _buildStatRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildRecentActivityCard(List<RecentActivity> activities) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: WebTheme.grey50,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
+          Row(
+            children: [
+              Icon(Icons.history, color: WebTheme.primaryBlue, size: 24),
+              const Gap(12),
+              Text(
+                'Recent Activity',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: WebTheme.primaryBlue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${activities.length}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: WebTheme.primaryBlue,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Gap(16),
+          if (activities.isEmpty)
+            Center(
+              child: Column(
+                children: [
+                  Icon(Icons.inbox, size: 48, color: Colors.grey[400]),
+                  const Gap(12),
+                  Text(
+                    'No recent activity',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            )
+          else
+            ...activities
+                .take(5)
+                .map((activity) => _buildActivityItem(activity)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlayerItem(PlayerDashboardData player) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: Colors.green.withValues(alpha: 0.1),
+            child: Text(
+              player.userName?.substring(0, 1).toUpperCase() ?? 'G',
+              style: TextStyle(
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
             ),
+          ),
+          const Gap(12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  player.userName ?? 'Guest',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                Text(
+                  '${player.overallScore} pts',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.star, color: Colors.amber, size: 18),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivityItem(RecentActivity activity) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Icon(Icons.circle, size: 8, color: WebTheme.primaryBlue),
+          const Gap(12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${activity.displayName} scored ${activity.score}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                Text(
+                  'in ${activity.gameType.name}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+          if (activity.isHighScore)
+            Icon(Icons.star, color: Colors.amber, size: 16),
+          const Gap(8),
+          Text(
+            activity.timeAgo,
+            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
           ),
         ],
       ),

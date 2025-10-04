@@ -117,17 +117,21 @@ class ScoreService {
       final User? currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) return false;
 
-      final now = FieldValue.serverTimestamp();
-      final gameScoreData = {
-        'userId': currentUser.uid,
-        'gameType': gameType,
-        'score': score,
-        'playedAt': now,
-        'additionalData': additionalData,
-      };
+      // Convert string gameType to GameType enum
+      final GameType gameTypeEnum = _stringToGameType(gameType);
 
-      // Save to game_scores collection
-      await _gameScoresCollection.add(gameScoreData);
+      // Create GameScore using the model
+      final GameScore gameScore = GameScore.create(
+        userId: currentUser.uid,
+        userName: currentUser.displayName,
+        gameType: gameTypeEnum,
+        score: score,
+        gameData: additionalData,
+        isHighScore: false, // Will be determined by user profile logic
+      );
+
+      // Save to game_scores collection using the model
+      await _gameScoresCollection.add(gameScore.toMap());
 
       // Update user_scores collection
       final userScoreRef = _userScoresCollection.doc(currentUser.uid);
@@ -146,8 +150,8 @@ class ScoreService {
             'highScore': score,
             'totalGames': 1,
             'averageScore': score.toDouble(),
-            'lastPlayed': now,
-            'firstPlayed': now,
+            'lastPlayed': FieldValue.serverTimestamp(),
+            'firstPlayed': FieldValue.serverTimestamp(),
           };
         } else {
           final gameStats = Map<String, dynamic>.from(currentScores[gameType]);
@@ -162,7 +166,7 @@ class ScoreService {
           gameStats['averageScore'] =
               ((currentAverage * currentTotalGames) + score) /
               (currentTotalGames + 1);
-          gameStats['lastPlayed'] = now;
+          gameStats['lastPlayed'] = FieldValue.serverTimestamp();
 
           currentScores[gameType] = gameStats;
         }
@@ -177,8 +181,8 @@ class ScoreService {
           'totalGames': totalGames,
           'totalScore': totalScore,
           'averageScore': averageScore,
-          'lastActive': now,
-          'updatedAt': now,
+          'lastActive': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
         });
       } else {
         // Create new user score document
@@ -192,16 +196,16 @@ class ScoreService {
               'highScore': score,
               'totalGames': 1,
               'averageScore': score.toDouble(),
-              'lastPlayed': now,
-              'firstPlayed': now,
+              'lastPlayed': FieldValue.serverTimestamp(),
+              'firstPlayed': FieldValue.serverTimestamp(),
             },
           },
           'totalGames': 1,
           'totalScore': score,
           'averageScore': score.toDouble(),
-          'createdAt': now,
-          'lastActive': now,
-          'updatedAt': now,
+          'createdAt': FieldValue.serverTimestamp(),
+          'lastActive': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
         };
 
         await userScoreRef.set(userScoreData);
