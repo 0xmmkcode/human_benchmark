@@ -5,6 +5,7 @@ import 'package:human_benchmark/web/widgets/page_header.dart';
 import 'package:human_benchmark/services/game_management_service.dart';
 import 'package:human_benchmark/models/game_management.dart';
 import 'package:human_benchmark/services/admin_service.dart';
+import 'package:human_benchmark/web/widgets/app_loading.dart';
 
 class AdminGameManagementPage extends StatefulWidget {
   const AdminGameManagementPage({super.key});
@@ -44,7 +45,7 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
     if (_isLoadingAdmin) {
       return const Scaffold(
         backgroundColor: Colors.white,
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(child: AppLoading()),
       );
     }
 
@@ -83,7 +84,7 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
         stream: GameManagementService.getAllGameManagementStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: AppLoading());
           }
 
           if (snapshot.hasError) {

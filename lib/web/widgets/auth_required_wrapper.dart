@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:human_benchmark/services/auth_service.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:human_benchmark/web/widgets/app_loading.dart';
 
 class AuthRequiredWrapper extends StatelessWidget {
   final Widget child;
@@ -31,7 +32,7 @@ class AuthRequiredWrapper extends StatelessWidget {
         if (isLoading && showLoadingIndicator) {
           return Scaffold(
             backgroundColor: WebTheme.grey50,
-            body: const Center(child: CircularProgressIndicator()),
+            body: const Center(child: AppLoading()),
           );
         }
 

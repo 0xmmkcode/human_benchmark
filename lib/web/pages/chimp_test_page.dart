@@ -412,6 +412,17 @@ class _WebChimpTestPageState extends State<WebChimpTestPage> {
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  'Level $_currentLevel',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black54,
+                  ),
+                ),
+              ),
               LayoutBuilder(
                 builder: (context, constraints) {
                   final double maxSide = 400;

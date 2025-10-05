@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:human_benchmark/web/widgets/app_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/admin_service.dart';
@@ -474,7 +475,7 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
               // Users Table
               Expanded(
                 child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? const Center(child: AppLoading())
                     : _buildUsersTable(),
               ),
 
@@ -885,7 +886,7 @@ class UserDetailsModal extends StatelessWidget {
             const Divider(height: 32),
 
             if (isLoading)
-              const Expanded(child: Center(child: CircularProgressIndicator()))
+              const Expanded(child: Center(child: AppLoading()))
             else if (userDetails != null)
               Expanded(
                 child: SingleChildScrollView(

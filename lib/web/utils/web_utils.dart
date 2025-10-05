@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:human_benchmark/web/widgets/app_loading.dart';
 import '../theme/web_theme.dart';
 
 class WebUtils {
@@ -128,9 +129,8 @@ class WebUtils {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue[600]!),
-          ),
+          const SizedBox(height: 4),
+          const AppLoading(width: 36, height: 36),
           SizedBox(height: 16),
           Text(
             message,

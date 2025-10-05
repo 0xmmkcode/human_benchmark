@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:human_benchmark/services/game_management_service.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
 import 'package:gap/gap.dart';
+import 'package:human_benchmark/web/widgets/app_loading.dart';
 
 class GameAccessGuard extends StatefulWidget {
   final String gameId;
@@ -64,8 +65,7 @@ class _GameAccessGuardState extends State<GameAccessGuard> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return widget.loadingWidget ??
-          const Center(child: CircularProgressIndicator());
+      return widget.loadingWidget ?? const Center(child: AppLoading());
     }
 
     if (!_isAccessible) {

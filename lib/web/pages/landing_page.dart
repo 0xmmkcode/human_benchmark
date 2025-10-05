@@ -6,6 +6,7 @@ import 'package:human_benchmark/web/constants/web_constants.dart';
 import 'package:human_benchmark/services/web_settings_service.dart';
 import 'package:human_benchmark/models/web_settings.dart';
 import 'dart:html' as html;
+import 'dart:ui';
 
 class LandingPage extends StatefulWidget {
   final VoidCallback onStartApp;
@@ -343,165 +344,183 @@ class _LandingPageState extends State<LandingPage>
 
     return FadeTransition(
       opacity: _fadeAnimation,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 16 : (isSmall ? 20 : 24),
-          vertical: isMobile ? 16 : 23,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, 2),
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: isMobile ? 16 : (isSmall ? 20 : 24),
+              vertical: isMobile ? 16 : 23,
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            // Animated Logo
-            AnimatedBuilder(
-              animation: _rotateAnimation,
-              builder: (context, child) {
-                return Transform.rotate(
-                  angle: _rotateAnimation.value * 0.1,
-                  child: Container(
-                    width: isMobile ? 36 : 40,
-                    height: isMobile ? 36 : 40,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          WebTheme.primaryBlue,
-                          WebTheme.primaryBlueLight,
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: WebTheme.primaryBlue.withOpacity(0.3),
-                          blurRadius: 15,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: EdgeInsetsGeometry.all(isMobile ? 6 : 8),
-                      child: Image.asset(
-                        "assets/images/human_benchmark_onlylogo_white.png",
-                        height: isMobile ? 16 : 50,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-            SizedBox(width: isMobile ? 10 : 12),
-            Text(
-              WebConstants.appName,
-              style: WebTheme.headingMedium.copyWith(
-                fontSize: isMobile ? 18 : (isSmall ? 20 : 24),
-                fontWeight: FontWeight.bold,
-                foreground: Paint()
-                  ..shader = LinearGradient(
-                    colors: [WebTheme.primaryBlue, WebTheme.primaryBlueLight],
-                  ).createShader(const Rect.fromLTWH(0, 0, 200, 30)),
-              ),
-            ),
-
-            Spacer(),
-
-            // Navigation
-            Row(
-              children: [
-                if (!isSmall) ...[
-                  _buildAnimatedButton(
-                    onPressed: () => _scrollToSection(_heroKey),
-                    child: Text('Home', style: WebTheme.bodyLarge),
-                    delay: 200,
-                  ),
-                  SizedBox(width: 16),
-                  _buildAnimatedButton(
-                    onPressed: () => _scrollToSection(_featuresKey),
-                    child: Text('Features', style: WebTheme.bodyLarge),
-                    delay: 300,
-                  ),
-                  SizedBox(width: 16),
-                  _buildAnimatedButton(
-                    onPressed: () => _scrollToSection(_personalityKey),
-                    child: Text('Personality', style: WebTheme.bodyLarge),
-                    delay: 400,
-                  ),
-                  SizedBox(width: 16),
-                  _buildAnimatedButton(
-                    onPressed: () => _scrollToSection(_aboutKey),
-                    child: Text('About', style: WebTheme.bodyLarge),
-                    delay: 500,
-                  ),
-                  SizedBox(width: 16),
-                  _buildAnimatedButton(
-                    onPressed: () => _scrollToSection(_mobileKey),
-                    child: Text('Mobile', style: WebTheme.bodyLarge),
-                    delay: 600,
-                  ),
-                  SizedBox(width: 16),
-                ] else ...[
-                  // Mobile menu button
-                  _buildAnimatedButton(
-                    onPressed: () => _showMobileMenu(context),
-                    child: Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: WebTheme.primaryBlue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.menu,
-                        color: WebTheme.primaryBlue,
-                        size: isMobile ? 20 : 24,
-                      ),
-                    ),
-                    delay: 400,
-                  ),
-                  SizedBox(width: isMobile ? 12 : 16),
-                ],
-                StreamBuilder<WebSettings>(
-                  stream: WebSettingsService.getWebSettingsStream(),
-                  builder: (context, snapshot) {
-                    final webSettings =
-                        snapshot.data ?? WebSettings.defaultSettings;
-
-                    return _buildAnimatedButton(
-                      onPressed: () {
-                        if (webSettings.webGameEnabled) {
-                          // Web game is enabled - go to web app
-                          widget.onStartApp();
-                        } else {
-                          // Web game is disabled - go to Play Store
-                          final url =
-                              webSettings.playStoreLink ??
-                              'https://play.google.com/store/apps/details?id=xyz.mmkcode.humanbenchmark.human_benchmark';
-                          html.window.open(url, '_blank');
-                        }
-                      },
-                      child: Text(
-                        isMobile ? 'Start' : 'Get Started',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: isMobile ? 14 : 16,
-                        ),
-                      ),
-                      isPrimary: true,
-                      delay: 800,
-                    );
-                  },
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.85),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: Offset(0, 2),
                 ),
               ],
             ),
-          ],
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: 1200),
+                child: Row(
+                  children: [
+                    // Animated Logo
+                    AnimatedBuilder(
+                      animation: _rotateAnimation,
+                      builder: (context, child) {
+                        return Transform.rotate(
+                          angle: _rotateAnimation.value * 0.1,
+                          child: Container(
+                            width: isMobile ? 36 : 40,
+                            height: isMobile ? 36 : 40,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  WebTheme.primaryBlue,
+                                  WebTheme.primaryBlueLight,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                isMobile ? 10 : 12,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: WebTheme.primaryBlue.withOpacity(0.3),
+                                  blurRadius: 15,
+                                  offset: Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.all(isMobile ? 6 : 8),
+                              child: Image.asset(
+                                "assets/images/human_benchmark_onlylogo_white.png",
+                                height: isMobile ? 16 : 50,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    SizedBox(width: isMobile ? 10 : 12),
+                    Text(
+                      WebConstants.appName,
+                      style: WebTheme.headingMedium.copyWith(
+                        fontSize: isMobile ? 18 : (isSmall ? 20 : 24),
+                        fontWeight: FontWeight.bold,
+                        foreground: Paint()
+                          ..shader = LinearGradient(
+                            colors: [
+                              WebTheme.primaryBlue,
+                              WebTheme.primaryBlueLight,
+                            ],
+                          ).createShader(const Rect.fromLTWH(0, 0, 200, 30)),
+                      ),
+                    ),
+
+                    Spacer(),
+
+                    // Navigation
+                    Row(
+                      children: [
+                        if (!isSmall) ...[
+                          _buildAnimatedButton(
+                            onPressed: () => _scrollToSection(_heroKey),
+                            child: Text('Home', style: WebTheme.bodyLarge),
+                            delay: 200,
+                          ),
+                          SizedBox(width: 16),
+                          _buildAnimatedButton(
+                            onPressed: () => _scrollToSection(_featuresKey),
+                            child: Text('Features', style: WebTheme.bodyLarge),
+                            delay: 300,
+                          ),
+                          SizedBox(width: 16),
+                          _buildAnimatedButton(
+                            onPressed: () => _scrollToSection(_personalityKey),
+                            child: Text(
+                              'Personality',
+                              style: WebTheme.bodyLarge,
+                            ),
+                            delay: 400,
+                          ),
+                          SizedBox(width: 16),
+                          _buildAnimatedButton(
+                            onPressed: () => _scrollToSection(_aboutKey),
+                            child: Text('About', style: WebTheme.bodyLarge),
+                            delay: 500,
+                          ),
+                          SizedBox(width: 16),
+                          _buildAnimatedButton(
+                            onPressed: () => _scrollToSection(_mobileKey),
+                            child: Text('Mobile', style: WebTheme.bodyLarge),
+                            delay: 600,
+                          ),
+                          SizedBox(width: 16),
+                        ] else ...[
+                          // Mobile menu button
+                          _buildAnimatedButton(
+                            onPressed: () => _showMobileMenu(context),
+                            child: Container(
+                              padding: EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: WebTheme.primaryBlue.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.menu,
+                                color: WebTheme.primaryBlue,
+                                size: isMobile ? 20 : 24,
+                              ),
+                            ),
+                            delay: 400,
+                          ),
+                          SizedBox(width: isMobile ? 12 : 16),
+                        ],
+                        StreamBuilder<WebSettings>(
+                          stream: WebSettingsService.getWebSettingsStream(),
+                          builder: (context, snapshot) {
+                            final webSettings =
+                                snapshot.data ?? WebSettings.defaultSettings;
+
+                            return _buildAnimatedButton(
+                              onPressed: () {
+                                if (webSettings.webGameEnabled) {
+                                  // Web game is enabled - go to web app
+                                  widget.onStartApp();
+                                } else {
+                                  // Web game is disabled - go to Play Store
+                                  final url =
+                                      webSettings.playStoreLink ??
+                                      'https://play.google.com/store/apps/details?id=xyz.mmkcode.humanbenchmark.human_benchmark';
+                                  html.window.open(url, '_blank');
+                                }
+                              },
+                              child: Text(
+                                isMobile ? 'Start' : 'Get Started',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: isMobile ? 14 : 16,
+                                ),
+                              ),
+                              isPrimary: true,
+                              delay: 800,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -2279,7 +2298,7 @@ class _LandingPageState extends State<LandingPage>
                   opacity: (100 - value) / 100,
                   child: Column(
                     children: [
-                      // Primary download button
+                      // Primary download button - Google Play
                       Container(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -2304,13 +2323,13 @@ class _LandingPageState extends State<LandingPage>
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.download_rounded,
-                                size: isTiny ? 18 : 20,
+                              Image.asset(
+                                'assets/images/google.png',
+                                height: isTiny ? 16 : 18,
                               ),
-                              SizedBox(width: 8),
+                              SizedBox(width: 10),
                               Text(
-                                'Get Mobile App',
+                                'Get it on Google Play',
                                 style: WebTheme.bodyLarge.copyWith(
                                   fontSize: isTiny ? 14 : 16,
                                   fontWeight: FontWeight.bold,
@@ -2323,7 +2342,7 @@ class _LandingPageState extends State<LandingPage>
 
                       SizedBox(height: isTiny ? 16 : 20),
 
-                      // Web play button (if enabled)
+                      // Web version button (if enabled)
                       StreamBuilder<WebSettings>(
                         stream: WebSettingsService.getWebSettingsStream(),
                         builder: (context, snapshot) {
@@ -2361,7 +2380,7 @@ class _LandingPageState extends State<LandingPage>
                                   ),
                                   SizedBox(width: 8),
                                   Text(
-                                    'Play on Web',
+                                    'Use Web Version',
                                     style: WebTheme.bodyLarge.copyWith(
                                       fontSize: isTiny ? 14 : 16,
                                       fontWeight: FontWeight.bold,
@@ -2473,7 +2492,7 @@ class _LandingPageState extends State<LandingPage>
                       ),
                       SizedBox(height: 32),
 
-                      // Buttons
+                      // Buttons - only Google Play and Web Version
                       Wrap(
                         spacing: 16,
                         runSpacing: 12,
@@ -2502,10 +2521,13 @@ class _LandingPageState extends State<LandingPage>
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.download_rounded, size: 20),
-                                SizedBox(width: 8),
+                                Image.asset(
+                                  'assets/images/google.png',
+                                  height: 18,
+                                ),
+                                SizedBox(width: 10),
                                 Text(
-                                  'Get Mobile App',
+                                  'Get it on Google Play',
                                   style: WebTheme.bodyLarge.copyWith(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -2546,7 +2568,7 @@ class _LandingPageState extends State<LandingPage>
                                     Icon(Icons.play_circle_outline, size: 20),
                                     SizedBox(width: 8),
                                     Text(
-                                      'Play on Web',
+                                      'Use Web Version',
                                       style: WebTheme.bodyLarge.copyWith(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,

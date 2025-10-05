@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:human_benchmark/services/maintenance_service.dart';
+import 'package:human_benchmark/web/widgets/app_loading.dart';
 import 'package:human_benchmark/web/pages/maintenance_page.dart';
 
 class MaintenanceWrapper extends StatefulWidget {
@@ -49,7 +50,7 @@ class _MaintenanceWrapperState extends State<MaintenanceWrapper> {
   Widget build(BuildContext context) {
     // Show loading indicator while checking maintenance status
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: Center(child: AppLoading()));
     }
 
     // Show maintenance page if in maintenance mode or explicitly requested

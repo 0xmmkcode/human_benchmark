@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:human_benchmark/web/widgets/app_loading.dart';
 import 'package:gap/gap.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
 import 'package:human_benchmark/web/widgets/page_header.dart';
@@ -419,9 +420,7 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
             ),
           ),
           const Gap(24),
-          const CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-          ),
+          const AppLoading(width: 36, height: 36),
           const Gap(16),
           Text(
             'Memorizing...',

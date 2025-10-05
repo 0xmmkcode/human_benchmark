@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/route_protection_service.dart';
+import '../widgets/app_loading.dart';
 
 class ProtectedGameRoute extends ConsumerStatefulWidget {
   final String gameId;
@@ -46,7 +47,7 @@ class _ProtectedGameRouteState extends ConsumerState<ProtectedGameRoute> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: Center(child: AppLoading()));
     }
 
     if (!_isGameEnabled) {

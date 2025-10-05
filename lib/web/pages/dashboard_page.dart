@@ -5,6 +5,7 @@ import 'package:human_benchmark/models/game_score.dart';
 import 'package:human_benchmark/services/dashboard_service.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
 import 'package:human_benchmark/web/widgets/page_header.dart';
+import 'package:human_benchmark/web/widgets/app_loading.dart';
 
 class WebDashboardPage extends StatefulWidget {
   const WebDashboardPage({super.key});
@@ -39,7 +40,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> {
       stream: DashboardService.getDashboardOverviewStream(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: AppLoading());
         }
 
         if (snapshot.hasError) {

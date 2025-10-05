@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:human_benchmark/web/widgets/app_loading.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
 import 'package:human_benchmark/web/utils/web_utils.dart';
 import 'package:human_benchmark/services/auth_service.dart';
@@ -120,7 +121,7 @@ class _WebMinimizedSidebarState extends State<WebMinimizedSidebar> {
                         child: SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: AppLoading(width: 18, height: 18),
                         ),
                       );
                     }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:human_benchmark/web/widgets/app_loading.dart';
 import 'package:human_benchmark/services/web_settings_service.dart';
 import 'package:human_benchmark/models/web_settings.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
@@ -110,7 +111,7 @@ class _AdminWebSettingsPageState extends State<AdminWebSettingsPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: AppLoading())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -335,12 +336,7 @@ class _AdminWebSettingsPageState extends State<AdminWebSettingsPage> {
                           ? const SizedBox(
                               height: 20,
                               width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
-                              ),
+                              child: AppLoading(width: 20, height: 20),
                             )
                           : Text(
                               'Save Changes',

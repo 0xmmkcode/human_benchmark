@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:human_benchmark/web/widgets/app_loading.dart';
 import 'dart:ui';
 import 'package:gap/gap.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
@@ -303,7 +304,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
 
   Widget _buildProfileContent() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: AppLoading());
     }
 
     if (_error != null) {

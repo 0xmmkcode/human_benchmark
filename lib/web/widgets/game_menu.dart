@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:human_benchmark/web/widgets/app_loading.dart';
 import 'package:gap/gap.dart';
 import 'package:human_benchmark/services/game_management_service.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
@@ -111,7 +112,7 @@ class _GameMenuState extends State<GameMenu> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: AppLoading());
     }
 
     if (_visibleGames.isEmpty) {

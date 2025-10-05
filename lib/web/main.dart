@@ -16,7 +16,8 @@ import 'package:human_benchmark/web/pages/terms_of_service_page.dart';
 import 'package:human_benchmark/screens/personality_quiz_page.dart';
 import 'package:human_benchmark/web/pages/decision_making_page.dart';
 import 'package:human_benchmark/services/auth_service.dart';
-import 'package:human_benchmark/web/pages/global_dashboard_page.dart';
+// import 'package:human_benchmark/web/pages/global_dashboard_page.dart';
+import 'package:human_benchmark/screens/dashboard_page.dart';
 import 'package:human_benchmark/web/pages/number_memory_page.dart';
 import 'package:human_benchmark/web/pages/chimp_test_page.dart';
 import 'package:human_benchmark/web/pages/profile_page.dart';
@@ -192,10 +193,7 @@ List<RouteBase> _buildDynamicRoutes(List<Map<String, dynamic>> routes) {
 
     if (type == 'dashboard') {
       dynamicRoutes.add(
-        GoRoute(
-          path: path,
-          builder: (context, state) => const GlobalDashboardPage(),
-        ),
+        GoRoute(path: path, builder: (context, state) => const DashboardPage()),
       );
     } else if (type == 'game') {
       final gameId = route['gameId'] as String;
@@ -245,7 +243,8 @@ Widget _buildGameRoute(String gameId) {
     future: _getGameStatus(gameId),
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        // Remove startup blocking loader; render empty shell until ready.
+        return const Scaffold(body: SizedBox.shrink());
       }
 
       final gameStatus = snapshot.data ?? {};
@@ -454,9 +453,8 @@ class _WebAppShellState extends State<_WebAppShell> {
           ),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
+              // Avoid blocking UI with large loader; keep shell minimal
+              return const Scaffold(body: SizedBox.shrink());
             }
 
             if (snapshot.hasError) {

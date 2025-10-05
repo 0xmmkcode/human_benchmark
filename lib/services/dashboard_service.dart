@@ -48,7 +48,7 @@ class DashboardService {
           _getTotalGamesPlayed(),
           _getActiveUsersToday(),
           _getRecentActivity(),
-          _getTopPerformers(),
+          _getRecentPlayers(),
           _getGameStatistics(),
         ]);
 
@@ -66,7 +66,7 @@ class DashboardService {
         final totalGames = await _getTotalGamesPlayed();
         final activeToday = await _getActiveUsersToday();
         final recentActivity = await _getRecentActivity();
-        final topPerformers = await _getTopPerformers();
+        final topPerformers = await _getRecentPlayers();
         final gameStats = await _getGameStatistics();
 
         return DashboardOverview(
@@ -599,6 +599,37 @@ class DashboardService {
           .toList(growable: false);
     } catch (e, st) {
       AppLogger.error('dashboard._getTopPerformers', e, st);
+      return <PlayerDashboardData>[];
+    }
+  }
+
+  // Recent players: order by last activity and map to PlayerDashboardData
+  static Future<List<PlayerDashboardData>> _getRecentPlayers({
+    int limit = 10,
+  }) async {
+    try {
+      final optimizedLimit = kIsWeb ? limit : (limit > 8 ? 8 : limit);
+
+      final snapshot = await _userScoresCollection
+          .orderBy('updatedAt', descending: true)
+          .limit(optimizedLimit)
+          .get();
+
+      return snapshot.docs
+          .map((doc) {
+            try {
+              final userScore = UserScore.fromMap(doc.data());
+              return PlayerDashboardData.fromUserScore(userScore);
+            } catch (e) {
+              AppLogger.error('dashboard.parse_recent_player', e, null);
+              return null;
+            }
+          })
+          .where((player) => player != null)
+          .cast<PlayerDashboardData>()
+          .toList(growable: false);
+    } catch (e, st) {
+      AppLogger.error('dashboard._getRecentPlayers', e, st);
       return <PlayerDashboardData>[];
     }
   }

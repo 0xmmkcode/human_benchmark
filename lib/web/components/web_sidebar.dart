@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:human_benchmark/web/widgets/app_loading.dart';
 import 'package:gap/gap.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
 import 'package:human_benchmark/web/utils/web_utils.dart';
@@ -140,9 +141,7 @@ class _WebSidebarState extends State<WebSidebar> {
                                 SizedBox(
                                   width: 16,
                                   height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
+                                  child: AppLoading(width: 20, height: 20),
                                 ),
                                 SizedBox(width: 12),
                                 Text(
