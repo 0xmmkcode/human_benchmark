@@ -123,8 +123,13 @@ class FirebaseNavigationService {
   // Get navigation items stream for real-time updates
   static Stream<List<Map<String, dynamic>>> getAllNavigationItemsStream({
     bool isSignedIn = false,
-  }) {
-    return GameManagementService.getAllGameManagementStream().asyncMap((
+  }) async* {
+    // Emit immediately on subscribe so UI updates when auth state changes
+    final initialItems = await getAllNavigationItems(isSignedIn: isSignedIn);
+    yield initialItems;
+
+    // Then keep emitting on game management updates
+    yield* GameManagementService.getAllGameManagementStream().asyncMap((
       allGames,
     ) async {
       final isAdmin = await AdminService.isCurrentUserAdmin();

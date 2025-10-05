@@ -441,16 +441,39 @@ class UserProfileService {
   static UserProfile _recalculateOverallStats(UserProfile profile) {
     int totalGames = 0;
     int overallScore = 0;
+    int globalScore = 0;
 
     for (final gameType in GameType.values) {
       final stats = profile.getGameStats(gameType);
       totalGames += stats.totalGames;
       overallScore += stats.highScore;
+
+      // Normalize per-game contribution for global score
+      // Heuristic: convert lower-is-better games to inverted band and clamp
+      // reactionTime, aimTrainer => lower better; others higher better
+      final bool descending = _shouldSortDescending(gameType);
+      final int high = stats.highScore;
+      int normalized = 0;
+      if (high <= 0) {
+        normalized = 0;
+      } else if (descending) {
+        // Map raw high to a capped band (e.g., 0-1000)
+        normalized = high.clamp(0, 1000);
+      } else {
+        // For ms times, invert into a 0-1000 band where faster => higher
+        // 150ms+ maps near 0; 100ms ~ 600; 80ms ~ 800; 60ms ~ 950; 40ms ~ 1000
+        final int ms = high;
+        final double score =
+            1000.0 * (1.0 / (1.0 + ((ms - 60).clamp(0, 300)) / 60.0));
+        normalized = score.round().clamp(0, 1000);
+      }
+      globalScore += normalized;
     }
 
     return profile.copyWith(
       totalGamesPlayed: totalGames,
       overallScore: overallScore,
+      globalScore: globalScore,
     );
   }
 
@@ -645,7 +668,7 @@ class UserProfileService {
           .snapshots()
           .map((snapshot) {
             final userIndex = snapshot.docs.indexWhere(
-              (doc) => doc.id == currentUser!.uid,
+              (doc) => doc.id == currentUser.uid,
             );
             return userIndex >= 0 ? userIndex + 1 : -1;
           })

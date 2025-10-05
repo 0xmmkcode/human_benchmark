@@ -114,7 +114,8 @@ class AuthRequiredWrapper extends StatelessWidget {
                       try {
                         final cred = await AuthService.signInWithGoogle();
                         if (context.mounted && cred != null) {
-                          // Navigation will be handled automatically by the StreamBuilder
+                          // Replace the sign-in prompt route to avoid back-stack errors
+                          Navigator.of(context).maybePop();
                         }
                       } catch (e) {
                         if (context.mounted) {

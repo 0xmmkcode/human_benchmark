@@ -24,6 +24,7 @@ class _WebChimpTestPageState extends State<WebChimpTestPage> {
   int _currentLevel = 1;
   int _currentScore = 0;
   int _bestScore = 0;
+  int _highestLevel = 0;
 
   // Grid and numbers
   final int _gridSize = 8; // 8x8 grid
@@ -58,6 +59,9 @@ class _WebChimpTestPageState extends State<WebChimpTestPage> {
         if (scores.isNotEmpty) {
           setState(() {
             _bestScore = scores.map((s) => s.score).reduce(max);
+            _highestLevel = scores
+                .map((s) => (s.gameData?['level'] as num?)?.toInt() ?? 0)
+                .fold(0, (prev, v) => v > prev ? v : prev);
           });
         }
       }
@@ -191,7 +195,7 @@ class _WebChimpTestPageState extends State<WebChimpTestPage> {
       subtitle:
           'Sign in to play the Chimp Test and save your scores to track your progress.',
       child: Scaffold(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: Colors.white,
         body: Container(
           padding: const EdgeInsets.all(32),
           child: Column(
@@ -237,6 +241,8 @@ class _WebChimpTestPageState extends State<WebChimpTestPage> {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Game Icon
           Container(
@@ -267,33 +273,7 @@ class _WebChimpTestPageState extends State<WebChimpTestPage> {
             textAlign: TextAlign.center,
           ),
           const Gap(32),
-
-          // Best Score
-          if (_bestScore > 0)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.star, color: Colors.amber, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Best Score: $_bestScore',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          const Gap(32),
+          // Stats before starting
 
           // Start Button
           ElevatedButton(
@@ -324,69 +304,226 @@ class _WebChimpTestPageState extends State<WebChimpTestPage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Column(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Level and Score - Nice cards without borders
-          _buildScoreCards(),
-          const Gap(32),
-
-          // Game Grid
-          Container(
-            width: 400,
-            height: 400,
-            child: GridView.builder(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: _gridSize,
-                crossAxisSpacing: 2,
-                mainAxisSpacing: 2,
+          // Show only current level while playing
+          /* Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildScoreCard(
+                icon: Icons.trending_up,
+                label: 'Level',
+                value: '$_currentLevel',
+                color: Colors.blue,
+                isHighlighted: true,
               ),
-              itemCount: _gridSize * _gridSize,
-              itemBuilder: (context, index) {
-                final numberIndex = _positions.indexOf(index);
-                final hasNumber = numberIndex != -1;
-                final number = hasNumber ? _numbers[numberIndex] : 0;
-                final isRevealed = _revealed[index];
-                final isClicked = _clicked[index];
-
-                return GestureDetector(
-                  onTap: () => _onGridTap(index),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isClicked
-                          ? Colors.green.withValues(alpha: 0.3)
-                          : (hasNumber
-                                ? Colors.amber.withValues(alpha: 0.8)
-                                : Colors.grey[200]),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: isClicked ? Colors.green : Colors.grey.shade300,
-                        width: 1,
+            ],
+          ),
+          const Gap(24),*/
+          /*Container(
+            height: 250,
+            width: 250,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildScoreCard(
+                        icon: Icons.trending_up,
+                        label: 'Level',
+                        value: '$_currentLevel',
+                        color: Colors.blue,
+                        isHighlighted: true,
+                        isSmall: true,
                       ),
                     ),
-                    child: Center(
-                      child: Text(
-                        (isRevealed && hasNumber) ? number.toString() : '',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                    Gap(20),
+                    Expanded(
+                      child: _buildScoreCard(
+                        icon: Icons.score,
+                        label: 'Score',
+                        value: '$_currentScore',
+                        color: Colors.amber,
+                        isHighlighted: false,
+                        isSmall: true,
+                      ),
+                    ),
+                  ],
+                ),
+                Gap(20),
+                // Restart Game Button (match score card theme)
+                Expanded(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () {
+                      setState(() {
+                        _currentLevel = 1;
+                        _currentScore = 0;
+                        _gameState = GameState.playing;
+                        _startLevel();
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.red.withOpacity(0.15),
+                            Colors.red.withOpacity(0.08),
+                          ],
                         ),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.refresh,
+                            color: Colors.red.withOpacity(0.9),
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Restart',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.red.withOpacity(0.9),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                );
-              },
+                ),
+              ],
             ),
-          ),
+          ),*/
           const Gap(24),
+          // Game Grid - responsive to avoid overflow
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final double maxSide = 400;
+                  final double side =
+                      [
+                            maxSide,
+                            constraints.maxWidth,
+                            constraints.maxHeight -
+                                180, // leave space for text/buttons
+                          ]
+                          .where((v) => v.isFinite && v > 0)
+                          .reduce((a, b) => a < b ? a : b);
+                  final double gridSide = side.clamp(220, maxSide);
+
+                  return SizedBox(
+                    width: gridSide,
+                    height: gridSide,
+                    child: GridView.builder(
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: _gridSize,
+                        crossAxisSpacing: 2,
+                        mainAxisSpacing: 2,
+                      ),
+                      itemCount: _gridSize * _gridSize,
+                      itemBuilder: (context, index) {
+                        final numberIndex = _positions.indexOf(index);
+                        final hasNumber = numberIndex != -1;
+                        final number = hasNumber ? _numbers[numberIndex] : 0;
+                        final isRevealed = _revealed[index];
+                        final isClicked = _clicked[index];
+
+                        return GestureDetector(
+                          onTap: () => _onGridTap(index),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: isClicked
+                                  ? Colors.green.withValues(alpha: 0.3)
+                                  : (hasNumber
+                                        ? Colors.amber.withValues(alpha: 0.8)
+                                        : Colors.grey[200]),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: isClicked
+                                    ? Colors.green
+                                    : Colors.grey.shade300,
+                                width: 1,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                (isRevealed && hasNumber)
+                                    ? number.toString()
+                                    : '',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+              Gap(20),
+              Text(
+                _revealed.any((r) => r)
+                    ? 'Memorize the numbers!'
+                    : 'Click the numbers in order: $_nextNumber',
+                style: const TextStyle(fontSize: 16, color: Colors.black54),
+              ),
+              const SizedBox(height: 12),
+              // Controls under the instruction message
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _pillButton(
+                    icon: Icons.refresh,
+                    label: 'Restart',
+                    color: Colors.red,
+                    onTap: () {
+                      setState(() {
+                        _currentLevel = 1;
+                        _currentScore = 0;
+                        _gameState = GameState.playing;
+                        _startLevel();
+                      });
+                    },
+                  ),
+                  _pillButton(
+                    icon: Icons.stop_circle_outlined,
+                    label: 'End',
+                    color: Colors.grey,
+                    onTap: () {
+                      setState(() {
+                        _gameTimer?.cancel();
+                        _gameState = GameState.finished;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
 
           // Instructions
-          Text(
-            _revealed.any((r) => r)
-                ? 'Memorize the numbers!'
-                : 'Click the numbers in order: $_nextNumber',
-            style: const TextStyle(fontSize: 16, color: Colors.black54),
-          ),
         ],
       ),
     );
@@ -402,86 +539,45 @@ class _WebChimpTestPageState extends State<WebChimpTestPage> {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Result Icon
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              color: isNewBest
-                  ? Colors.amber.withValues(alpha: 0.1)
-                  : Colors.blue.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isNewBest ? Colors.amber : Colors.blue,
-                width: 3,
-              ),
-            ),
-            child: Icon(
-              isNewBest ? Icons.star : Icons.pets,
-              size: 60,
-              color: isNewBest ? Colors.amber : Colors.blue,
-            ),
-          ),
-          const Gap(24),
-
-          // Result Title
-          Text(
-            isNewBest ? 'New Best Score!' : 'Test Complete!',
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: isNewBest ? Colors.amber[700]! : Colors.blue[700]!,
-            ),
-          ),
-          const Gap(32),
-
-          // Scores
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildResultItem('Score', '$_currentScore', Colors.blue),
-              _buildResultItem('Best', '$_bestScore', Colors.amber),
-              _buildResultItem('Level', '${_currentLevel - 1}', Colors.green),
-            ],
-          ),
-          const Gap(32),
-
-          // Action Buttons
+          // Final stats: last score and best score
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              OutlinedButton(
-                onPressed: _resetGame,
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                ),
-                child: const Text('Try Again'),
+              _buildScoreCard(
+                icon: Icons.score,
+                label: 'Last Score',
+                value: '$_currentScore',
+                color: Colors.blue,
+                isHighlighted: false,
               ),
               const SizedBox(width: 16),
-              ElevatedButton(
-                onPressed: _startGame,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: WebTheme.primaryBlue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text('Play Again'),
+              _buildScoreCard(
+                icon: Icons.emoji_events,
+                label: 'Best Score',
+                value: '$_bestScore',
+                color: Colors.amber,
+                isHighlighted: false,
               ),
             ],
+          ),
+          const Gap(24),
+
+          // Action Buttons
+          ElevatedButton(
+            onPressed: _startGame,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: WebTheme.primaryBlue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              elevation: 0,
+            ),
+            child: const Text('Play Again'),
           ),
         ],
       ),
@@ -555,6 +651,7 @@ class _WebChimpTestPageState extends State<WebChimpTestPage> {
     required String value,
     required Color color,
     required bool isHighlighted,
+    bool isSmall = false,
   }) {
     return Container(
       padding: const EdgeInsets.all(24),
@@ -571,20 +668,22 @@ class _WebChimpTestPageState extends State<WebChimpTestPage> {
       child: Column(
         children: [
           // Icon with background
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [color, color.withOpacity(0.8)],
+          if (!isSmall) ...[
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [color, color.withOpacity(0.8)],
+                ),
+                borderRadius: BorderRadius.circular(16),
               ),
-              borderRadius: BorderRadius.circular(16),
+              child: Icon(icon, color: Colors.white, size: 28),
             ),
-            child: Icon(icon, color: Colors.white, size: 28),
-          ),
-          const Gap(16),
+            const Gap(16),
+          ],
 
           // Value
           Text(
@@ -608,6 +707,43 @@ class _WebChimpTestPageState extends State<WebChimpTestPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _pillButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [color.withOpacity(0.15), color.withOpacity(0.08)],
+          ),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: color.withOpacity(0.9)),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: color.withOpacity(0.9),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

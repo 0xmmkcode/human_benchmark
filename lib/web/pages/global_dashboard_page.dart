@@ -32,162 +32,123 @@ class _GlobalDashboardPageState extends State<GlobalDashboardPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          // Page Header
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: PageHeader(
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            // Page Header
+            PageHeader(
               title: 'Global Dashboard',
               subtitle: 'View global statistics and trends.',
             ),
-          ),
-          Expanded(
-            child: StreamBuilder<DashboardOverview>(
-              stream: DashboardService.getDashboardOverviewStream(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+            const Gap(24),
+            Expanded(
+              child: StreamBuilder<DashboardOverview>(
+                stream: DashboardService.getDashboardOverviewStream(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                if (snapshot.hasError) {
-                  return Center(
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          const Gap(16),
+                          const Text(
+                            'Failed to load global statistics',
+                            style: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 18,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          const Gap(8),
+                          const Text(
+                            'Please try again later',
+                            style: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 14,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final overview = snapshot.data ?? DashboardOverview.empty();
+
+                  return SingleChildScrollView(
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: Colors.grey[400],
+                        // Statistics Grid
+                        Row(
+                          children: [
+                            Expanded(
+                              child: WebUtils.buildStatCard(
+                                title: 'Total Players',
+                                value: '${overview.totalUsers}',
+                                icon: Icons.people,
+                                color: WebTheme.primaryBlue,
+                              ),
+                            ),
+                            const Gap(16),
+                            Expanded(
+                              child: WebUtils.buildStatCard(
+                                title: 'Games Played',
+                                value: '${overview.totalGamesPlayed}',
+                                icon: Icons.games,
+                                color: Colors.green[600]!,
+                              ),
+                            ),
+                            const Gap(16),
+                            Expanded(
+                              child: WebUtils.buildStatCard(
+                                title: 'Active Today',
+                                value: '${overview.activeUsersToday}',
+                                icon: Icons.trending_up,
+                                color: Colors.orange[600]!,
+                              ),
+                            ),
+                          ],
                         ),
-                        const Gap(16),
-                        const Text(
-                          'Failed to load global statistics',
-                          style: TextStyle(
-                            fontFamily: 'Montserrat',
-                            fontSize: 18,
-                            color: Colors.grey,
-                          ),
+                        const Gap(32),
+                        // Recent Players and Activity Row
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Recent Players
+                            Expanded(
+                              child: _buildRecentPlayersCard(
+                                overview.topPerformers,
+                              ),
+                            ),
+                            const Gap(24),
+                            // Recent Activity (moved to right side)
+                            Expanded(
+                              child: _buildRecentActivityCard(
+                                overview.recentActivity,
+                              ),
+                            ),
+                          ],
                         ),
-                        const Gap(8),
-                        const Text(
-                          'Please try again later',
-                          style: TextStyle(
-                            fontFamily: 'Montserrat',
-                            fontSize: 14,
-                            color: Colors.grey,
-                          ),
-                        ),
+                        // Game-Specific Recent Activity
                       ],
                     ),
                   );
-                }
-
-                final overview = snapshot.data ?? DashboardOverview.empty();
-
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Gap(10),
-                      // Welcome Section
-                      /*Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      WebTheme.primaryBlue.withValues(alpha: 0.1),
-                      WebTheme.primaryBlueLight.withValues(alpha: 0.05),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  children: [
-                    Icon(Icons.public, size: 48, color: WebTheme.primaryBlue),
-                    const Gap(16),
-                    Text(
-                      'Welcome to the Global Dashboard',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: WebTheme.primaryBlue,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const Gap(8),
-                    Text(
-                      'Discover how players worldwide are performing in cognitive tests',
-                      style: TextStyle(fontSize: 16, color: Colors.grey[700]),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),*/
-
-                      // Statistics Grid
-                      Row(
-                        children: [
-                          Expanded(
-                            child: WebUtils.buildStatCard(
-                              title: 'Total Players',
-                              value: '${overview.totalUsers}',
-                              icon: Icons.people,
-                              color: WebTheme.primaryBlue,
-                            ),
-                          ),
-                          const Gap(16),
-                          Expanded(
-                            child: WebUtils.buildStatCard(
-                              title: 'Games Played',
-                              value: '${overview.totalGamesPlayed}',
-                              icon: Icons.games,
-                              color: Colors.green[600]!,
-                            ),
-                          ),
-                          const Gap(16),
-                          Expanded(
-                            child: WebUtils.buildStatCard(
-                              title: 'Active Today',
-                              value: '${overview.activeUsersToday}',
-                              icon: Icons.trending_up,
-                              color: Colors.orange[600]!,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Gap(32),
-                      // Recent Players and Activity Row
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Recent Players
-                          Expanded(
-                            child: _buildRecentPlayersCard(
-                              overview.topPerformers,
-                            ),
-                          ),
-                          const Gap(24),
-                          // Recent Activity (moved to right side)
-                          Expanded(
-                            child: _buildRecentActivityCard(
-                              overview.recentActivity,
-                            ),
-                          ),
-                        ],
-                      ),
-                      // Game-Specific Recent Activity
-                    ],
-                  ),
-                );
-              },
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

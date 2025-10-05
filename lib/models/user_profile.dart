@@ -20,6 +20,7 @@ class UserProfile {
   // Overall stats
   final int totalGamesPlayed;
   final int overallScore;
+  final int globalScore; // normalized aggregate across all games
   final DateTime? lastGamePlayed;
 
   const UserProfile({
@@ -35,6 +36,7 @@ class UserProfile {
     required this.recentScores,
     required this.totalGamesPlayed,
     required this.overallScore,
+    required this.globalScore,
     this.lastGamePlayed,
   });
 
@@ -57,6 +59,7 @@ class UserProfile {
       ),
       'totalGamesPlayed': totalGamesPlayed,
       'overallScore': overallScore,
+      'globalScore': globalScore,
       'lastGamePlayed': lastGamePlayed != null
           ? Timestamp.fromDate(lastGamePlayed!)
           : null,
@@ -133,6 +136,7 @@ class UserProfile {
     final int totalGamesPlayed =
         (data['totalGamesPlayed'] as num?)?.toInt() ?? 0;
     final int overallScore = (data['overallScore'] as num?)?.toInt() ?? 0;
+    final int globalScore = (data['globalScore'] as num?)?.toInt() ?? 0;
 
     DateTime? lastGamePlayed;
     if (data['lastGamePlayed'] is Timestamp) {
@@ -152,6 +156,7 @@ class UserProfile {
       recentScores: recentScores,
       totalGamesPlayed: totalGamesPlayed,
       overallScore: overallScore,
+      globalScore: globalScore,
       lastGamePlayed: lastGamePlayed,
     );
   }
@@ -171,6 +176,7 @@ class UserProfile {
       recentScores: {},
       totalGamesPlayed: 0,
       overallScore: 0,
+      globalScore: 0,
       lastGamePlayed: null,
     );
   }
@@ -200,6 +206,7 @@ class UserProfile {
     Map<GameType, List<GameScore>>? recentScores,
     int? totalGamesPlayed,
     int? overallScore,
+    int? globalScore,
     DateTime? lastGamePlayed,
   }) {
     return UserProfile(
@@ -215,6 +222,7 @@ class UserProfile {
       recentScores: recentScores ?? this.recentScores,
       totalGamesPlayed: totalGamesPlayed ?? this.totalGamesPlayed,
       overallScore: overallScore ?? this.overallScore,
+      globalScore: globalScore ?? this.globalScore,
       lastGamePlayed: lastGamePlayed ?? this.lastGamePlayed,
     );
   }

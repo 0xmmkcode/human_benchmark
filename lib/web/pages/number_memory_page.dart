@@ -231,7 +231,7 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
                   title: 'Number Memory Test',
                   subtitle: 'Remember the number sequence and type it back',
                 ),
-                SizedBox(height: 24),
+                Gap(40),
 
                 // Score Display (equal widths)
                 Row(
@@ -261,7 +261,7 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
                     ),
                   ],
                 ),
-                const Gap(40),
+                const Gap(25),
 
                 // Game Area fills remaining space and is centered
                 Expanded(child: Center(child: _buildGameArea())),
@@ -277,15 +277,8 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: WebTheme.grey50,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -326,7 +319,7 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
       width: double.infinity,
       padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: WebTheme.grey50,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -382,7 +375,7 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
     return Container(
       padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: WebTheme.grey50,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -444,7 +437,7 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
     return Container(
       padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: WebTheme.grey50,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -519,7 +512,7 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
     return Container(
       padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: WebTheme.grey50,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(

@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/admin_service.dart';
-import '../../services/auth_service.dart';
 import '../../services/app_logger.dart';
-import '../../models/user_profile.dart';
-import '../../models/user_score.dart';
 import '../widgets/page_header.dart';
 
 class AdminUsersPage extends ConsumerStatefulWidget {
@@ -432,7 +429,7 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
             children: [
               // Page Header
               PageHeader(
-                title: 'Admin Users',
+                title: 'Users Management',
                 subtitle: 'Manage user accounts and permissions.',
               ),
               const SizedBox(height: 40),
@@ -610,6 +607,18 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
+        dataRowMinHeight: 56,
+        dataRowMaxHeight: 64,
+        headingRowHeight: 48,
+        columnSpacing: 28,
+        headingRowColor: MaterialStateProperty.all(Colors.white),
+        dataRowColor: MaterialStateProperty.all(Colors.white),
+        headingTextStyle: const TextStyle(
+          fontWeight: FontWeight.w700,
+          color: Colors.black87,
+        ),
+        dividerThickness: 0.5,
+        showBottomBorder: true,
         columns: [
           DataColumn(
             label: const Text('User'),
@@ -627,15 +636,20 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
             label: const Text('Last Active'),
             onSort: (columnIndex, ascending) => _sortUsers('lastActive'),
           ),
-          DataColumn(label: const Text('Status')),
-          DataColumn(label: const Text('Actions')),
+          const DataColumn(label: Text('Status')),
+          const DataColumn(label: Text('Actions')),
         ],
         rows: pageUsers.map((user) {
           final lastActive = user['lastActive'] as Timestamp?;
-          final createdAt = user['createdAt'] as Timestamp?;
           final isMigrated = user['migrationCompleted'] == true;
 
           return DataRow(
+            color: MaterialStateProperty.resolveWith((states) {
+              if (states.contains(MaterialState.hovered)) {
+                return Colors.blue[50];
+              }
+              return Colors.white;
+            }),
             cells: [
               DataCell(
                 Row(
@@ -655,27 +669,45 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
                       child: Text(
                         user['displayName'],
                         overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
                 ),
               ),
-              DataCell(Text(user['email'], overflow: TextOverflow.ellipsis)),
-              DataCell(Text(user['totalGames'].toString())),
+              DataCell(
+                Text(
+                  user['email'],
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.black87),
+                ),
+              ),
+              DataCell(
+                Text(
+                  user['totalGames'].toString(),
+                  style: const TextStyle(fontFeatures: []),
+                ),
+              ),
               DataCell(
                 Text(
                   lastActive != null ? _formatTimestamp(lastActive) : 'Never',
+                  style: TextStyle(color: Colors.grey[700]),
                 ),
               ),
               DataCell(
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+                    horizontal: 10,
+                    vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: isMigrated ? Colors.green[100] : Colors.orange[100],
+                    color: isMigrated ? Colors.green[50] : Colors.orange[50],
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isMigrated
+                          ? Colors.green[200]!
+                          : Colors.orange[200]!,
+                    ),
                   ),
                   child: Text(
                     isMigrated ? 'Migrated' : 'Legacy',
@@ -684,6 +716,7 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
                           ? Colors.green[700]
                           : Colors.orange[700],
                       fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -876,7 +909,8 @@ class UserDetailsModal extends StatelessWidget {
 
   Widget _buildUserStats(Map<String, dynamic> details) {
     final profile = details['profile'] as Map<String, dynamic>?;
-    final legacyScores = details['legacyScores'] as Map<String, dynamic>?;
+    final Map<String, dynamic>? legacyScores =
+        details['legacyScores'] as Map<String, dynamic>?;
 
     return Card(
       child: Padding(

@@ -73,6 +73,29 @@ void main() async {
           useMaterial3: true,
           brightness: Brightness.light,
           fontFamily: GoogleFonts.montserrat().fontFamily,
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+          textButtonTheme: TextButtonThemeData(
+            style: TextButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+          outlinedButtonTheme: OutlinedButtonThemeData(
+            style: OutlinedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              side: BorderSide(color: Colors.blue.shade200),
+            ),
+          ),
         ),
         routerConfig: router,
       ),
@@ -118,19 +141,6 @@ Future<GoRouter> _createDynamicRouter() async {
         path: '/terms',
         builder: (context, state) => const TermsOfServicePage(),
       ),
-      // Admin pages (registered statically to avoid missing routes)
-      GoRoute(
-        path: '/app/admin-users',
-        builder: (context, state) => const AdminUsersPage(),
-      ),
-      GoRoute(
-        path: '/app/admin-game-management',
-        builder: (context, state) => const AdminGameManagementPage(),
-      ),
-      GoRoute(
-        path: '/app/admin-web-settings',
-        builder: (context, state) => const AdminWebSettingsPage(),
-      ),
       // Aliases/redirects for common typos
       GoRoute(
         path: '/app/game-management',
@@ -145,7 +155,28 @@ Future<GoRouter> _createDynamicRouter() async {
         builder: (context, state, child) {
           return MaintenanceWrapper(child: _WebAppShell(child: child));
         },
-        routes: _buildDynamicRoutes(routes),
+        routes: <RouteBase>[
+          // Ensure admin pages are always accessible within the shell
+          GoRoute(
+            path: '/app/admin-users',
+            builder: (context, state) => const AdminUsersPage(),
+          ),
+          GoRoute(
+            path: '/app/admin-game-management',
+            builder: (context, state) => const AdminGameManagementPage(),
+          ),
+          GoRoute(
+            path: '/app/admin-web-settings',
+            builder: (context, state) => const AdminWebSettingsPage(),
+          ),
+          // Always register profile route; page will guard auth internally
+          GoRoute(
+            path: '/app/profile',
+            builder: (context, state) => const WebProfilePage(),
+          ),
+          // Dynamic routes from Firebase configuration
+          ..._buildDynamicRoutes(routes),
+        ],
       ),
     ],
   );
@@ -413,48 +444,56 @@ class _WebAppShell extends StatefulWidget {
 class _WebAppShellState extends State<_WebAppShell> {
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: FirebaseNavigationService.getAllNavigationItemsStream(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        if (snapshot.hasError) {
-          return Scaffold(
-            body: Center(
-              child: Text('Error loading navigation: ${snapshot.error}'),
-            ),
-          );
-        }
-
-        final navigationItems = snapshot.data ?? [];
-        if (navigationItems.isEmpty) {
-          return const Scaffold(
-            body: Center(child: Text('No navigation items available')),
-          );
-        }
-
-        final location = GoRouterState.of(context).uri.toString();
-        final selectedIndex = _getSelectedIndex(location, navigationItems);
-
-        return WebSidebarToggle(
-          selectedIndex: selectedIndex,
-          onIndexChanged: (int idx) {
-            final item = navigationItems.firstWhere(
-              (item) => item['index'] == idx,
-              orElse: () => <String, dynamic>{},
-            );
-
-            final route = item['path'] as String?;
-            if (route != null) {
-              context.go(route);
+    return StreamBuilder<User?>(
+      stream: AuthService.authStateChanges,
+      builder: (context, authSnapshot) {
+        final bool isSignedIn = authSnapshot.data != null;
+        return StreamBuilder<List<Map<String, dynamic>>>(
+          stream: FirebaseNavigationService.getAllNavigationItemsStream(
+            isSignedIn: isSignedIn,
+          ),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
             }
+
+            if (snapshot.hasError) {
+              return Scaffold(
+                body: Center(
+                  child: Text('Error loading navigation: ${snapshot.error}'),
+                ),
+              );
+            }
+
+            final navigationItems = snapshot.data ?? [];
+            if (navigationItems.isEmpty) {
+              return const Scaffold(
+                body: Center(child: Text('No navigation items available')),
+              );
+            }
+
+            final location = GoRouterState.of(context).uri.toString();
+            final selectedIndex = _getSelectedIndex(location, navigationItems);
+
+            return WebSidebarToggle(
+              selectedIndex: selectedIndex,
+              onIndexChanged: (int idx) {
+                final item = navigationItems.firstWhere(
+                  (item) => item['index'] == idx,
+                  orElse: () => <String, dynamic>{},
+                );
+
+                final route = item['path'] as String?;
+                if (route != null) {
+                  context.go(route);
+                }
+              },
+              onBackToLanding: () => context.go('/'),
+              child: widget.child,
+            );
           },
-          onBackToLanding: () => context.go('/'),
-          child: widget.child,
         );
       },
     );

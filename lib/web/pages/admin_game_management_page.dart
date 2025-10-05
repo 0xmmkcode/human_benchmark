@@ -42,11 +42,15 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoadingAdmin) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
 
     if (!_isAdmin) {
       return Scaffold(
+        backgroundColor: Colors.white,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -74,6 +78,7 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
     }
 
     return Scaffold(
+      backgroundColor: Colors.white,
       body: StreamBuilder<List<GameManagement>>(
         stream: GameManagementService.getAllGameManagementStream(),
         builder: (context, snapshot) {
@@ -122,9 +127,9 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                       subtitle:
                           'Control game availability and visibility across the platform.',
                     ),
-                    const Gap(32),
-                    _buildQuickStats(games),
                     const Gap(24),
+                    _buildSummaryStats(games),
+                    const Gap(16),
                     _buildGameManagementGrid(games),
                   ],
                 ),
@@ -136,110 +141,76 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
     );
   }
 
-  Widget _buildQuickStats(List<GameManagement> games) {
-    final activeGames = games.where((g) => g.isActive).length;
-    final hiddenGames = games.where((g) => g.isHidden).length;
-    final blockedGames = games.where((g) => g.isBlocked).length;
-    final maintenanceGames = games.where((g) => g.isMaintenance).length;
+  Widget _buildSummaryStats(List<GameManagement> games) {
+    final int totalGames = games.length;
+    final int activeGames = games.where((game) => game.isActive).length;
+    // Disabled means not accessible (blocked or maintenance)
+    final int disabledGames = games.where((game) => !game.isAccessible).length;
+
+    Widget buildStat(String label, String value, Color color, IconData icon) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: color),
+            const Gap(8),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            const Gap(6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Row(
       children: [
         Expanded(
-          child: _buildStatCard(
-            'Active Games',
-            activeGames.toString(),
-            Icons.check_circle,
+          child: buildStat(
+            'Total',
+            '$totalGames',
+            Colors.grey[800]!,
+            Icons.apps,
+          ),
+        ),
+        const Gap(12),
+        Expanded(
+          child: buildStat(
+            'Active',
+            '$activeGames',
             Colors.green,
-            'Visible and playable',
+            Icons.check_circle,
           ),
         ),
-        const Gap(16),
+        const Gap(12),
         Expanded(
-          child: _buildStatCard(
-            'Hidden Games',
-            hiddenGames.toString(),
-            Icons.visibility_off,
-            Colors.orange,
-            'Hidden from menu',
-          ),
-        ),
-        const Gap(16),
-        Expanded(
-          child: _buildStatCard(
-            'Blocked Games',
-            blockedGames.toString(),
-            Icons.block,
+          child: buildStat(
+            'Disabled',
+            '$disabledGames',
             Colors.red,
-            'Completely blocked',
-          ),
-        ),
-        const Gap(16),
-        Expanded(
-          child: _buildStatCard(
-            'Maintenance',
-            maintenanceGames.toString(),
-            Icons.build,
-            Colors.purple,
-            'Temporarily unavailable',
+            Icons.block,
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildStatCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-    String subtitle,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 32, color: color),
-          const Gap(12),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const Gap(4),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const Gap(4),
-          Text(
-            subtitle,
-            style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
     );
   }
 
@@ -279,19 +250,12 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
   Widget _buildGameCard(GameManagement game) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.grey[50],
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: _getStatusColor(game.status).withOpacity(0.2),
+          color: _getStatusColor(game.status).withValues(alpha: 0.2),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
       ),
       child: Column(
         children: [
@@ -300,7 +264,7 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: _getStatusColor(game.status).withOpacity(0.1),
+              color: _getStatusColor(game.status).withValues(alpha: 0.1),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(19),
                 topRight: Radius.circular(19),
@@ -371,7 +335,7 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.grey[50],
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey[200]!),
                       ),
@@ -398,7 +362,7 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                                 },
                                 activeColor: WebTheme.primaryBlue,
                                 activeTrackColor: WebTheme.primaryBlue
-                                    .withOpacity(0.3),
+                                    .withValues(alpha: 0.3),
                               ),
                             ],
                           ),
@@ -642,7 +606,7 @@ class _AdminGameManagementPageState extends State<AdminGameManagementPage> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.grey[50],
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.grey[200]!),
                         ),

@@ -27,7 +27,6 @@ class _WebProfilePageState extends State<WebProfilePage> {
   List<GameScore> _recentActivities = [];
   bool _isLoading = true;
   bool _isLoadingActivities = true;
-  bool _isLoadingProfile = true;
   String? _error;
 
   @override
@@ -64,23 +63,14 @@ class _WebProfilePageState extends State<WebProfilePage> {
 
   Future<void> _loadUserProfileData() async {
     try {
-      setState(() {
-        _isLoadingProfile = true;
-      });
-
       final userProfile = await UserProfileService.getOrCreateUserProfile();
       if (mounted) {
         setState(() {
           _userProfile = userProfile;
-          _isLoadingProfile = false;
         });
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoadingProfile = false;
-        });
-      }
+      // Ignore: non-critical for rendering
     }
   }
 
@@ -276,79 +266,13 @@ class _WebProfilePageState extends State<WebProfilePage> {
       subtitle:
           'Sign in to view and manage your profile, scores, and game statistics.',
       child: Scaffold(
-        backgroundColor: WebTheme.grey50,
+        backgroundColor: Colors.white,
         body: _buildProfileContent(),
       ),
     );
   }
 
-  Widget _buildSignInPrompt() {
-    return Center(
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 600),
-        padding: const EdgeInsets.all(24),
-        child: Container(
-          padding: const EdgeInsets.all(40),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.grey[200]!),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.person_outline, size: 80, color: WebTheme.primaryBlue),
-              const Gap(24),
-              Text(
-                'Sign in to view profile',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const Gap(16),
-              Text(
-                'Please sign in to see your statistics and achievements.',
-                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                textAlign: TextAlign.center,
-              ),
-              const Gap(32),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.login),
-                  label: const Text('Sign in with Google'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: WebTheme.primaryBlue,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () async {
-                    final cred = await AuthService.signInWithGoogle();
-                    if (mounted && cred != null) {
-                      _loadUserProfile();
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  // Removed unused _buildSignInPrompt
 
   Widget _buildErrorState() {
     return Center(
@@ -403,7 +327,6 @@ class _WebProfilePageState extends State<WebProfilePage> {
         padding: const EdgeInsets.all(24),
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 800),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -412,21 +335,17 @@ class _WebProfilePageState extends State<WebProfilePage> {
                   title: 'Profile',
                   subtitle: 'View your statistics and achievements.',
                 ),
-
-                // Profile Header
-                _buildProfileHeader(user),
+                const Gap(24),
+                // Identity Block (avatar, name, country, age, joined)
+                _buildIdentityBlock(user),
                 const Gap(32),
 
-                // Statistics Overview
-                if (_userScore != null) _buildStatisticsOverview(),
+                // Rank Block (global score + rank timeline)
+                if (_userProfile != null) _buildRankBlock(),
                 const Gap(32),
 
-                // Game Performance
-                if (_userScore != null) _buildGamePerformance(),
-                const Gap(32),
-
-                // Recent Activity
-                if (_userScore != null) _buildRecentActivity(),
+                // Per-game statistics cards
+                if (_userScore != null) _buildPerGameStats(),
               ],
             ),
           ),
@@ -435,107 +354,72 @@ class _WebProfilePageState extends State<WebProfilePage> {
     );
   }
 
-  Widget _buildProfileHeader(User user) {
+  Widget _buildIdentityBlock(User user) {
+    final String displayName =
+        _userProfile?.displayName ?? user.displayName ?? 'User';
+    final String? countryName = _userProfile?.country;
+    final String countryFlag = countryName != null
+        ? (Countries.findByName(countryName)?.flag ?? '')
+        : '';
+    final DateTime joinedAt =
+        _userProfile?.createdAt ?? _userScore?.createdAt ?? DateTime.now();
+    final int? age = _userProfile?.birthday != null
+        ? _calculateAge(_userProfile!.birthday!)
+        : null;
+
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.grey[50],
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CircleAvatar(
-            radius: 50,
+            radius: 40,
             backgroundColor: Colors.blue[100],
             backgroundImage: user.photoURL != null && user.photoURL!.isNotEmpty
                 ? NetworkImage(user.photoURL!)
                 : null,
-            child: user.photoURL == null || user.photoURL!.isEmpty
-                ? Icon(Icons.person, size: 50, color: Colors.blue[600])
+            child: (user.photoURL == null || user.photoURL!.isEmpty)
+                ? Icon(Icons.person, size: 40, color: Colors.blue[600])
                 : null,
           ),
-          const Gap(24),
+          const Gap(20),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                Text(
+                  displayName,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                const Gap(6),
+                if (user.email != null)
+                  Text(user.email!, style: TextStyle(color: Colors.grey[600])),
+                const Gap(12),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
                   children: [
-                    Expanded(
-                      child: Text(
-                        _userProfile?.displayName ?? user.displayName ?? 'User',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
-                        ),
+                    if (countryName != null)
+                      _chip(
+                        icon: Icons.flag,
+                        label: '$countryFlag $countryName',
                       ),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: _showEditProfileDialog,
-                      icon: const Icon(Icons.edit, size: 18),
-                      label: const Text('Edit Profile'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: WebTheme.primaryBlue,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
+                    if (age != null)
+                      _chip(icon: Icons.cake, label: 'Age: $age'),
+                    _chip(
+                      icon: Icons.calendar_today,
+                      label: 'Joined: ${_formatDate(joinedAt)}',
                     ),
                   ],
                 ),
-                const Gap(8),
-                Text(
-                  user.email ?? 'No email',
-                  style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                ),
-                if (_userProfile?.country != null) ...[
-                  const Gap(4),
-                  Row(
-                    children: [
-                      Text(
-                        'Country: ',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                      ),
-                      Text(
-                        Countries.findByName(_userProfile!.country!)?.flag ??
-                            '',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      const Gap(4),
-                      Text(
-                        _userProfile!.country!,
-                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                      ),
-                    ],
-                  ),
-                ],
-                if (_userProfile?.birthday != null) ...[
-                  const Gap(4),
-                  Text(
-                    'Birthday: ${_formatDate(_userProfile!.birthday!)}',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                  ),
-                ],
-                if (_userScore != null) ...[
-                  const Gap(12),
-                  Text(
-                    'Member since ${_formatDate(_userScore!.createdAt)}',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                  ),
-                ],
               ],
             ),
           ),
@@ -544,291 +428,280 @@ class _WebProfilePageState extends State<WebProfilePage> {
     );
   }
 
-  Widget _buildStatisticsOverview() {
-    final overallScore = _userScore!.overallScore;
-    final totalGames = _userScore!.totalGamesPlayedOverall;
-
+  Widget _chip({required IconData icon, required String label}) {
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: WebTheme.primaryBlue),
+          const SizedBox(width: 8),
+          Text(label, style: TextStyle(color: Colors.grey[700])),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPerGameStats() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Statistics Overview',
+            'Game Statistics',
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          const Gap(24),
+          const Gap(16),
+          SizedBox(
+            height: 160,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children:
+                    (_userProfile?.gameStats.keys.toList() ?? GameType.values)
+                        .map((gameType) {
+                          final int high =
+                              _userScore?.getHighScore(gameType) ?? 0;
+                          final int total =
+                              _userScore?.getTotalGames(gameType) ?? 0;
+                          final DateTime? last = _userScore?.getLastPlayed(
+                            gameType,
+                          );
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 16),
+                            child: Container(
+                              width: 220,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: Colors.grey[200]!),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        _getGameIcon(gameType),
+                                        color: WebTheme.primaryBlue,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          _getGameName(gameType),
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.grey[800],
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const Gap(12),
+                                  _kv('High Score', '$high'),
+                                  const Gap(6),
+                                  _kv('Games Played', '$total'),
+                                  if (last != null) ...[
+                                    const Gap(6),
+                                    _kv('Last Played', _formatDate(last)),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          );
+                        })
+                        .toList(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRankBlock() {
+    final int global = _userProfile?.globalScore ?? 0;
+    final _RankInfo rank = _computeRank(global);
+    final double progress = rank.progress;
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Row(
             children: [
-              Expanded(
-                child: _buildStatCard(
-                  'Overall Score',
-                  overallScore.toString(),
-                  Icons.star,
-                  Colors.amber[600]!,
+              Icon(Icons.emoji_events, color: WebTheme.primaryBlue),
+              const SizedBox(width: 8),
+              Text(
+                'Global Rank',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
                 ),
               ),
-              const Gap(24),
-              Expanded(
-                child: _buildStatCard(
-                  'Total Games',
-                  totalGames.toString(),
-                  Icons.games,
-                  Colors.blue[600]!,
+              const Spacer(),
+              Text(
+                '${rank.name}',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: WebTheme.primaryBlue,
                 ),
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 40),
+          const Gap(12),
+          _kv('Global Score', '$global'),
+          const Gap(12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 10,
+              color: WebTheme.primaryBlue,
+              backgroundColor: Colors.grey[200],
+            ),
+          ),
           const Gap(16),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const Gap(8),
-          Text(
-            title,
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            textAlign: TextAlign.center,
-          ),
+          // Make rank timeline horizontally scrollable (already scrolls),
+          // and include a horizontal scrollable badge list of ranks for visibility
+          SizedBox(height: 80, child: _rankTimeline(rankIndex: rank.index)),
         ],
       ),
     );
   }
 
-  Widget _buildGamePerformance() {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+  Widget _kv(String k, String v) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(k, style: TextStyle(color: Colors.grey[600])),
+        ),
+        Text(
+          v,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[800],
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Game Performance',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
-          ),
-          const Gap(24),
-          Wrap(
-            spacing: 16,
-            runSpacing: 16,
-            children: GameType.values.map((gameType) {
-              final highScore = _userScore!.getHighScore(gameType);
-              final gamesPlayed = _userScore!.totalGamesPlayed[gameType] ?? 0;
-              final lastPlayed = _userScore!.lastPlayedAt[gameType];
-
-              if (gamesPlayed == 0) return const SizedBox.shrink();
-
-              return Container(
-                width: 200,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey[200]!),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          _getGameIcon(gameType),
-                          color: WebTheme.primaryBlue,
-                          size: 24,
-                        ),
-                        const Gap(12),
-                        Expanded(
-                          child: Text(
-                            _getGameName(gameType),
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Gap(16),
-                    Text(
-                      'Best Score: $highScore',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: WebTheme.primaryBlue,
-                      ),
-                    ),
-                    const Gap(8),
-                    Text(
-                      'Games Played: $gamesPlayed',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                    ),
-                    if (lastPlayed != null) ...[
-                      const Gap(8),
-                      Text(
-                        'Last played: ${_formatDate(lastPlayed)}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                      ),
-                    ],
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _buildRecentActivity() {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Recent Activity',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
-          ),
-          const Gap(24),
-          if (_isLoadingActivities)
-            const Center(child: CircularProgressIndicator())
-          else if (_recentActivities.isEmpty)
-            Text(
-              'No recent activities found.',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            )
-          else
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _recentActivities.length,
-              itemBuilder: (context, index) {
-                final activity = _recentActivities[index];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
+  Widget _rankTimeline({required int rankIndex}) {
+    final ranks = _ranks();
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: List.generate(ranks.length, (i) {
+          final active = i <= rankIndex;
+          return Row(
+            children: [
+              Column(
+                children: [
+                  Container(
+                    width: 14,
+                    height: 14,
                     decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[200]!),
+                      shape: BoxShape.circle,
+                      color: active ? WebTheme.primaryBlue : Colors.grey[300],
                     ),
-                    child: Row(
+                  ),
+                  const SizedBox(height: 6),
+                  SizedBox(
+                    width: 100,
+                    child: Column(
                       children: [
-                        Icon(
-                          _getGameIcon(activity.gameType),
-                          color: WebTheme.primaryBlue,
-                          size: 24,
+                        Text(
+                          ranks[i].$1,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: active ? Colors.grey[800] : Colors.grey[500],
+                            fontWeight: active
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        const Gap(12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _getGameName(activity.gameType),
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey[800],
-                                ),
-                              ),
-                              const Gap(4),
-                              Text(
-                                'Score: ${activity.score}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              const Gap(4),
-                              Text(
-                                'Date: ${_formatDateTime(activity.playedAt)}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[500],
-                                ),
-                              ),
-                            ],
+                        const SizedBox(height: 2),
+                        Text(
+                          '≥ ${ranks[i].$2}',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: active ? Colors.grey[700] : Colors.grey[500],
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
                   ),
-                );
-              },
-            ),
-        ],
+                ],
+              ),
+              if (i < ranks.length - 1)
+                Container(
+                  width: 48,
+                  height: 2,
+                  margin: const EdgeInsets.symmetric(horizontal: 6),
+                  color: i < rankIndex
+                      ? WebTheme.primaryBlue
+                      : Colors.grey[300],
+                ),
+            ],
+          );
+        }),
       ),
+    );
+  }
+
+  int _calculateAge(DateTime birthday) {
+    final now = DateTime.now();
+    int age = now.year - birthday.year;
+    if (now.month < birthday.month ||
+        (now.month == birthday.month && now.day < birthday.day)) {
+      age--;
+    }
+    return age;
+  }
+
+  _RankInfo _computeRank(int globalScore) {
+    final ranks = _ranks();
+    int idx = 0;
+    for (int i = 0; i < ranks.length; i++) {
+      if (globalScore >= ranks[i].$2) idx = i;
+    }
+    final int floor = ranks[idx].$2;
+    final int ceil = idx + 1 < ranks.length ? ranks[idx + 1].$2 : floor + 1;
+    final double progress = (globalScore - floor) / (ceil - floor);
+    return _RankInfo(
+      name: ranks[idx].$1,
+      index: idx,
+      progress: progress.clamp(0, 1),
     );
   }
 
@@ -842,6 +715,16 @@ class _WebProfilePageState extends State<WebProfilePage> {
         return Icons.psychology;
       case GameType.decisionRisk:
         return Icons.speed;
+      case GameType.visualMemory:
+        return Icons.visibility;
+      case GameType.verbalMemory:
+        return Icons.record_voice_over;
+      case GameType.aimTrainer:
+        return Icons.gps_fixed;
+      case GameType.sequenceMemory:
+        return Icons.format_list_numbered;
+      case GameType.chimpTest:
+        return Icons.pets;
       default:
         return Icons.games;
     }
@@ -857,6 +740,16 @@ class _WebProfilePageState extends State<WebProfilePage> {
         return 'Personality Quiz';
       case GameType.decisionRisk:
         return 'Decision Making';
+      case GameType.visualMemory:
+        return 'Visual Memory';
+      case GameType.verbalMemory:
+        return 'Verbal Memory';
+      case GameType.aimTrainer:
+        return 'Aim Trainer';
+      case GameType.sequenceMemory:
+        return 'Sequence Memory';
+      case GameType.chimpTest:
+        return 'Chimp Test';
       default:
         return 'Unknown Game';
     }
@@ -884,4 +777,27 @@ class _WebProfilePageState extends State<WebProfilePage> {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} '
         '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
+
+  // Returns list of (name, threshold)
+  List<(String, int)> _ranks() {
+    return [
+      ('Novice Neuron', 0),
+      ('Quick Learner', 500),
+      ('Pattern Seeker', 1200),
+      ('Recall Rookie', 2000),
+      ('Focus Finder', 3000),
+      ('Mind Sprinter', 4200),
+      ('Cortex Challenger', 5600),
+      ('Synapse Master', 7200),
+      ('Cognitive Elite', 9000),
+      ('Benchmark Legend', 11000),
+    ];
+  }
+}
+
+class _RankInfo {
+  final String name;
+  final int index;
+  final double progress;
+  _RankInfo({required this.name, required this.index, required this.progress});
 }

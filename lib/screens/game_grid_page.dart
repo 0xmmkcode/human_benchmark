@@ -8,7 +8,6 @@ import 'number_memory_page.dart';
 import 'decision_risk_page.dart';
 import 'personality_quiz_page.dart';
 import 'chimp_test_page.dart';
-import 'about_page.dart';
 import 'bug_report_page.dart';
 
 class GameGridPage extends ConsumerStatefulWidget {
@@ -449,63 +448,63 @@ class _GameGridPageState extends ConsumerState<GameGridPage> {
     switch (gameId) {
       case 'reaction_time':
         return GameData(
-          name: 'Reaction Time',
+          name: 'Quick Reflex',
           subtitle: 'Test your reflexes',
           icon: Icons.flash_on,
           color: Color(0xFF6366F1), // Indigo
         );
       case 'number_memory':
         return GameData(
-          name: 'Number Memory',
+          name: 'Digit Recall',
           subtitle: 'Remember sequences',
           icon: Icons.memory,
           color: Color(0xFF8B5CF6), // Purple
         );
       case 'decision_risk':
         return GameData(
-          name: 'Decision Risk',
+          name: 'Risk Sense',
           subtitle: 'Make choices',
           icon: Icons.speed,
           color: Color(0xFFEC4899), // Pink
         );
       case 'personality_quiz':
         return GameData(
-          name: 'Personality Quiz',
+          name: 'Persona Pulse',
           subtitle: 'Discover yourself',
           icon: Icons.psychology,
           color: Color(0xFF10B981), // Emerald
         );
       case 'chimp_test':
         return GameData(
-          name: 'Chimp Test',
+          name: 'Chimp Memory',
           subtitle: 'Test your memory',
           icon: Icons.pets,
           color: Color(0xFFF59E0B), // Amber
         );
       case 'aim_trainer':
         return GameData(
-          name: 'Aim Trainer',
+          name: 'Aim Precision',
           subtitle: 'Test your precision',
           icon: Icons.gps_fixed,
           color: Color(0xFFEF4444), // Red
         );
       case 'verbal_memory':
         return GameData(
-          name: 'Verbal Memory',
+          name: 'Word Recall',
           subtitle: 'Remember words',
           icon: Icons.record_voice_over,
           color: Color(0xFF06B6D4), // Cyan
         );
       case 'visual_memory':
         return GameData(
-          name: 'Visual Memory',
+          name: 'Pattern Recall',
           subtitle: 'Remember patterns',
           icon: Icons.visibility,
           color: Color(0xFF84CC16), // Lime
         );
       case 'sequence_memory':
         return GameData(
-          name: 'Sequence Memory',
+          name: 'Sequence Recall',
           subtitle: 'Remember sequences',
           icon: Icons.format_list_numbered,
           color: Color(0xFFF97316), // Orange

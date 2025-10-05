@@ -139,7 +139,7 @@ class AuthRequiredWrapper extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Image.asset(
-                            'assets/images/google_logo.png',
+                            'assets/images/google.png',
                             height: 20,
                             width: 20,
                           ),

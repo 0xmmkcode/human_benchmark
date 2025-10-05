@@ -109,18 +109,6 @@ class _AdminWebSettingsPageState extends State<AdminWebSettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text(
-          'Web Settings',
-          style: WebTheme.headingMedium.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: WebTheme.primaryBlue,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -130,15 +118,18 @@ class _AdminWebSettingsPageState extends State<AdminWebSettingsPage> {
                 children: [
                   // Header
                   PageHeader(
-                    title: 'Manage Web Game Access',
+                    title: 'Web Settings',
                     subtitle:
-                        'Control whether users can access the web game or be redirected to the mobile app',
+                        'Manage access to the web app and default redirect links',
                   ),
                   const SizedBox(height: 32),
 
                   // Web Game Toggle
-                  Card(
-                    elevation: 2,
+                  Container(
+                    decoration: BoxDecoration(
+                      color: WebTheme.grey50,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(24),
                       child: Column(
@@ -209,8 +200,11 @@ class _AdminWebSettingsPageState extends State<AdminWebSettingsPage> {
                   const SizedBox(height: 24),
 
                   // Play Store Link
-                  Card(
-                    elevation: 2,
+                  Container(
+                    decoration: BoxDecoration(
+                      color: WebTheme.grey50,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(24),
                       child: Column(
@@ -275,9 +269,11 @@ class _AdminWebSettingsPageState extends State<AdminWebSettingsPage> {
 
                   // Current Status
                   if (_currentSettings != null) ...[
-                    Card(
-                      elevation: 1,
-                      color: Colors.grey[50],
+                    Container(
+                      decoration: BoxDecoration(
+                        color: WebTheme.grey50,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       child: Padding(
                         padding: const EdgeInsets.all(20),
                         child: Column(
