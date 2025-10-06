@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: human-benchmark
-        image: msalekmouad/humanbenchmark:amd64
+        image: msalekmouad/humanbenchmark:latest
         ports:
         - containerPort: 80
           name: http
