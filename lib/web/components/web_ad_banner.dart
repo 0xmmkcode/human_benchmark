@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kReleaseMode;
+import '../utils/register_view_factory_stub.dart'
+    if (dart.library.html) '../utils/register_view_factory_web.dart';
 import 'package:human_benchmark/web/widgets/app_loading.dart';
 
 class WebAdBanner extends StatefulWidget {
@@ -17,8 +20,11 @@ class WebAdBanner extends StatefulWidget {
 class _WebAdBannerState extends State<WebAdBanner> {
   static bool _scriptInjected = false;
   static int _adCounter = 0;
+  static int _factoryCounter = 0;
+
   bool _isLoading = true;
   int _buildCount = 0;
+  String? _viewType;
 
   @override
   void initState() {
@@ -33,7 +39,7 @@ class _WebAdBannerState extends State<WebAdBanner> {
     }
 
     _ensureAdsScriptInjected();
-    _createAdSenseAd();
+    _createAdHostView();
 
     // Set a timeout to stop showing loading after 10 seconds
     Future.delayed(Duration(seconds: 10), () {
@@ -55,19 +61,28 @@ class _WebAdBannerState extends State<WebAdBanner> {
       return;
     }
 
+    // Prefer the script placed in index.html/index_web.html. If present, do not inject again.
+    final existing = html.document.getElementById('adsbygoogle-js');
+    if (existing != null) {
+      _scriptInjected = true;
+      print('[AdSense] Found existing AdSense script in head');
+      return;
+    }
+
     try {
       print('[AdSense] Injecting AdSense script...');
       final script = html.ScriptElement()
-        ..src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js'
-        ..setAttribute('data-ad-client', 'ca-pub-7825069888597435')
-        ..async = true;
+        ..id = 'adsbygoogle-js'
+        ..async = true
+        ..defer = true
+        ..src =
+            'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7825069888597435'
+        ..setAttribute('crossorigin', 'anonymous');
 
       // Add development mode override
       if (!kReleaseMode) {
         print('[AdSense] Development mode - adding test mode attributes');
         script.setAttribute('data-adtest', 'on');
-        // Override domain for testing (optional)
-        // script.setAttribute('data-ad-domain', 'yourdomain.com');
       } else {
         print('[AdSense] Production mode - using live AdSense configuration');
       }
@@ -76,11 +91,9 @@ class _WebAdBannerState extends State<WebAdBanner> {
       _scriptInjected = true;
       print('[AdSense] ✅ AdSense script injected successfully');
 
-      // Add event listener to track when AdSense script loads
       script.onLoad.listen((_) {
         print('[AdSense] 🎉 AdSense script loaded successfully!');
       });
-
       script.onError.listen((_) {
         print('[AdSense] ❌ AdSense script failed to load');
       });
@@ -89,48 +102,62 @@ class _WebAdBannerState extends State<WebAdBanner> {
     }
   }
 
-  void _createAdSenseAd() {
+  void _createAdHostView() {
     try {
-      // Create a unique ID for this ad
-      final adId = 'adsense-ad-${widget.position ?? 'default'}-${_adCounter++}';
-      print('[AdSense] Creating ad element with ID: $adId');
+      final int counter = _factoryCounter++;
+      final String adId =
+          'adsense-ad-${widget.position ?? 'default'}-${_adCounter++}';
+      final String viewType = 'adsense-banner-${counter}-${adId}';
 
-      // Create the ad container
-      final adContainer = html.DivElement()
-        ..id = adId
-        ..style.width = '100%'
-        ..style.height = '${widget.height}px'
-        ..style.display = 'block'
-        ..style.margin = '16px 0';
+      registerViewFactory(viewType, (int viewId) {
+        final html.DivElement container = html.DivElement()
+          ..id = adId
+          ..style.width = '100%'
+          ..style.height = '${widget.height}px'
+          ..style.display = 'block'
+          ..style.margin = '16px 0';
 
-      // Create the AdSense ins element
-      final insElement = html.Element.tag('ins')
-        ..setAttribute('class', 'adsbygoogle')
-        ..setAttribute('style', 'display:block')
-        ..setAttribute('data-ad-client', 'ca-pub-7825069888597435')
-        ..setAttribute('data-ad-slot', '8029901045')
-        ..setAttribute('data-ad-format', 'auto')
-        ..setAttribute('data-full-width-responsive', 'true');
+        final html.Element insElement = html.Element.tag('ins')
+          ..classes.add('adsbygoogle')
+          ..setAttribute('style', 'display:block')
+          ..setAttribute('data-ad-client', 'ca-pub-7825069888597435')
+          ..setAttribute('data-ad-slot', '8029901045')
+          ..setAttribute('data-ad-format', 'auto')
+          ..setAttribute('data-full-width-responsive', 'true');
 
-      // Add test mode for development
-      if (!kReleaseMode) {
-        print('[AdSense] Development mode - adding test mode to ad element');
-        insElement.setAttribute('data-adtest', 'on');
-      }
+        if (!kReleaseMode) {
+          print('[AdSense] Development mode - adding test mode to ad element');
+          insElement.setAttribute('data-adtest', 'on');
+        }
 
-      adContainer.append(insElement);
+        container.append(insElement);
 
-      // Add to the page
-      html.document.body?.append(adContainer);
-      print('[AdSense] ✅ Ad container added to DOM: $adId');
+        // Explicitly request an ad fill
+        _pushAdsByGoogle();
 
-      // AdSense will automatically detect and process the ad
-      print('[AdSense] 📡 AdSense will auto-detect and process ad: $adId');
+        // Start basic load detection (best-effort)
+        _checkAdLoaded(adId);
 
-      // Try to detect when the ad loads
-      _checkAdLoaded(adId);
+        return container;
+      });
+
+      setState(() {
+        _viewType = viewType;
+      });
     } catch (e) {
-      print('[AdSense] ❌ Failed to create AdSense ad: $e');
+      print('[AdSense] ❌ Failed to create AdSense host view: $e');
+    }
+  }
+
+  void _pushAdsByGoogle() {
+    try {
+      // Ensure global exists then push a fill request
+      // ignore: avoid_dynamic_calls
+      (html.window as dynamic).adsbygoogle ??= [];
+      // ignore: avoid_dynamic_calls
+      (html.window as dynamic).adsbygoogle.push({});
+    } catch (_) {
+      // no-op
     }
   }
 
@@ -203,47 +230,20 @@ class _WebAdBannerState extends State<WebAdBanner> {
 
   @override
   Widget build(BuildContext context) {
-    _buildCount++;
-    print(
-      '[AdSense] Building WebAdBanner (build #$_buildCount) - Position: ${widget.position}, Loading: $_isLoading, Release Mode: $kReleaseMode',
-    );
+    // Ads removed: render nothing to remove ad placements safely
+    return const SizedBox.shrink();
+  }
 
-    if (!kIsWeb) {
-      print('[AdSense] Building placeholder for non-web platform');
-      return _buildPlaceholder();
-    }
-
-    // Log production vs development mode
-    if (!kReleaseMode) {
-      print(
-        '[AdSense] Development mode - attempting to load real ads (may show placeholders)',
-      );
-    } else {
-      print('[AdSense] Production mode - loading real AdSense ads');
-    }
-
+  Widget _buildLoadingOverlay() {
     return Container(
       width: double.infinity,
       height: widget.height,
-      margin: const EdgeInsets.symmetric(vertical: 16),
-      child: Stack(
-        children: [
-          // AdSense ad container (loads asynchronously)
-          Container(width: double.infinity, height: widget.height),
-          // Loading indicator while ad loads
-          if (_isLoading)
-            Container(
-              width: double.infinity,
-              height: widget.height,
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[300]!),
-              ),
-              child: Center(child: AppLoading(width: 40, height: 40)),
-            ),
-        ],
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[300]!),
       ),
+      child: Center(child: AppLoading(width: 40, height: 40)),
     );
   }
 

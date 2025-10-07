@@ -24,7 +24,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 32, vertical: 40),
             child: PageHeader(
-              title: 'Statistics',
+              title: 'GlobalStatistics',
               subtitle: 'Monitor game statistics and player activity.',
             ),
           ),
@@ -96,9 +96,9 @@ class _WebDashboardPageState extends State<WebDashboardPage> {
                   ),
                 ],
               ),
-              const Gap(32),
+              //const Gap(32),
               // Time Played Statistics
-              _buildTimePlayedSection(),
+              //_buildTimePlayedSection(),
             ],
           ),
         );
@@ -413,7 +413,6 @@ class _WebDashboardPageState extends State<WebDashboardPage> {
       decoration: BoxDecoration(
         color: WebTheme.grey50,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
         children: [
