@@ -33,11 +33,11 @@ class _SidebarDemoPageState extends State<SidebarDemoPage> {
 
           final route = item['path'] as String?;
           if (route != null) {
-            context.go(route);
+            context.push(route);
           }
         });
       },
-      onBackToLanding: () => context.go('/'),
+      onBackToLanding: () => context.push('/'),
       child: _buildDemoContent(),
     );
   }

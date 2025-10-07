@@ -12,7 +12,6 @@ class DashboardService {
   // Collections
   static CollectionReference<Map<String, dynamic>> get _userScoresCollection =>
       _firestore.collection('user_scores');
-
   static CollectionReference<Map<String, dynamic>> get _gameScoresCollection =>
       _firestore.collection('game_scores');
 
@@ -49,7 +48,7 @@ class DashboardService {
           _getActiveUsersToday(),
           _getRecentActivity(),
           _getRecentPlayers(),
-          _getGameStatistics(),
+          getComprehensiveGameStatistics(),
         ]);
 
         return DashboardOverview(
@@ -67,7 +66,7 @@ class DashboardService {
         final activeToday = await _getActiveUsersToday();
         final recentActivity = await _getRecentActivity();
         final topPerformers = await _getRecentPlayers();
-        final gameStats = await _getGameStatistics();
+        final gameStats = await getComprehensiveGameStatistics();
 
         return DashboardOverview(
           totalUsers: totalUsers,
@@ -474,6 +473,50 @@ class DashboardService {
       // Optimize limit for mobile
       final optimizedLimit = kIsWeb ? limit : (limit > 8 ? 8 : limit);
 
+      // Prefer reading from recent_activity if present
+      try {
+        final recentSnap = await FirebaseFirestore.instance
+            .collection('recent_activity')
+            .orderBy('playedAt', descending: true)
+            .limit(optimizedLimit)
+            .get();
+
+        if (recentSnap.docs.isNotEmpty) {
+          return recentSnap.docs
+              .map((doc) {
+                final data = doc.data();
+                try {
+                  // Map simplified activity to RecentActivity
+                  final gameType = GameType.values.firstWhere(
+                    (e) => e.name == (data['gameType'] as String? ?? ''),
+                    orElse: () => GameType.reactionTime,
+                  );
+                  final playedAt = (data['playedAt'] is Timestamp)
+                      ? (data['playedAt'] as Timestamp).toDate()
+                      : DateTime.now();
+                  return RecentActivity(
+                    userId: (data['userId'] as String?) ?? '',
+                    userName: data['userName'] as String?,
+                    userEmail: null,
+                    userPhotoUrl: null,
+                    gameType: gameType,
+                    score: (data['score'] as num?)?.toInt() ?? 0,
+                    playedAt: playedAt,
+                    isHighScore: data['isHighScore'] as bool? ?? false,
+                    gameData: null,
+                  );
+                } catch (e) {
+                  return null;
+                }
+              })
+              .where((e) => e != null)
+              .cast<RecentActivity>()
+              .toList();
+        }
+      } catch (_) {
+        // ignore and fallback
+      }
+
       final snapshot = await _gameScoresCollection
           .orderBy('playedAt', descending: true)
           .limit(optimizedLimit)
@@ -572,37 +615,6 @@ class DashboardService {
     }
   }
 
-  static Future<List<PlayerDashboardData>> _getTopPerformers({
-    int limit = 10,
-  }) async {
-    try {
-      // Optimize limit for mobile
-      final optimizedLimit = kIsWeb ? limit : (limit > 8 ? 8 : limit);
-
-      final snapshot = await _userScoresCollection
-          .orderBy('overallScore', descending: true)
-          .limit(optimizedLimit)
-          .get();
-
-      return snapshot.docs
-          .map((doc) {
-            try {
-              final userScore = UserScore.fromMap(doc.data());
-              return PlayerDashboardData.fromUserScore(userScore);
-            } catch (e) {
-              AppLogger.error('dashboard.parse_top_performer', e, null);
-              return null;
-            }
-          })
-          .where((player) => player != null)
-          .cast<PlayerDashboardData>()
-          .toList(growable: false);
-    } catch (e, st) {
-      AppLogger.error('dashboard._getTopPerformers', e, st);
-      return <PlayerDashboardData>[];
-    }
-  }
-
   // Recent players: order by last activity and map to PlayerDashboardData
   static Future<List<PlayerDashboardData>> _getRecentPlayers({
     int limit = 10,
@@ -634,106 +646,7 @@ class DashboardService {
     }
   }
 
-  static Future<Map<GameType, GameStatistics>> _getGameStatistics() async {
-    try {
-      final Map<GameType, GameStatistics> stats = {};
-
-      // Process game types in batches for mobile performance
-      final gameTypes = GameType.values;
-      final batchSize = kIsWeb
-          ? gameTypes.length
-          : 3; // Smaller batches on mobile
-
-      for (int i = 0; i < gameTypes.length; i += batchSize) {
-        final batch = gameTypes.skip(i).take(batchSize);
-
-        final batchResults = await Future.wait(
-          batch.map((gameType) => _getGameStatisticsForType(gameType)),
-        );
-
-        for (final result in batchResults) {
-          if (result != null) {
-            stats[result.gameType] = result;
-          }
-        }
-
-        // Small delay between batches on mobile to prevent overwhelming
-        if (!kIsWeb && i + batchSize < gameTypes.length) {
-          await Future.delayed(const Duration(milliseconds: 100));
-        }
-      }
-
-      return stats;
-    } catch (e, st) {
-      AppLogger.error('dashboard._getGameStatistics', e, st);
-      return <GameType, GameStatistics>{};
-    }
-  }
-
-  static Future<GameStatistics?> _getGameStatisticsForType(
-    GameType gameType,
-  ) async {
-    try {
-      // Determine sorting order based on game type
-      final bool descending = _shouldSortDescending(gameType);
-
-      // Get top score for this game type
-      final topScoreSnapshot = await _userScoresCollection
-          .orderBy('highScores.${gameType.name}', descending: descending)
-          .limit(1)
-          .get();
-
-      int topScore = 0;
-      if (topScoreSnapshot.docs.isNotEmpty) {
-        final data = topScoreSnapshot.docs.first.data();
-        final highScores = data['highScores'] as Map<String, dynamic>?;
-        if (highScores != null) {
-          topScore = (highScores[gameType.name] as num?)?.toInt() ?? 0;
-        }
-      }
-
-      // Get player count and calculate average score
-      final allScoresSnapshot = await _userScoresCollection
-          .where('highScores.${gameType.name}', isGreaterThan: 0)
-          .get();
-
-      int totalScore = 0;
-      int playerCount = 0;
-
-      for (final doc in allScoresSnapshot.docs) {
-        final data = doc.data();
-        final highScores = data['highScores'] as Map<String, dynamic>?;
-        if (highScores != null) {
-          final score = (highScores[gameType.name] as num?)?.toInt() ?? 0;
-          if (score > 0) {
-            totalScore += score;
-            playerCount++;
-          }
-        }
-      }
-
-      final averageScore = playerCount > 0 ? totalScore / playerCount : 0;
-
-      // Only return stats if we have data
-      if (playerCount > 0) {
-        return GameStatistics(
-          gameType: gameType,
-          topScore: topScore,
-          averageScore: averageScore.round(),
-          playerCount: playerCount,
-          totalGamesPlayed: playerCount, // For now, same as player count
-          lastUpdated: DateTime.now(),
-        );
-      }
-
-      return null;
-    } catch (e, st) {
-      AppLogger.error('dashboard._getGameStatisticsForType', e, st);
-      return null;
-    }
-  }
-
-  // Get comprehensive game statistics for all games (more efficient)
+  // Get comprehensive game statistics for all games using game_scores collection
   static Future<Map<GameType, GameStatistics>>
   getComprehensiveGameStatistics() async {
     try {
@@ -741,28 +654,41 @@ class DashboardService {
 
       final Map<GameType, GameStatistics> stats = {};
 
-      // Get all user scores to calculate comprehensive statistics
-      final allUserScores = await _userScoresCollection.get();
+      // Get all game scores to calculate comprehensive statistics
+      final allGameScores = await _gameScoresCollection.get();
 
       // Group scores by game type
       final Map<GameType, List<int>> gameScores = {};
+      final Map<GameType, Set<String>> uniquePlayers = {};
       final Map<GameType, int> topScores = {};
 
-      for (final doc in allUserScores.docs) {
+      for (final doc in allGameScores.docs) {
         final data = doc.data();
-        final highScores = data['highScores'] as Map<String, dynamic>?;
+        final gameTypeName = data['gameType'] as String?;
+        final score = (data['score'] as num?)?.toInt() ?? 0;
+        final userId = data['userId'] as String?;
 
-        if (highScores != null) {
-          for (final gameType in GameType.values) {
-            final score = (highScores[gameType.name] as num?)?.toInt() ?? 0;
-            if (score > 0) {
-              gameScores.putIfAbsent(gameType, () => []).add(score);
+        if (gameTypeName != null && score > 0 && userId != null) {
+          final gameType = GameType.values.firstWhere(
+            (e) => e.name == gameTypeName,
+            orElse: () => GameType.reactionTime,
+          );
 
-              // Track top score
-              final currentTop = topScores[gameType] ?? 0;
-              if (score > currentTop) {
-                topScores[gameType] = score;
-              }
+          // Collect all scores for this game type
+          gameScores.putIfAbsent(gameType, () => []).add(score);
+
+          // Track unique players
+          uniquePlayers.putIfAbsent(gameType, () => <String>{}).add(userId);
+
+          // Track top score: for time-based games lower is better, otherwise higher is better
+          if (!topScores.containsKey(gameType)) {
+            topScores[gameType] = score;
+          } else {
+            final currentTop = topScores[gameType]!;
+            final bool lowerIsBetter = _isLowerBetter(gameType);
+            if ((lowerIsBetter && score < currentTop) ||
+                (!lowerIsBetter && score > currentTop)) {
+              topScores[gameType] = score;
             }
           }
         }
@@ -771,16 +697,24 @@ class DashboardService {
       // Calculate statistics for each game type
       for (final gameType in GameType.values) {
         final scores = gameScores[gameType] ?? [];
+        final players = uniquePlayers[gameType] ?? <String>{};
+
         if (scores.isNotEmpty) {
           final totalScore = scores.reduce((a, b) => a + b);
-          final averageScore = totalScore / scores.length;
+          double averageScore = totalScore / scores.length;
+
+          // For time-based games (lower is better), average should reflect lower-is-better metric
+          if (_isLowerBetter(gameType)) {
+            // Keep arithmetic mean but ensure display uses ms; no inversion needed
+            // We still round the mean as before
+          }
 
           stats[gameType] = GameStatistics(
             gameType: gameType,
             topScore: topScores[gameType] ?? 0,
             averageScore: averageScore.round(),
-            playerCount: scores.length,
-            totalGamesPlayed: scores.length, // For now, same as player count
+            playerCount: players.length,
+            totalGamesPlayed: scores.length, // Total game sessions
             lastUpdated: DateTime.now(),
           );
         }
@@ -790,6 +724,17 @@ class DashboardService {
     } catch (e, st) {
       AppLogger.error('dashboard.getComprehensiveGameStatistics', e, st);
       return {};
+    }
+  }
+
+  // For these games, lower scores are better (measured in milliseconds)
+  static bool _isLowerBetter(GameType gameType) {
+    switch (gameType) {
+      case GameType.reactionTime:
+      case GameType.aimTrainer:
+        return true;
+      default:
+        return false;
     }
   }
 

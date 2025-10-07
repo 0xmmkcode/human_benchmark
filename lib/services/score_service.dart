@@ -133,6 +133,21 @@ class ScoreService {
       // Save to game_scores collection using the model
       await _gameScoresCollection.add(gameScore.toMap());
 
+      // Also write a simplified activity document to recent_ectivity
+      try {
+        await FirebaseFirestore.instance.collection('recent_ectivity').add({
+          'userId': currentUser.uid,
+          'userName': currentUser.displayName,
+          'gameType': gameTypeEnum.name,
+          'gameName': GameScore.getDisplayName(gameTypeEnum),
+          'score': score,
+          'playedAt': FieldValue.serverTimestamp(),
+          'isHighScore': false,
+        });
+      } catch (_) {
+        // Non-fatal; dashboard can fall back to game_scores
+      }
+
       // Update user_scores collection
       final userScoreRef = _userScoresCollection.doc(currentUser.uid);
       final userScoreDoc = await userScoreRef.get();

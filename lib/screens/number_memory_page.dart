@@ -150,7 +150,7 @@ class _NumberMemoryPageState extends State<NumberMemoryPage>
         setState(() {
           _bestScore = _currentScore;
         });
-        _saveBestScore();
+        // Don't save score here - only save when game ends
       }
 
       // Auto-proceed to next level after a short delay
@@ -172,40 +172,18 @@ class _NumberMemoryPageState extends State<NumberMemoryPage>
     _scaleController.forward();
   }
 
-  Future<void> _saveBestScore() async {
-    try {
-      await LocalStorageService.saveBestTime(_bestScore);
-
-      // Submit to Firebase if user is authenticated
-      if (AuthService.currentUser != null) {
-        try {
-          await ScoreService.submitGameScore(
-            gameType: 'number_memory',
-            score: _bestScore,
-            additionalData: {
-              'level': _currentLevel,
-              'totalScore': _currentScore,
-              'bestScore': _bestScore,
-              'gameCompleted': false, // Still playing
-            },
-          );
-        } catch (e) {
-          print('Failed to save score to Firebase: $e');
-        }
-      }
-    } catch (e) {
-      print('Failed to save best score: $e');
-    }
-  }
-
   Future<void> _saveGameResults() async {
     try {
+      // Save best score to local storage
+      await LocalStorageService.saveBestTime(_bestScore);
+
       // Submit final game results to Firebase if user is authenticated
       if (AuthService.currentUser != null) {
         try {
+          // Save the best score (final score) when game ends
           await ScoreService.submitGameScore(
             gameType: 'number_memory',
-            score: _currentScore,
+            score: _bestScore, // Use best score as the final score
             additionalData: {
               'level': _currentLevel,
               'totalScore': _currentScore,

@@ -5,6 +5,7 @@ import 'package:gap/gap.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
 import 'package:human_benchmark/web/widgets/page_header.dart';
 import 'package:human_benchmark/web/widgets/auth_required_wrapper.dart';
+import 'package:human_benchmark/web/components/web_ad_banner.dart';
 
 import 'package:human_benchmark/services/auth_service.dart';
 import 'package:human_benchmark/services/user_profile_service.dart';
@@ -196,7 +197,7 @@ class _WebChimpTestPageState extends State<WebChimpTestPage> {
           'Sign in to play the Chimp Test and save your scores to track your progress.',
       child: Scaffold(
         backgroundColor: Colors.white,
-        body: Container(
+        body: SingleChildScrollView(
           padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -208,11 +209,11 @@ class _WebChimpTestPageState extends State<WebChimpTestPage> {
                     'Test your working memory with this challenging sequence game.',
               ),
               const Gap(32),
-              Expanded(
-                child: Container(
-                  child: _buildGameContent(),
-                  width: double.infinity,
-                  height: double.infinity,
+              Container(
+                child: _buildGameContent(),
+                width: double.infinity,
+                constraints: BoxConstraints(
+                  minHeight: MediaQuery.of(context).size.height - 200,
                 ),
               ),
             ],
@@ -272,6 +273,9 @@ class _WebChimpTestPageState extends State<WebChimpTestPage> {
             style: TextStyle(fontSize: 18, color: Colors.black54),
             textAlign: TextAlign.center,
           ),
+          const Gap(32),
+          // AdSense Banner before game start
+          WebAdBanner(height: 100, position: 'before_game'),
           const Gap(32),
           // Stats before starting
 

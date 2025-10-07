@@ -9,7 +9,7 @@ class FirebaseNavigationService {
     {
       'type': 'dashboard',
       'path': '/app/dashboard',
-      'title': 'Global Dashboard',
+      'title': 'Global Statistics',
       'subtitle': 'View global statistics',
       'icon': 'dashboard',
     },
@@ -45,6 +45,13 @@ class FirebaseNavigationService {
       'icon': 'people',
     },
     {
+      'type': 'admin_analytics',
+      'path': '/app/admin-analytics',
+      'title': 'Analytics',
+      'subtitle': 'Game and activity stats',
+      'icon': 'insights',
+    },
+    {
       'type': 'admin_game_management',
       'path': '/app/admin-game-management',
       'title': 'Game Management',
@@ -77,61 +84,8 @@ class FirebaseNavigationService {
   static Future<List<Map<String, dynamic>>> getAllNavigationItems({
     bool isSignedIn = false,
   }) async {
-    final visibleGames = await GameManagementService.getVisibleGamesInOrder();
-    final isAdmin = await AdminService.isCurrentUserAdmin();
-
-    final List<Map<String, dynamic>> allItems = [];
-    int currentIndex = 0;
-
-    // Add static items first
-    for (final item in staticNavigationItems) {
-      allItems.add({...item, 'index': currentIndex});
-      currentIndex++;
-    }
-
-    // Add games from Firebase
-    for (final gameId in visibleGames) {
-      allItems.add({
-        'type': 'game',
-        'gameId': gameId,
-        'path': gameIdToRoute[gameId],
-        'title': _getGameTitle(gameId),
-        'subtitle': _getGameSubtitle(gameId),
-        'icon': _getGameIcon(gameId),
-        'index': currentIndex,
-      });
-      currentIndex++;
-    }
-
-    // Add end items
-    for (final item in getEndNavigationItems(isSignedIn)) {
-      allItems.add({...item, 'index': currentIndex});
-      currentIndex++;
-    }
-
-    // Add admin items if user is admin
-    if (isAdmin) {
-      for (final item in adminNavigationItems) {
-        allItems.add({...item, 'index': currentIndex});
-        currentIndex++;
-      }
-    }
-
-    return allItems;
-  }
-
-  // Get navigation items stream for real-time updates
-  static Stream<List<Map<String, dynamic>>> getAllNavigationItemsStream({
-    bool isSignedIn = false,
-  }) async* {
-    // Emit immediately on subscribe so UI updates when auth state changes
-    final initialItems = await getAllNavigationItems(isSignedIn: isSignedIn);
-    yield initialItems;
-
-    // Then keep emitting on game management updates
-    yield* GameManagementService.getAllGameManagementStream().asyncMap((
-      allGames,
-    ) async {
+    try {
+      final visibleGames = await GameManagementService.getVisibleGamesInOrder();
       final isAdmin = await AdminService.isCurrentUserAdmin();
 
       final List<Map<String, dynamic>> allItems = [];
@@ -143,66 +97,18 @@ class FirebaseNavigationService {
         currentIndex++;
       }
 
-      // Add ALL games from Firebase (including hidden/blocked ones for admin view)
-      // Sort by the fixed order
-      final completeFixedOrder = [
-        'reaction_time',
-        'number_memory',
-        'sequence_memory',
-        'verbal_memory',
-        'visual_memory',
-        'chimp_test',
-        'decision_risk',
-        'aim_trainer',
-        'personality_quiz',
-      ];
-
-      final orderedGames = <GameManagement>[];
-
-      // Add games in fixed order
-      for (final gameId in completeFixedOrder) {
-        final game = allGames.firstWhere(
-          (g) => g.gameId == gameId,
-          orElse: () => GameManagement(
-            gameId: '',
-            gameName: '',
-            status: GameStatus.active,
-            updatedAt: DateTime.now(),
-            updatedBy: '',
-          ),
-        );
-        if (game.gameId.isNotEmpty) {
-          orderedGames.add(game);
-        }
-      }
-
-      // Add any other games not in the fixed order
-      for (final game in allGames) {
-        if (!completeFixedOrder.contains(game.gameId)) {
-          orderedGames.add(game);
-        }
-      }
-
-      for (final game in orderedGames) {
-        // Determine if game should be visible to user (only show active games or maintenance games)
-        final isVisible = game.isActive || game.isMaintenance;
-
-        if (isVisible) {
-          allItems.add({
-            'type': 'game',
-            'gameId': game.gameId,
-            'path': gameIdToRoute[game.gameId],
-            'title': _getGameTitle(game.gameId),
-            'subtitle': _getGameSubtitleWithStatus(game),
-            'icon': _getGameIcon(game.gameId),
-            'index': currentIndex,
-            'status': game.status.name,
-            'isMaintenance': game.isMaintenance,
-            'isBlocked': game.isBlocked,
-            'isActive': game.isActive,
-          });
-          currentIndex++;
-        }
+      // Add games from Firebase
+      for (final gameId in visibleGames) {
+        allItems.add({
+          'type': 'game',
+          'gameId': gameId,
+          'path': gameIdToRoute[gameId],
+          'title': _getGameTitle(gameId),
+          'subtitle': _getGameSubtitle(gameId),
+          'icon': _getGameIcon(gameId),
+          'index': currentIndex,
+        });
+        currentIndex++;
       }
 
       // Add end items
@@ -220,7 +126,180 @@ class FirebaseNavigationService {
       }
 
       return allItems;
-    });
+    } catch (e) {
+      print('Error getting navigation items: $e');
+      // Return basic navigation items if Firebase fails
+      return [
+        {
+          'type': 'dashboard',
+          'path': '/app/dashboard',
+          'title': 'Global Statistics',
+          'subtitle': 'View global statistics',
+          'icon': 'dashboard',
+          'index': 0,
+        },
+        if (isSignedIn)
+          {
+            'type': 'profile',
+            'path': '/app/profile',
+            'title': 'Profile',
+            'subtitle': 'View your statistics',
+            'icon': 'person',
+            'index': 1,
+          },
+      ];
+    }
+  }
+
+  // Get navigation items stream for real-time updates
+  static Stream<List<Map<String, dynamic>>> getAllNavigationItemsStream({
+    bool isSignedIn = false,
+  }) async* {
+    try {
+      // Emit immediately on subscribe so UI updates when auth state changes
+      final initialItems = await getAllNavigationItems(isSignedIn: isSignedIn);
+      yield initialItems;
+
+      // Then keep emitting on game management updates
+      yield* GameManagementService.getAllGameManagementStream().asyncMap((
+        allGames,
+      ) async {
+        try {
+          final isAdmin = await AdminService.isCurrentUserAdmin();
+
+          final List<Map<String, dynamic>> allItems = [];
+          int currentIndex = 0;
+
+          // Add static items first
+          for (final item in staticNavigationItems) {
+            allItems.add({...item, 'index': currentIndex});
+            currentIndex++;
+          }
+
+          // Add ALL games from Firebase (including hidden/blocked ones for admin view)
+          // Sort by the fixed order
+          final completeFixedOrder = [
+            'reaction_time',
+            'number_memory',
+            'sequence_memory',
+            'verbal_memory',
+            'visual_memory',
+            'chimp_test',
+            'decision_risk',
+            'aim_trainer',
+            'personality_quiz',
+          ];
+
+          final orderedGames = <GameManagement>[];
+
+          // Add games in fixed order
+          for (final gameId in completeFixedOrder) {
+            final game = allGames.firstWhere(
+              (g) => g.gameId == gameId,
+              orElse: () => GameManagement(
+                gameId: '',
+                gameName: '',
+                status: GameStatus.active,
+                updatedAt: DateTime.now(),
+                updatedBy: '',
+              ),
+            );
+            if (game.gameId.isNotEmpty) {
+              orderedGames.add(game);
+            }
+          }
+
+          // Add any other games not in the fixed order
+          for (final game in allGames) {
+            if (!completeFixedOrder.contains(game.gameId)) {
+              orderedGames.add(game);
+            }
+          }
+
+          for (final game in orderedGames) {
+            // Determine if game should be visible to user (only show active games or maintenance games)
+            final isVisible = game.isActive || game.isMaintenance;
+
+            if (isVisible) {
+              allItems.add({
+                'type': 'game',
+                'gameId': game.gameId,
+                'path': gameIdToRoute[game.gameId],
+                'title': _getGameTitle(game.gameId),
+                'subtitle': _getGameSubtitleWithStatus(game),
+                'icon': _getGameIcon(game.gameId),
+                'index': currentIndex,
+                'status': game.status.name,
+                'isMaintenance': game.isMaintenance,
+                'isBlocked': game.isBlocked,
+                'isActive': game.isActive,
+              });
+              currentIndex++;
+            }
+          }
+
+          // Add end items
+          for (final item in getEndNavigationItems(isSignedIn)) {
+            allItems.add({...item, 'index': currentIndex});
+            currentIndex++;
+          }
+
+          // Add admin items if user is admin
+          if (isAdmin) {
+            for (final item in adminNavigationItems) {
+              allItems.add({...item, 'index': currentIndex});
+              currentIndex++;
+            }
+          }
+
+          return allItems;
+        } catch (e) {
+          print('Error in navigation stream: $e');
+          // Return basic navigation items if Firebase fails
+          return [
+            {
+              'type': 'dashboard',
+              'path': '/app/dashboard',
+              'title': 'Global Statistics',
+              'subtitle': 'View global statistics',
+              'icon': 'dashboard',
+              'index': 0,
+            },
+            if (isSignedIn)
+              {
+                'type': 'profile',
+                'path': '/app/profile',
+                'title': 'Profile',
+                'subtitle': 'View your statistics',
+                'icon': 'person',
+                'index': 1,
+              },
+          ];
+        }
+      });
+    } catch (e) {
+      print('Error in navigation stream setup: $e');
+      // Yield basic navigation items if Firebase fails
+      yield [
+        {
+          'type': 'dashboard',
+          'path': '/app/dashboard',
+          'title': 'Global Statistics',
+          'subtitle': 'View global statistics',
+          'icon': 'dashboard',
+          'index': 0,
+        },
+        if (isSignedIn)
+          {
+            'type': 'profile',
+            'path': '/app/profile',
+            'title': 'Profile',
+            'subtitle': 'View your statistics',
+            'icon': 'person',
+            'index': 1,
+          },
+      ];
+    }
   }
 
   // Helper method to get subtitle with status

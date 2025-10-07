@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
 
 class MaintenancePage extends StatelessWidget {
@@ -144,7 +145,7 @@ class MaintenancePage extends StatelessWidget {
               TextButton(
                 onPressed: () {
                   // Navigate back to landing page
-                  Navigator.of(context).pushReplacementNamed('/');
+                  context.push('/');
                 },
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(

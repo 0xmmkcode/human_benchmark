@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:human_benchmark/firebase_options.dart';
+import 'package:human_benchmark/web/pages/dashboard_page.dart';
 import 'package:human_benchmark/web/pages/landing_page.dart';
 import 'package:human_benchmark/web/pages/about_page.dart';
 import 'package:human_benchmark/web/pages/features_page.dart';
@@ -17,13 +18,13 @@ import 'package:human_benchmark/screens/personality_quiz_page.dart';
 import 'package:human_benchmark/web/pages/decision_making_page.dart';
 import 'package:human_benchmark/services/auth_service.dart';
 // import 'package:human_benchmark/web/pages/global_dashboard_page.dart';
-import 'package:human_benchmark/screens/dashboard_page.dart';
 import 'package:human_benchmark/web/pages/number_memory_page.dart';
 import 'package:human_benchmark/web/pages/chimp_test_page.dart';
 import 'package:human_benchmark/web/pages/profile_page.dart';
 import 'package:human_benchmark/web/pages/admin_users_page.dart';
 import 'package:human_benchmark/web/pages/admin_game_management_page.dart';
 import 'package:human_benchmark/web/pages/admin_web_settings_page.dart';
+import 'package:human_benchmark/web/pages/admin_analytics_page.dart';
 import 'package:human_benchmark/web/components/protected_game_route.dart';
 import 'package:human_benchmark/web/components/maintenance_wrapper.dart';
 import 'package:human_benchmark/web/services/firebase_navigation_service.dart';
@@ -59,6 +60,7 @@ void main() async {
     }
   } catch (e) {
     print('Error initializing Firebase: $e');
+    // Continue with app initialization even if Firebase fails
   }
 
   // Create dynamic router based on Firebase settings
@@ -106,81 +108,113 @@ void main() async {
 
 // Create dynamic router based on Firebase game management settings
 Future<GoRouter> _createDynamicRouter() async {
-  final isSignedIn = AuthService.currentUser != null;
-  final routes = await FirebaseNavigationService.getAllRoutes(
-    isSignedIn: isSignedIn,
-  );
+  try {
+    final isSignedIn = AuthService.currentUser != null;
+    final routes = await FirebaseNavigationService.getAllRoutes(
+      isSignedIn: isSignedIn,
+    );
 
-  return GoRouter(
-    initialLocation: '/',
-    routes: <RouteBase>[
-      // Landing page
-      GoRoute(
-        path: '/',
-        builder: (context, state) => LandingPage(
-          onStartApp: () => context.go('/app/dashboard'),
-          onAbout: () => context.go('/app/about'),
-          onFeatures: () => context.go('/app/features'),
+    return GoRouter(
+      initialLocation: '/',
+      debugLogDiagnostics: false,
+      routes: <RouteBase>[
+        // Landing page
+        GoRoute(
+          path: '/',
+          builder: (context, state) => LandingPage(
+            onStartApp: () => context.push('/app/dashboard'),
+            onAbout: () => context.push('/app/about'),
+            onFeatures: () => context.push('/app/features'),
+          ),
         ),
-      ),
-      // Static pages
-      GoRoute(
-        path: '/app/about',
-        builder: (context, state) =>
-            AboutPage(onBackToLanding: () => context.go('/')),
-      ),
-      GoRoute(
-        path: '/app/features',
-        builder: (context, state) =>
-            FeaturesPage(onBackToLanding: () => context.go('/')),
-      ),
-      GoRoute(
-        path: '/privacy',
-        builder: (context, state) => const PrivacyPolicyPage(),
-      ),
-      GoRoute(
-        path: '/terms',
-        builder: (context, state) => const TermsOfServicePage(),
-      ),
-      // Aliases/redirects for common typos
-      GoRoute(
-        path: '/app/game-management',
-        redirect: (context, state) => '/app/admin-game-management',
-      ),
-      GoRoute(
-        path: '/app/ugame-management',
-        redirect: (context, state) => '/app/admin-game-management',
-      ),
-      // Dynamic shell route for all app pages
-      ShellRoute(
-        builder: (context, state, child) {
-          return MaintenanceWrapper(child: _WebAppShell(child: child));
-        },
-        routes: <RouteBase>[
-          // Ensure admin pages are always accessible within the shell
-          GoRoute(
-            path: '/app/admin-users',
-            builder: (context, state) => const AdminUsersPage(),
+        // Static pages
+        GoRoute(
+          path: '/app/about',
+          builder: (context, state) =>
+              AboutPage(onBackToLanding: () => context.pop()),
+        ),
+        GoRoute(
+          path: '/app/features',
+          builder: (context, state) =>
+              FeaturesPage(onBackToLanding: () => context.pop()),
+        ),
+        GoRoute(
+          path: '/privacy',
+          builder: (context, state) => const PrivacyPolicyPage(),
+        ),
+        GoRoute(
+          path: '/terms',
+          builder: (context, state) => const TermsOfServicePage(),
+        ),
+        // Aliases/redirects for common typos
+        GoRoute(
+          path: '/app/game-management',
+          redirect: (context, state) => '/app/admin-game-management',
+        ),
+        GoRoute(
+          path: '/app/ugame-management',
+          redirect: (context, state) => '/app/admin-game-management',
+        ),
+        // Dynamic shell route for all app pages
+        ShellRoute(
+          builder: (context, state, child) {
+            return MaintenanceWrapper(child: _WebAppShell(child: child));
+          },
+          routes: <RouteBase>[
+            // Ensure admin pages are always accessible within the shell
+            GoRoute(
+              path: '/app/admin-users',
+              builder: (context, state) => const AdminUsersPage(),
+            ),
+            GoRoute(
+              path: '/app/admin-analytics',
+              builder: (context, state) => const AdminAnalyticsPage(),
+            ),
+            GoRoute(
+              path: '/app/admin-game-management',
+              builder: (context, state) => const AdminGameManagementPage(),
+            ),
+            GoRoute(
+              path: '/app/admin-web-settings',
+              builder: (context, state) => const AdminWebSettingsPage(),
+            ),
+            // Always register profile route; page will guard auth internally
+            GoRoute(
+              path: '/app/profile',
+              builder: (context, state) => const WebProfilePage(),
+            ),
+            // Dynamic routes from Firebase configuration
+            ..._buildDynamicRoutes(routes),
+          ],
+        ),
+      ],
+    );
+  } catch (e) {
+    print('Error creating dynamic router: $e');
+    // Return basic router if Firebase fails
+    return GoRouter(
+      initialLocation: '/',
+      debugLogDiagnostics: false,
+      routes: <RouteBase>[
+        GoRoute(
+          path: '/',
+          builder: (context, state) => LandingPage(
+            onStartApp: () => context.push('/app/dashboard'),
+            onAbout: () => context.push('/app/about'),
+            onFeatures: () => context.push('/app/features'),
           ),
-          GoRoute(
-            path: '/app/admin-game-management',
-            builder: (context, state) => const AdminGameManagementPage(),
-          ),
-          GoRoute(
-            path: '/app/admin-web-settings',
-            builder: (context, state) => const AdminWebSettingsPage(),
-          ),
-          // Always register profile route; page will guard auth internally
-          GoRoute(
-            path: '/app/profile',
-            builder: (context, state) => const WebProfilePage(),
-          ),
-          // Dynamic routes from Firebase configuration
-          ..._buildDynamicRoutes(routes),
-        ],
-      ),
-    ],
-  );
+        ),
+        GoRoute(
+          path: '/app/dashboard',
+          builder: (context, state) => const WebDashboardPage(),
+        ),
+        GoRoute(
+          path: '/app/profile',
+          builder: (context, state) => const WebProfilePage(),
+        ),
+      ],
+    );
+  }
 }
 
 // Build dynamic routes based on Firebase settings
@@ -193,7 +227,10 @@ List<RouteBase> _buildDynamicRoutes(List<Map<String, dynamic>> routes) {
 
     if (type == 'dashboard') {
       dynamicRoutes.add(
-        GoRoute(path: path, builder: (context, state) => const DashboardPage()),
+        GoRoute(
+          path: path,
+          builder: (context, state) => const WebDashboardPage(),
+        ),
       );
     } else if (type == 'game') {
       final gameId = route['gameId'] as String;
@@ -215,6 +252,13 @@ List<RouteBase> _buildDynamicRoutes(List<Map<String, dynamic>> routes) {
         GoRoute(
           path: path,
           builder: (context, state) => const AdminUsersPage(),
+        ),
+      );
+    } else if (type == 'admin_analytics') {
+      dynamicRoutes.add(
+        GoRoute(
+          path: path,
+          builder: (context, state) => const AdminAnalyticsPage(),
         ),
       );
     } else if (type == 'admin_game_management') {
@@ -485,10 +529,11 @@ class _WebAppShellState extends State<_WebAppShell> {
 
                 final route = item['path'] as String?;
                 if (route != null) {
-                  context.go(route);
+                  // Use push for proper browser history navigation
+                  context.push(route);
                 }
               },
-              onBackToLanding: () => context.go('/'),
+              onBackToLanding: () => context.push('/'),
               child: widget.child,
             );
           },

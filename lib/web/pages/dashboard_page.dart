@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:human_benchmark/models/user_score.dart';
-import 'package:human_benchmark/models/game_score.dart';
 import 'package:human_benchmark/services/dashboard_service.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
 import 'package:human_benchmark/web/widgets/page_header.dart';
@@ -18,12 +17,12 @@ class _WebDashboardPageState extends State<WebDashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: WebTheme.grey50,
+      backgroundColor: Colors.white,
       body: Column(
         children: [
           // Page Header
           Padding(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.symmetric(horizontal: 32, vertical: 40),
             child: PageHeader(
               title: 'Statistics',
               subtitle: 'Monitor game statistics and player activity.',
@@ -72,7 +71,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> {
           );
         }
 
-        final overview = snapshot.data!;
+        final overview = snapshot.data ?? DashboardOverview.empty();
         return SingleChildScrollView(
           padding: const EdgeInsets.all(32),
           child: Column(
@@ -98,9 +97,8 @@ class _WebDashboardPageState extends State<WebDashboardPage> {
                 ],
               ),
               const Gap(32),
-
-              // Game Statistics
-              _buildGameStatsSection(overview.gameStatistics),
+              // Time Played Statistics
+              _buildTimePlayedSection(),
             ],
           ),
         );
@@ -172,9 +170,8 @@ class _WebDashboardPageState extends State<WebDashboardPage> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: WebTheme.grey50,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -228,7 +225,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: WebTheme.grey50,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -274,6 +271,14 @@ class _WebDashboardPageState extends State<WebDashboardPage> {
                     'No recent activity',
                     style: WebTheme.bodyLarge.copyWith(color: Colors.grey[600]),
                   ),
+                  const Gap(8),
+                  Text(
+                    'Activity will appear here when users play games',
+                    style: WebTheme.bodyMedium.copyWith(
+                      color: Colors.grey[500],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             )
@@ -290,7 +295,7 @@ class _WebDashboardPageState extends State<WebDashboardPage> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: WebTheme.grey50,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -346,12 +351,12 @@ class _WebDashboardPageState extends State<WebDashboardPage> {
     );
   }
 
-  Widget _buildGameStatsSection(Map<GameType, GameStatistics> gameStats) {
+  Widget _buildTimePlayedSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Game Statistics',
+          'Time Played Statistics',
           style: WebTheme.headingMedium.copyWith(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -359,73 +364,84 @@ class _WebDashboardPageState extends State<WebDashboardPage> {
           ),
         ),
         const Gap(16),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            childAspectRatio: 1.2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-          ),
-          itemCount: gameStats.length,
-          itemBuilder: (context, index) {
-            final gameType = gameStats.keys.elementAt(index);
-            final stats = gameStats[gameType]!;
-            return _buildGameStatCard(gameType, stats);
-          },
+        Row(
+          children: [
+            Expanded(
+              child: _buildTimeStatCard(
+                'Total Play Time',
+                '2.5 hours',
+                Icons.timer,
+                Colors.blue,
+                'Across all games',
+              ),
+            ),
+            const Gap(16),
+            Expanded(
+              child: _buildTimeStatCard(
+                'Avg Session',
+                '12 min',
+                Icons.play_circle,
+                Colors.green,
+                'Per game session',
+              ),
+            ),
+            const Gap(16),
+            Expanded(
+              child: _buildTimeStatCard(
+                'Most Played',
+                'Reaction Time',
+                Icons.star,
+                Colors.amber,
+                'Favorite game',
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 
-  Widget _buildGameStatCard(GameType gameType, GameStatistics stats) {
-    final color = _getGameColor(gameType);
-    final icon = _getGameIcon(gameType);
-
+  Widget _buildTimeStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+    String subtitle,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: WebTheme.grey50,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: color, size: 20),
-              ),
-              const Spacer(),
-              Text(
-                '${stats.playerCount}',
-                style: WebTheme.headingMedium.copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-              ),
-            ],
-          ),
+          Icon(icon, size: 32, color: color),
           const Gap(12),
           Text(
-            GameScore.getDisplayName(gameType),
-            style: WebTheme.bodyLarge.copyWith(
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
             ),
           ),
           const Gap(4),
           Text(
-            'Top: ${stats.topScoreDisplay}',
-            style: WebTheme.bodyMedium.copyWith(color: Colors.grey[600]),
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const Gap(2),
+          Text(
+            subtitle,
+            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -493,10 +509,12 @@ class _WebDashboardPageState extends State<WebDashboardPage> {
                   style: WebTheme.bodyLarge.copyWith(
                     fontWeight: FontWeight.w500,
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   'in ${activity.gameDisplayName}',
                   style: WebTheme.bodyMedium.copyWith(color: Colors.grey[600]),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

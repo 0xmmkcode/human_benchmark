@@ -273,17 +273,24 @@ class _WebSidebarState extends State<WebSidebar> {
                                   user.photoURL!.isNotEmpty)
                               ? NetworkImage(user.photoURL!)
                               : null,
-                          child:
-                              (!isSignedIn ||
-                                  user.photoURL == null ||
-                                  user.photoURL!.isEmpty)
+                          child: (!isSignedIn)
                               ? Icon(
-                                  isSignedIn
-                                      ? Icons.person
-                                      : Icons.person_outline,
-                                  color: isSignedIn
-                                      ? Colors.blue[600]
-                                      : Colors.grey[600],
+                                  Icons.person_outline,
+                                  color: Colors.grey[600],
+                                )
+                              : (user.photoURL == null ||
+                                    user.photoURL!.isEmpty)
+                              ? Text(
+                                  (user.displayName != null &&
+                                          user.displayName!.isNotEmpty)
+                                      ? user.displayName!
+                                            .trim()[0]
+                                            .toUpperCase()
+                                      : 'U',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.blue[700],
+                                  ),
                                 )
                               : null,
                         ),
@@ -301,17 +308,14 @@ class _WebSidebarState extends State<WebSidebar> {
                                   color: Colors.grey[800],
                                 ),
                               ),
-                              Text(
-                                isSignedIn
-                                    ? user.email ?? 'Signed in user'
-                                    : 'Sign in for more features',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isSignedIn
-                                      ? Colors.blue[600]
-                                      : Colors.grey[600],
+                              if (!isSignedIn)
+                                Text(
+                                  'Sign in for more features',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
                                 ),
-                              ),
                               // Show admin status if user is admin
                               if (isSignedIn && isAdmin)
                                 Container(

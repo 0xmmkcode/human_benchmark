@@ -1,6 +1,6 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:human_benchmark/web/widgets/app_loading.dart';
-import 'dart:ui';
 import 'package:gap/gap.dart';
 import 'package:human_benchmark/web/theme/web_theme.dart';
 import 'package:human_benchmark/web/widgets/page_header.dart';
@@ -9,11 +9,13 @@ import 'package:human_benchmark/services/auth_service.dart';
 import 'package:human_benchmark/services/score_service.dart';
 import 'package:human_benchmark/services/user_profile_service.dart';
 import 'package:human_benchmark/models/user_score.dart';
-import 'package:human_benchmark/models/game_score.dart';
 import 'package:human_benchmark/models/user_profile.dart';
-import 'package:human_benchmark/web/widgets/country_selector.dart';
-import 'package:human_benchmark/web/constants/countries.dart';
+import 'package:human_benchmark/models/rank.dart';
+import 'package:human_benchmark/services/rank_service.dart';
+import 'package:human_benchmark/utils/rank_image_mapper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../widgets/user_avatar.dart';
 
 class WebProfilePage extends StatefulWidget {
   const WebProfilePage({super.key});
@@ -25,17 +27,17 @@ class WebProfilePage extends StatefulWidget {
 class _WebProfilePageState extends State<WebProfilePage> {
   UserScore? _userScore;
   UserProfile? _userProfile;
-  List<GameScore> _recentActivities = [];
+  List<Rank> _ranks = [];
+  bool _isLoadingRanks = false;
   bool _isLoading = true;
-  bool _isLoadingActivities = true;
   String? _error;
 
   @override
   void initState() {
     super.initState();
     _loadUserProfile();
-    _loadRecentActivities();
     _loadUserProfileData();
+    _loadRanks();
   }
 
   Future<void> _loadUserProfile() async {
@@ -69,192 +71,37 @@ class _WebProfilePageState extends State<WebProfilePage> {
         setState(() {
           _userProfile = userProfile;
         });
+        // nothing extra
       }
     } catch (e) {
       // Ignore: non-critical for rendering
     }
   }
 
-  Future<void> _showEditProfileDialog() async {
-    if (_userProfile == null) return;
-
-    final TextEditingController displayNameController = TextEditingController(
-      text: _userProfile!.displayName ?? '',
-    );
-    final TextEditingController countryController = TextEditingController(
-      text: _userProfile!.country ?? '',
-    );
-    DateTime? selectedBirthday = _userProfile!.birthday;
-
-    await showDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder: (BuildContext context) {
-        return BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: AlertDialog(
-            title: const Text('Edit Profile'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: displayNameController,
-                    decoration: InputDecoration(
-                      labelText: 'Display Name',
-                      hintText: 'Enter your display name',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey[300]!),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: WebTheme.primaryBlue,
-                          width: 2,
-                        ),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[50],
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-                  const Gap(16),
-                  CountrySelector(
-                    initialValue: _userProfile!.country,
-                    onCountrySelected: (String? country) {
-                      // Update the country controller when a country is selected
-                      if (country != null) {
-                        countryController.text = country;
-                      } else {
-                        countryController.clear();
-                      }
-                    },
-                  ),
-                  const Gap(16),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey[300]!),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: ListTile(
-                      title: const Text('Birthday'),
-                      subtitle: Text(
-                        selectedBirthday != null
-                            ? '${selectedBirthday!.day}/${selectedBirthday!.month}/${selectedBirthday!.year}'
-                            : 'Select your birthday',
-                      ),
-                      trailing: Icon(
-                        Icons.calendar_today,
-                        color: WebTheme.primaryBlue,
-                      ),
-                      onTap: () async {
-                        final DateTime? picked = await showDatePicker(
-                          context: context,
-                          initialDate: selectedBirthday ?? DateTime.now(),
-                          firstDate: DateTime(1900),
-                          lastDate: DateTime.now(),
-                        );
-                        if (picked != null) {
-                          setState(() {
-                            selectedBirthday = picked;
-                          });
-                        }
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                ),
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  try {
-                    await UserProfileService.updateProfileFields(
-                      uid: _userProfile!.uid,
-                      displayName: displayNameController.text.isNotEmpty
-                          ? displayNameController.text
-                          : null,
-                      birthday: selectedBirthday,
-                      country: countryController.text.isNotEmpty
-                          ? countryController.text
-                          : null,
-                    );
-
-                    if (mounted) {
-                      Navigator.of(context).pop();
-                      _loadUserProfileData();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Profile updated successfully!'),
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Failed to update profile: $e')),
-                      );
-                    }
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: WebTheme.primaryBlue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Save Changes',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _loadRecentActivities() async {
+  Future<void> _loadRanks() async {
     try {
       setState(() {
-        _isLoadingActivities = true;
+        _isLoadingRanks = true;
       });
-      final activities = await ScoreService.getRecentActivities();
+
+      print('🔄 Loading ranks from Firestore...');
+      final ranks = await RankService.getAllRanks();
+      print('✅ Loaded ${ranks.length} ranks from Firestore');
+
+      ranks.sort((a, b) => a.order.compareTo(b.order));
+
       if (mounted) {
         setState(() {
-          _recentActivities = activities;
-          _isLoadingActivities = false;
+          _ranks = ranks;
+          _isLoadingRanks = false;
         });
+        print('✅ Ranks state updated: ${_ranks.length} ranks');
       }
     } catch (e) {
+      print('❌ Error loading ranks: $e');
       if (mounted) {
         setState(() {
-          _error = 'Failed to load recent activities: $e';
-          _isLoadingActivities = false;
+          _isLoadingRanks = false;
         });
       }
     }
@@ -320,8 +167,8 @@ class _WebProfilePageState extends State<WebProfilePage> {
       onRefresh: () async {
         await Future.wait([
           _loadUserProfile(),
-          _loadRecentActivities(),
           _loadUserProfileData(),
+          _loadRanks(),
         ]);
       },
       child: SingleChildScrollView(
@@ -341,9 +188,24 @@ class _WebProfilePageState extends State<WebProfilePage> {
                 _buildIdentityBlock(user),
                 const Gap(32),
 
-                // Rank Block (global score + rank timeline)
-                if (_userProfile != null) _buildRankBlock(),
-                const Gap(32),
+                // Your Rank
+                if (_ranks.isNotEmpty && _userProfile != null)
+                  _buildYourRankSection(),
+                if (_ranks.isNotEmpty && _userProfile != null) const Gap(32),
+
+                // Milestones (Ranks)
+                if (_isLoadingRanks)
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Center(child: AppLoading()),
+                  ),
+                if (_isLoadingRanks) const Gap(32),
+                if (_ranks.isNotEmpty) _buildMilestones(),
+                if (_ranks.isNotEmpty) const Gap(32),
 
                 // Per-game statistics cards
                 if (_userScore != null) _buildPerGameStats(),
@@ -359,9 +221,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
     final String displayName =
         _userProfile?.displayName ?? user.displayName ?? 'User';
     final String? countryName = _userProfile?.country;
-    final String countryFlag = countryName != null
-        ? (Countries.findByName(countryName)?.flag ?? '')
-        : '';
+    final String countryFlag = '';
     final DateTime joinedAt =
         _userProfile?.createdAt ?? _userScore?.createdAt ?? DateTime.now();
     final int? age = _userProfile?.birthday != null
@@ -377,28 +237,37 @@ class _WebProfilePageState extends State<WebProfilePage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
+          UserAvatar(
             radius: 40,
-            backgroundColor: Colors.blue[100],
-            backgroundImage: user.photoURL != null && user.photoURL!.isNotEmpty
-                ? NetworkImage(user.photoURL!)
-                : null,
-            child: (user.photoURL == null || user.photoURL!.isEmpty)
-                ? Icon(Icons.person, size: 40, color: Colors.blue[600])
-                : null,
+            photoURL: user.photoURL,
+            displayName: _userProfile?.displayName ?? user.displayName,
+            email: user.email,
+            borderColor: Colors.blue[200],
+            borderWidth: 2,
           ),
           const Gap(20),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  displayName,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        displayName,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: _showEditProfileDialog,
+                      icon: Icon(Icons.edit, color: Colors.grey[600]),
+                      tooltip: 'Edit Profile',
+                    ),
+                  ],
                 ),
                 const Gap(6),
                 if (user.email != null)
@@ -537,12 +406,9 @@ class _WebProfilePageState extends State<WebProfilePage> {
     );
   }
 
-  Widget _buildRankBlock() {
-    final int global = _userProfile?.globalScore ?? 0;
-    final _RankInfo rank = _computeRank(global);
-    final double progress = rank.progress;
-
+  Widget _buildMilestones() {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.grey[50],
@@ -551,48 +417,308 @@ class _WebProfilePageState extends State<WebProfilePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            'All Ranks',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
+            ),
+          ),
+          const Gap(16),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: _ranks.map((rank) {
+                final imagePath = RankImageMapper.getImagePath(rank.order);
+                return Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: Container(
+                    width: 220,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey[200]!),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: Image.asset(
+                                imagePath,
+                                width: 36,
+                                height: 36,
+                                fit: BoxFit.cover,
+                                errorBuilder: (c, e, s) => Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[300],
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Icon(Icons.image_not_supported),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                rank.name,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey[800],
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Gap(8),
+                        Text(
+                          rank.description,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const Gap(8),
+                        _kv(
+                          'Score Range',
+                          '${rank.minGlobalScore} - ${rank.maxGlobalScore}',
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildYourRankSection() {
+    final info = _getCurrentRankInfo();
+    if (info == null) return const SizedBox.shrink();
+
+    final Rank current = info['current'] as Rank;
+    final Rank? next = info['next'] as Rank?;
+    final double progress = info['progress'] as double;
+    final int pointsToNext = info['pointsToNext'] as int;
+    final int global = _userProfile?.globalScore ?? 0;
+    final imagePath = RankImageMapper.getImagePath(current.order);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Your Rank',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
+            ),
+          ),
+          const Gap(16),
           Row(
             children: [
-              Icon(Icons.emoji_events, color: WebTheme.primaryBlue),
-              const SizedBox(width: 8),
-              Text(
-                'Global Rank',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset(
+                  imagePath,
+                  width: 48,
+                  height: 48,
+                  fit: BoxFit.cover,
+                  errorBuilder: (c, e, s) => Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.image_not_supported),
+                  ),
                 ),
               ),
-              const Spacer(),
-              Text(
-                '${rank.name}',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: WebTheme.primaryBlue,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      current.name,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey[900],
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      current.description,
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Text(
+                  'Score: $global',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
                 ),
               ),
             ],
           ),
           const Gap(12),
-          _kv('Global Score', '$global'),
-          const Gap(12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 10,
-              color: WebTheme.primaryBlue,
-              backgroundColor: Colors.grey[200],
+          if (next != null) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                value: progress.clamp(0.0, 1.0),
+                minHeight: 10,
+                color: Colors.amber[600],
+                backgroundColor: Colors.grey[200],
+              ),
             ),
-          ),
-          const Gap(16),
-          // Make rank timeline horizontally scrollable (already scrolls),
-          // and include a horizontal scrollable badge list of ranks for visibility
-          SizedBox(height: 80, child: _rankTimeline(rankIndex: rank.index)),
+            const Gap(8),
+            Text(
+              '$pointsToNext points to ${next.name}',
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+            ),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: WebTheme.primaryBlue.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                'Max Rank Achieved',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: WebTheme.primaryBlue,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  void _showEditProfileDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => _EditProfileDialog(
+        userProfile: _userProfile,
+        onSave: _updateUserProfile,
+      ),
+    );
+  }
+
+  Future<void> _updateUserProfile(UserProfile updatedProfile) async {
+    try {
+      await UserProfileService.updateUserProfile(updatedProfile);
+
+      if (mounted) {
+        setState(() {
+          _userProfile = updatedProfile;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile updated successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update profile: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Map<String, dynamic>? _getCurrentRankInfo() {
+    if (_userProfile == null || _ranks.isEmpty) return null;
+    final int score = _userProfile!.globalScore;
+    if (_ranks.length > 1) {
+      _ranks.sort((a, b) => a.order.compareTo(b.order));
+    }
+
+    Rank? current;
+    Rank? next;
+    for (int i = 0; i < _ranks.length; i++) {
+      final r = _ranks[i];
+      if (r.qualifiesForRank(score)) {
+        current = r;
+        if (i + 1 < _ranks.length) {
+          next = _ranks[i + 1];
+        }
+        break;
+      }
+    }
+
+    if (current == null) {
+      // If below first rank, treat first as next
+      if (score < _ranks.first.minGlobalScore) {
+        next = _ranks.first;
+        return {
+          'current': _ranks.first,
+          'next': next,
+          'progress': 0.0,
+          'pointsToNext': next.minGlobalScore - score,
+        };
+      }
+      return null;
+    }
+
+    final double progress = current.calculateProgress(score);
+    final int pointsToNext = next != null ? (next.minGlobalScore - score) : 0;
+
+    return {
+      'current': current,
+      'next': next,
+      'progress': progress,
+      'pointsToNext': pointsToNext,
+    };
   }
 
   Widget _kv(String k, String v) {
@@ -612,73 +738,7 @@ class _WebProfilePageState extends State<WebProfilePage> {
     );
   }
 
-  Widget _rankTimeline({required int rankIndex}) {
-    final ranks = _ranks();
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: List.generate(ranks.length, (i) {
-          final active = i <= rankIndex;
-          return Row(
-            children: [
-              Column(
-                children: [
-                  Container(
-                    width: 14,
-                    height: 14,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: active ? WebTheme.primaryBlue : Colors.grey[300],
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  SizedBox(
-                    width: 100,
-                    child: Column(
-                      children: [
-                        Text(
-                          ranks[i].$1,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: active ? Colors.grey[800] : Colors.grey[500],
-                            fontWeight: active
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '≥ ${ranks[i].$2}',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: active ? Colors.grey[700] : Colors.grey[500],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              if (i < ranks.length - 1)
-                Container(
-                  width: 48,
-                  height: 2,
-                  margin: const EdgeInsets.symmetric(horizontal: 6),
-                  color: i < rankIndex
-                      ? WebTheme.primaryBlue
-                      : Colors.grey[300],
-                ),
-            ],
-          );
-        }),
-      ),
-    );
-  }
+  // Ranks timeline removed
 
   int _calculateAge(DateTime birthday) {
     final now = DateTime.now();
@@ -690,19 +750,47 @@ class _WebProfilePageState extends State<WebProfilePage> {
     return age;
   }
 
-  _RankInfo _computeRank(int globalScore) {
-    final ranks = _ranks();
-    int idx = 0;
-    for (int i = 0; i < ranks.length; i++) {
-      if (globalScore >= ranks[i].$2) idx = i;
-    }
-    final int floor = ranks[idx].$2;
-    final int ceil = idx + 1 < ranks.length ? ranks[idx + 1].$2 : floor + 1;
-    final double progress = (globalScore - floor) / (ceil - floor);
-    return _RankInfo(
-      name: ranks[idx].$1,
-      index: idx,
-      progress: progress.clamp(0, 1),
+  // (removed) _getRankIcon no longer used; rank images are shown instead
+
+  // Rank helpers removed
+
+  // Debug section for troubleshooting (only in debug mode)
+  Widget _buildDebugSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '🐛 Debug Info',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.orange[800],
+            ),
+          ),
+          const Gap(8),
+          Text('Loading Ranks: $_isLoadingRanks'),
+          Text('Ranks Count: ${_ranks.length}'),
+          Text('User Profile: ${_userProfile != null}'),
+          Text('Global Score: ${_userProfile?.globalScore ?? 'N/A'}'),
+          const Gap(8),
+          Row(
+            children: [
+              ElevatedButton.icon(
+                onPressed: _loadRanks,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Reload Ranks'),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -726,8 +814,6 @@ class _WebProfilePageState extends State<WebProfilePage> {
         return Icons.format_list_numbered;
       case GameType.chimpTest:
         return Icons.pets;
-      default:
-        return Icons.games;
     }
   }
 
@@ -751,8 +837,6 @@ class _WebProfilePageState extends State<WebProfilePage> {
         return 'Sequence Memory';
       case GameType.chimpTest:
         return 'Chimp Test';
-      default:
-        return 'Unknown Game';
     }
   }
 
@@ -773,32 +857,649 @@ class _WebProfilePageState extends State<WebProfilePage> {
       return '${date.day}/${date.month}/${date.year}';
     }
   }
-
-  String _formatDateTime(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} '
-        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-  }
-
-  // Returns list of (name, threshold)
-  List<(String, int)> _ranks() {
-    return [
-      ('Novice Neuron', 0),
-      ('Quick Learner', 500),
-      ('Pattern Seeker', 1200),
-      ('Recall Rookie', 2000),
-      ('Focus Finder', 3000),
-      ('Mind Sprinter', 4200),
-      ('Cortex Challenger', 5600),
-      ('Synapse Master', 7200),
-      ('Cognitive Elite', 9000),
-      ('Benchmark Legend', 11000),
-    ];
-  }
 }
 
-class _RankInfo {
-  final String name;
-  final int index;
-  final double progress;
-  _RankInfo({required this.name, required this.index, required this.progress});
+class _EditProfileDialog extends StatefulWidget {
+  final UserProfile? userProfile;
+  final Function(UserProfile) onSave;
+
+  const _EditProfileDialog({required this.userProfile, required this.onSave});
+
+  @override
+  State<_EditProfileDialog> createState() => _EditProfileDialogState();
+}
+
+class _EditProfileDialogState extends State<_EditProfileDialog> {
+  late TextEditingController _nameController;
+  String? _selectedCountry;
+  DateTime? _selectedBirthday;
+  bool _isLoading = false;
+
+  // List of countries
+  static const List<String> _countries = [
+    'Afghanistan',
+    'Albania',
+    'Algeria',
+    'Argentina',
+    'Armenia',
+    'Australia',
+    'Austria',
+    'Azerbaijan',
+    'Bahrain',
+    'Bangladesh',
+    'Belarus',
+    'Belgium',
+    'Brazil',
+    'Bulgaria',
+    'Cambodia',
+    'Canada',
+    'Chile',
+    'China',
+    'Colombia',
+    'Croatia',
+    'Czech Republic',
+    'Denmark',
+    'Egypt',
+    'Estonia',
+    'Finland',
+    'France',
+    'Georgia',
+    'Germany',
+    'Ghana',
+    'Greece',
+    'Hungary',
+    'Iceland',
+    'India',
+    'Indonesia',
+    'Iran',
+    'Iraq',
+    'Ireland',
+    'Israel',
+    'Italy',
+    'Japan',
+    'Jordan',
+    'Kazakhstan',
+    'Kenya',
+    'Kuwait',
+    'Latvia',
+    'Lebanon',
+    'Lithuania',
+    'Luxembourg',
+    'Malaysia',
+    'Mexico',
+    'Morocco',
+    'Netherlands',
+    'New Zealand',
+    'Nigeria',
+    'Norway',
+    'Oman',
+    'Pakistan',
+    'Peru',
+    'Philippines',
+    'Poland',
+    'Portugal',
+    'Qatar',
+    'Romania',
+    'Russia',
+    'Saudi Arabia',
+    'Singapore',
+    'Slovakia',
+    'Slovenia',
+    'South Africa',
+    'South Korea',
+    'Spain',
+    'Sri Lanka',
+    'Sweden',
+    'Switzerland',
+    'Thailand',
+    'Turkey',
+    'Ukraine',
+    'United Arab Emirates',
+    'United Kingdom',
+    'United States',
+    'Vietnam',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(
+      text: widget.userProfile?.displayName ?? '',
+    );
+    _selectedCountry = widget.userProfile?.country;
+    _selectedBirthday = widget.userProfile?.birthday;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              width: 500,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.95),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.grey[200]!.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header with gradient
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          WebTheme.primaryBlue.withOpacity(0.1),
+                          Colors.grey[50]!,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: WebTheme.primaryBlue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.edit,
+                            color: WebTheme.primaryBlue,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        const Expanded(
+                          child: Text(
+                            'Edit Profile',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: IconButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: Icon(Icons.close, color: Colors.grey[600]),
+                            tooltip: 'Close',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Content
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Required fields note
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.blue[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.blue[200]!,
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                color: Colors.blue[600],
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'All fields marked with * are required. You must be at least 13 years old to use this app.',
+                                  style: TextStyle(
+                                    color: Colors.blue[700],
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        // Name field
+                        TextField(
+                          controller: _nameController,
+                          decoration: InputDecoration(
+                            labelText: 'Display Name *',
+                            hintText: 'Enter your display name',
+                            prefixIcon: Icon(
+                              Icons.person,
+                              color: WebTheme.primaryBlue,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: WebTheme.primaryBlue,
+                                width: 2,
+                              ),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: Colors.red,
+                                width: 2,
+                              ),
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: Colors.red,
+                                width: 2,
+                              ),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                            helperText: 'This will be visible to other users',
+                            helperStyle: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Country dropdown
+                        DropdownButtonFormField<String>(
+                          value: _selectedCountry,
+                          decoration: InputDecoration(
+                            labelText: 'Country *',
+                            hintText: 'Select your country',
+                            prefixIcon: Icon(
+                              Icons.public,
+                              color: WebTheme.primaryBlue,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: WebTheme.primaryBlue,
+                                width: 2,
+                              ),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: Colors.red,
+                                width: 2,
+                              ),
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: Colors.red,
+                                width: 2,
+                              ),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                            helperText: 'Required for age verification',
+                            helperStyle: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                          items: _countries.map((country) {
+                            return DropdownMenuItem(
+                              value: country,
+                              child: Text(
+                                country,
+                                style: const TextStyle(color: Colors.black87),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedCountry = value;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Birthday field
+                        InkWell(
+                          onTap: _selectBirthday,
+                          child: InputDecorator(
+                            decoration: InputDecoration(
+                              labelText: 'Birthday *',
+                              hintText: 'Select your birthday',
+                              prefixIcon: Icon(
+                                Icons.cake,
+                                color: WebTheme.primaryBlue,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: WebTheme.primaryBlue,
+                                  width: 2,
+                                ),
+                              ),
+                              errorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Colors.red,
+                                  width: 2,
+                                ),
+                              ),
+                              focusedErrorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Colors.red,
+                                  width: 2,
+                                ),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[50],
+                              helperText: 'You must be at least 13 years old',
+                              helperStyle: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                            child: Text(
+                              _selectedBirthday != null
+                                  ? '${_selectedBirthday!.day}/${_selectedBirthday!.month}/${_selectedBirthday!.year}'
+                                  : 'Select your birthday',
+                              style: TextStyle(
+                                color: _selectedBirthday != null
+                                    ? Colors.black87
+                                    : Colors.grey[600],
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+
+                        // Action buttons
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              onPressed: _isLoading
+                                  ? null
+                                  : () => Navigator.of(context).pop(),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            ElevatedButton(
+                              onPressed: _isLoading ? null : _saveProfile,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: WebTheme.primaryBlue,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Save',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _selectBirthday() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedBirthday ?? DateTime(2000),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedBirthday = picked;
+      });
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    // Validate all required fields
+    if (_nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Display name is required'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedCountry == null || _selectedCountry!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Country is required'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedBirthday == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Birthday is required'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Validate age (must be at least 13 years old)
+    final age = _calculateAge(_selectedBirthday!);
+    if (age < 13) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You must be at least 13 years old to use this app'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Check if display name already exists (only if it's different from current)
+    final currentDisplayName = widget.userProfile?.displayName;
+    final newDisplayName = _nameController.text.trim();
+
+    if (newDisplayName != currentDisplayName) {
+      final isNameTaken = await _checkDisplayNameExists(newDisplayName);
+      if (isNameTaken) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'This display name is already taken. Please choose another one.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final updatedProfile = widget.userProfile?.copyWith(
+        displayName: newDisplayName,
+        country: _selectedCountry,
+        birthday: _selectedBirthday,
+        updatedAt: DateTime.now(),
+      );
+
+      if (updatedProfile == null) {
+        throw Exception('Failed to create updated profile');
+      }
+
+      await widget.onSave(updatedProfile);
+
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save profile: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  int _calculateAge(DateTime birthday) {
+    final now = DateTime.now();
+    int age = now.year - birthday.year;
+    if (now.month < birthday.month ||
+        (now.month == birthday.month && now.day < birthday.day)) {
+      age--;
+    }
+    return age;
+  }
+
+  Future<bool> _checkDisplayNameExists(String displayName) async {
+    try {
+      // Query Firestore to check if display name exists
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('user_profiles')
+          .where('displayName', isEqualTo: displayName)
+          .limit(1)
+          .get();
+
+      return querySnapshot.docs.isNotEmpty;
+    } catch (e) {
+      // If there's an error checking, assume it's available to avoid blocking users
+      print('Error checking display name availability: $e');
+      return false;
+    }
+  }
 }

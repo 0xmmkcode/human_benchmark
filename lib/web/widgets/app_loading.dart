@@ -19,8 +19,8 @@ class AppLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double resolvedWidth = width ?? 32;
-    final double resolvedHeight = height ?? 32;
+    final double resolvedWidth = width ?? 37;
+    final double resolvedHeight = height ?? 37;
 
     // If spinner-related params are provided, render a CircularProgressIndicator
     if (valueColor != null || strokeWidth != null) {

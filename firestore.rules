@@ -158,6 +158,17 @@ service cloud.firestore {
         get(/databases/$(database)/documents/admin_roles/$(request.auth.uid)).data.isAdmin == true;
     }
     
+    // Ranks collection - allow public read access for all users
+    match /ranks/{rankId} {
+      // Anyone can read ranks (needed for profile page)
+      allow read: if true;
+      
+      // Only admins can create, update, or delete ranks
+      allow create, update, delete: if request.auth != null && 
+        exists(/databases/$(database)/documents/admin_roles/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/admin_roles/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
     // Default rule - deny all other access
     match /{document=**} {
       allow read, write: if false;

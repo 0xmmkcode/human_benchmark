@@ -464,24 +464,38 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
-          Column(
-            children: [
-              // Search and Filter Bar
-              _buildSearchAndFilterBar(),
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                // Page Header
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  child: PageHeader(
+                    title: 'Users Management',
+                    subtitle: 'Manage user accounts and permissions.',
+                  ),
+                ),
 
-              // Users Table
-              Expanded(
-                child: _isLoading
-                    ? const Center(child: AppLoading())
-                    : _buildUsersTable(),
-              ),
+                // Search and Filter Bar
+                _buildSearchAndFilterBar(),
 
-              // Pagination
-              _buildPagination(),
-            ],
+                // Users Table Container
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  child: _isLoading
+                      ? const Center(child: AppLoading())
+                      : _buildUsersTable(),
+                ),
+
+                // Pagination
+                _buildPagination(),
+              ],
+            ),
           ),
 
           // User Details Modal
@@ -505,83 +519,95 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
 
   Widget _buildSearchAndFilterBar() {
     return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Row(
         children: [
-          // Page Header
-          PageHeader(
-            title: 'Admin Users',
-            subtitle: 'Manage user accounts and permissions.',
-          ),
-          const SizedBox(height: 24),
-
-          // Search and Filter Controls
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  decoration: const InputDecoration(
-                    hintText: 'Search users by email, name, or UID...',
-                    prefixIcon: Icon(Icons.search),
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                      _currentPage = 0;
-                    });
-                    _filterUsers();
-                  },
-                ),
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[200]!),
               ),
-              const SizedBox(width: 16),
-              DropdownButton<String>(
-                value: _sortBy,
-                hint: const Text('Sort by'),
-                items: [
-                  DropdownMenuItem(
-                    value: 'lastActive',
-                    child: const Text('Last Active'),
+              child: TextField(
+                decoration: const InputDecoration(
+                  hintText: 'Search users by email, name, or UID...',
+                  prefixIcon: Icon(Icons.search, color: Colors.grey),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
                   ),
-                  DropdownMenuItem(
-                    value: 'createdAt',
-                    child: const Text('Created'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'totalGames',
-                    child: const Text('Total Games'),
-                  ),
-                  DropdownMenuItem(value: 'email', child: const Text('Email')),
-                  DropdownMenuItem(
-                    value: 'displayName',
-                    child: const Text('Name'),
-                  ),
-                ],
+                ),
                 onChanged: (value) {
-                  if (value != null) {
-                    _sortUsers(value);
-                  }
-                },
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                onPressed: () {
                   setState(() {
-                    _sortAscending = !_sortAscending;
+                    _searchQuery = value;
+                    _currentPage = 0;
                   });
-                  _sortUsers(_sortBy);
+                  _filterUsers();
                 },
-                icon: Icon(
-                  _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
-                ),
-                tooltip: 'Sort direction',
               ),
-            ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            child: DropdownButton<String>(
+              value: _sortBy,
+              hint: const Text('Sort by'),
+              underline: const SizedBox(),
+              items: [
+                DropdownMenuItem(
+                  value: 'lastActive',
+                  child: const Text('Last Active'),
+                ),
+                DropdownMenuItem(
+                  value: 'createdAt',
+                  child: const Text('Created'),
+                ),
+                DropdownMenuItem(
+                  value: 'totalGames',
+                  child: const Text('Total Games'),
+                ),
+                DropdownMenuItem(value: 'email', child: const Text('Email')),
+                DropdownMenuItem(
+                  value: 'displayName',
+                  child: const Text('Name'),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  _sortUsers(value);
+                }
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            child: IconButton(
+              onPressed: () {
+                setState(() {
+                  _sortAscending = !_sortAscending;
+                });
+                _sortUsers(_sortBy);
+              },
+              icon: Icon(
+                _sortAscending ? Icons.arrow_downward : Icons.arrow_upward,
+                color: Colors.grey[700],
+              ),
+              tooltip: 'Sort direction',
+            ),
           ),
         ],
       ),
@@ -590,10 +616,18 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
 
   Widget _buildUsersTable() {
     if (_filteredUsers.isEmpty) {
-      return const Center(
-        child: Text(
-          'No users found',
-          style: TextStyle(fontSize: 18, color: Colors.grey),
+      return Center(
+        child: Container(
+          padding: const EdgeInsets.all(40),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey[200]!),
+          ),
+          child: const Text(
+            'No users found',
+            style: TextStyle(fontSize: 18, color: Colors.grey),
+          ),
         ),
       );
     }
@@ -605,152 +639,212 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
     );
     final pageUsers = _filteredUsers.sublist(startIndex, endIndex);
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
-        dataRowMinHeight: 56,
-        dataRowMaxHeight: 64,
-        headingRowHeight: 48,
-        columnSpacing: 28,
-        headingRowColor: MaterialStateProperty.all(Colors.white),
-        dataRowColor: MaterialStateProperty.all(Colors.white),
-        headingTextStyle: const TextStyle(
-          fontWeight: FontWeight.w700,
-          color: Colors.black87,
+    return Center(
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey[200]!),
         ),
-        dividerThickness: 0.5,
-        showBottomBorder: true,
-        columns: [
-          DataColumn(
-            label: const Text('User'),
-            onSort: (columnIndex, ascending) => _sortUsers('displayName'),
-          ),
-          DataColumn(
-            label: const Text('Email'),
-            onSort: (columnIndex, ascending) => _sortUsers('email'),
-          ),
-          DataColumn(
-            label: const Text('Games'),
-            onSort: (columnIndex, ascending) => _sortUsers('totalGames'),
-          ),
-          DataColumn(
-            label: const Text('Last Active'),
-            onSort: (columnIndex, ascending) => _sortUsers('lastActive'),
-          ),
-          const DataColumn(label: Text('Status')),
-          const DataColumn(label: Text('Actions')),
-        ],
-        rows: pageUsers.map((user) {
-          final lastActive = user['lastActive'] as Timestamp?;
-          final isMigrated = user['migrationCompleted'] == true;
-
-          return DataRow(
-            color: MaterialStateProperty.resolveWith((states) {
-              if (states.contains(MaterialState.hovered)) {
-                return Colors.blue[50];
-              }
-              return Colors.white;
-            }),
-            cells: [
-              DataCell(
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircleAvatar(
-                      radius: 16,
-                      backgroundImage: user['photoURL'] != null
-                          ? NetworkImage(user['photoURL'])
-                          : null,
-                      child: user['photoURL'] == null
-                          ? Text(user['displayName'][0].toUpperCase())
-                          : null,
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        user['displayName'],
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ],
-                ),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            dataRowMinHeight: 56,
+            dataRowMaxHeight: 64,
+            headingRowHeight: 48,
+            columnSpacing: 28,
+            headingRowColor: MaterialStateProperty.all(Colors.grey[100]),
+            dataRowColor: MaterialStateProperty.all(Colors.grey[50]),
+            headingTextStyle: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: Colors.grey[800],
+              fontSize: 14,
+            ),
+            dividerThickness: 0,
+            showBottomBorder: false,
+            columns: [
+              DataColumn(
+                label: const Text('User'),
+                onSort: (columnIndex, ascending) => _sortUsers('displayName'),
               ),
-              DataCell(
-                Text(
-                  user['email'],
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.black87),
-                ),
+              DataColumn(
+                label: const Text('Email'),
+                onSort: (columnIndex, ascending) => _sortUsers('email'),
               ),
-              DataCell(
-                Text(
-                  user['totalGames'].toString(),
-                  style: const TextStyle(fontFeatures: []),
-                ),
+              DataColumn(
+                label: const Text('Games'),
+                onSort: (columnIndex, ascending) => _sortUsers('totalGames'),
               ),
-              DataCell(
-                Text(
-                  lastActive != null ? _formatTimestamp(lastActive) : 'Never',
-                  style: TextStyle(color: Colors.grey[700]),
-                ),
+              DataColumn(
+                label: const Text('Last Active'),
+                onSort: (columnIndex, ascending) => _sortUsers('lastActive'),
               ),
-              DataCell(
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isMigrated ? Colors.green[50] : Colors.orange[50],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isMigrated
-                          ? Colors.green[200]!
-                          : Colors.orange[200]!,
-                    ),
-                  ),
-                  child: Text(
-                    isMigrated ? 'Migrated' : 'Legacy',
-                    style: TextStyle(
-                      color: isMigrated
-                          ? Colors.green[700]
-                          : Colors.orange[700],
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-              DataCell(
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      onPressed: () => _viewUserDetails(user['uid']),
-                      icon: const Icon(Icons.visibility, size: 20),
-                      tooltip: 'View Details',
-                    ),
-                    IconButton(
-                      onPressed: () => _updateUser(user['uid']),
-                      icon: const Icon(Icons.edit, size: 20),
-                      tooltip: 'Edit User',
-                    ),
-                    IconButton(
-                      onPressed: () => _deleteUser(user['uid']),
-                      icon: const Icon(
-                        Icons.delete,
-                        size: 20,
-                        color: Colors.red,
-                      ),
-                      tooltip: 'Delete User',
-                    ),
-                  ],
-                ),
-              ),
+              const DataColumn(label: Text('Status')),
+              const DataColumn(label: Text('Actions')),
             ],
-          );
-        }).toList(),
+            rows: pageUsers.map((user) {
+              final lastActive = user['lastActive'] as Timestamp?;
+              final isMigrated = user['migrationCompleted'] == true;
+
+              return DataRow(
+                color: MaterialStateProperty.resolveWith((states) {
+                  if (states.contains(MaterialState.hovered)) {
+                    return Colors.blue[100];
+                  }
+                  return Colors.grey[50];
+                }),
+                cells: [
+                  DataCell(
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircleAvatar(
+                          radius: 16,
+                          backgroundImage: user['photoURL'] != null
+                              ? NetworkImage(user['photoURL'])
+                              : null,
+                          child: user['photoURL'] == null
+                              ? Text(user['displayName'][0].toUpperCase())
+                              : null,
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            user['displayName'],
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  DataCell(
+                    Text(
+                      user['email'],
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.black87),
+                    ),
+                  ),
+                  DataCell(
+                    Text(
+                      user['totalGames'].toString(),
+                      style: const TextStyle(fontFeatures: []),
+                    ),
+                  ),
+                  DataCell(
+                    Text(
+                      lastActive != null
+                          ? _formatTimestamp(lastActive)
+                          : 'Never',
+                      style: TextStyle(color: Colors.grey[700]),
+                    ),
+                  ),
+                  DataCell(
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isMigrated
+                            ? Colors.green[50]
+                            : Colors.orange[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isMigrated
+                              ? Colors.green[200]!
+                              : Colors.orange[200]!,
+                        ),
+                      ),
+                      child: Text(
+                        isMigrated ? 'Migrated' : 'Legacy',
+                        style: TextStyle(
+                          color: isMigrated
+                              ? Colors.green[700]
+                              : Colors.orange[700],
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  DataCell(
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.blue[50],
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.blue[200]!),
+                          ),
+                          child: IconButton(
+                            onPressed: () => _viewUserDetails(user['uid']),
+                            icon: Icon(
+                              Icons.visibility,
+                              size: 18,
+                              color: Colors.blue[700],
+                            ),
+                            tooltip: 'View Details',
+                            padding: const EdgeInsets.all(6),
+                            constraints: const BoxConstraints(
+                              minWidth: 32,
+                              minHeight: 32,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.orange[50],
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.orange[200]!),
+                          ),
+                          child: IconButton(
+                            onPressed: () => _updateUser(user['uid']),
+                            icon: Icon(
+                              Icons.edit,
+                              size: 18,
+                              color: Colors.orange[700],
+                            ),
+                            tooltip: 'Edit User',
+                            padding: const EdgeInsets.all(6),
+                            constraints: const BoxConstraints(
+                              minWidth: 32,
+                              minHeight: 32,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.red[50],
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.red[200]!),
+                          ),
+                          child: IconButton(
+                            onPressed: () => _deleteUser(user['uid']),
+                            icon: Icon(
+                              Icons.delete,
+                              size: 18,
+                              color: Colors.red[700],
+                            ),
+                            tooltip: 'Delete User',
+                            padding: const EdgeInsets.all(6),
+                            constraints: const BoxConstraints(
+                              minWidth: 32,
+                              minHeight: 32,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
+        ),
       ),
     );
   }
@@ -760,36 +854,96 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
     if (totalPages <= 1) return const SizedBox.shrink();
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        border: Border(top: BorderSide(color: Colors.grey[300]!)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          IconButton(
-            onPressed: _currentPage > 0
-                ? () {
-                    setState(() {
-                      _currentPage--;
-                    });
-                  }
-                : null,
-            icon: const Icon(Icons.chevron_left),
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey[200]!),
           ),
-          Text('Page ${_currentPage + 1} of $totalPages'),
-          IconButton(
-            onPressed: _currentPage < totalPages - 1
-                ? () {
-                    setState(() {
-                      _currentPage++;
-                    });
-                  }
-                : null,
-            icon: const Icon(Icons.chevron_right),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: _currentPage > 0 ? Colors.blue[50] : Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: _currentPage > 0
+                        ? Colors.blue[200]!
+                        : Colors.grey[300]!,
+                  ),
+                ),
+                child: IconButton(
+                  onPressed: _currentPage > 0
+                      ? () {
+                          setState(() {
+                            _currentPage--;
+                          });
+                        }
+                      : null,
+                  icon: Icon(
+                    Icons.chevron_left,
+                    color: _currentPage > 0
+                        ? Colors.blue[700]
+                        : Colors.grey[400],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Text(
+                  'Page ${_currentPage + 1} of $totalPages',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Container(
+                decoration: BoxDecoration(
+                  color: _currentPage < totalPages - 1
+                      ? Colors.blue[50]
+                      : Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: _currentPage < totalPages - 1
+                        ? Colors.blue[200]!
+                        : Colors.grey[300]!,
+                  ),
+                ),
+                child: IconButton(
+                  onPressed: _currentPage < totalPages - 1
+                      ? () {
+                          setState(() {
+                            _currentPage++;
+                          });
+                        }
+                      : null,
+                  icon: Icon(
+                    Icons.chevron_right,
+                    color: _currentPage < totalPages - 1
+                        ? Colors.blue[700]
+                        : Colors.grey[400],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -834,74 +988,102 @@ class UserDetailsModal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
+      backgroundColor: Colors.transparent,
       child: Container(
         width: MediaQuery.of(context).size.width * 0.8,
         height: MediaQuery.of(context).size.height * 0.8,
-        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundImage: user['photoURL'] != null
-                      ? NetworkImage(user['photoURL'])
-                      : null,
-                  child: user['photoURL'] == null
-                      ? Text(
-                          user['displayName'][0].toUpperCase(),
-                          style: const TextStyle(fontSize: 24),
-                        )
-                      : null,
+            // Header with close button
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user['displayName'],
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        user['email'],
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                      Text(
-                        'UID: ${user['uid']}',
-                        style: TextStyle(
-                          color: Colors.grey[500],
-                          fontFamily: 'monospace',
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(onPressed: onClose, icon: const Icon(Icons.close)),
-              ],
-            ),
-            const Divider(height: 32),
-
-            if (isLoading)
-              const Expanded(child: Center(child: AppLoading()))
-            else if (userDetails != null)
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildUserStats(userDetails!),
-                      const SizedBox(height: 24),
-                      _buildGameHistory(userDetails!),
-                      const SizedBox(height: 24),
-                      _buildPersonalityResults(userDetails!),
-                    ],
-                  ),
-                ),
+                border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
               ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundImage: user['photoURL'] != null
+                        ? NetworkImage(user['photoURL'])
+                        : null,
+                    child: user['photoURL'] == null
+                        ? Text(
+                            user['displayName'][0].toUpperCase(),
+                            style: const TextStyle(fontSize: 24),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user['displayName'],
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          user['email'],
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                        Text(
+                          'UID: ${user['uid']}',
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: onClose,
+                    icon: const Icon(Icons.close),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.grey[100],
+                      foregroundColor: Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Content area
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                child: isLoading
+                    ? const Center(child: AppLoading())
+                    : userDetails != null
+                    ? SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildUserStats(userDetails!),
+                            const SizedBox(height: 24),
+                            _buildGameHistory(userDetails!),
+                            const SizedBox(height: 24),
+                            _buildPersonalityResults(userDetails!),
+                          ],
+                        ),
+                      )
+                    : const Center(child: Text('No user details available')),
+              ),
+            ),
           ],
         ),
       ),
@@ -910,10 +1092,14 @@ class UserDetailsModal extends StatelessWidget {
 
   Widget _buildUserStats(Map<String, dynamic> details) {
     final profile = details['profile'] as Map<String, dynamic>?;
-    final Map<String, dynamic>? legacyScores =
-        details['legacyScores'] as Map<String, dynamic>?;
 
     return Card(
+      color: Colors.white,
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey[200]!),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -997,6 +1183,12 @@ class UserDetailsModal extends StatelessWidget {
     final gameScores = details['gameScores'] as List<dynamic>;
 
     return Card(
+      color: Colors.white,
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey[200]!),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -1037,6 +1229,12 @@ class UserDetailsModal extends StatelessWidget {
     final personalityResults = details['personalityResults'] as List<dynamic>;
 
     return Card(
+      color: Colors.white,
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey[200]!),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

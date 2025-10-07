@@ -66,7 +66,7 @@ class WebConstants {
     },
     {
       'icon': 'dashboard',
-      'title': 'Global Dashboard',
+      'title': 'Global Statistics',
       'subtitle': 'View global statistics',
       'index': 9,
       'isComingSoon': false,

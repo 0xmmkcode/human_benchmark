@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/web_theme.dart';
 
@@ -29,7 +30,7 @@ class PageHeader extends StatelessWidget {
         children: [
           if (showBackButton) ...[
             IconButton(
-              onPressed: onBackPressed ?? () => Navigator.of(context).pop(),
+              onPressed: onBackPressed ?? () => context.pop(),
               icon: const Icon(Icons.arrow_back, size: 24),
               style: IconButton.styleFrom(
                 backgroundColor: WebTheme.grey50,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:human_benchmark/web/components/web_banner_ad.dart';
+import 'package:human_benchmark/web/components/web_ad_banner.dart';
 import 'package:human_benchmark/web/widgets/page_header.dart';
 import 'package:human_benchmark/services/score_service.dart';
 import 'package:human_benchmark/services/local_storage_service.dart';
@@ -25,7 +26,6 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
   DateTime? _startTime;
   late AnimationController _colorController;
   late AnimationController _scaleController;
-  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
@@ -37,9 +37,6 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
     _scaleController = AnimationController(
       duration: Duration(milliseconds: 200),
       vsync: this,
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut),
     );
     _loadBestTime();
   }
@@ -305,38 +302,23 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
                 if (_isGreen)
                   GestureDetector(
                     onTapDown: (_) => _onTap(),
-                    child: AnimatedBuilder(
-                      animation: _scaleAnimation,
-                      builder: (context, child) {
-                        return Transform.scale(
-                          scale: _scaleAnimation.value,
-                          child: Container(
-                            width: 400,
-                            height: 300,
-                            decoration: BoxDecoration(
-                              color: Colors.green,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.green.withValues(alpha: 0.3),
-                                  blurRadius: 20,
-                                  spreadRadius: 5,
-                                ),
-                              ],
-                            ),
-                            child: Center(
-                              child: Text(
-                                'CLICK NOW!',
-                                style: TextStyle(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
+                    child: Container(
+                      width: double.infinity,
+                      height: 300,
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'CLICK NOW!',
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
-                        );
-                      },
+                        ),
+                      ),
                     ),
                   ),
 
@@ -483,6 +465,9 @@ class _WebReactionTimePageState extends State<WebReactionTimePage>
             ),
           ),
 
+          Gap(30),
+          // AdSense Banner between game and stats
+          WebAdBanner(height: 100, position: 'game_stats'),
           Gap(30),
           // Stats Bar
           Container(

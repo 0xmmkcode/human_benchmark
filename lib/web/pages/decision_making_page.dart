@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:human_benchmark/web/widgets/page_header.dart';
 import 'package:human_benchmark/web/widgets/auth_required_wrapper.dart';
+import 'package:human_benchmark/web/components/web_ad_banner.dart';
 
 class WebDecisionMakingPage extends StatefulWidget {
   const WebDecisionMakingPage({super.key});
@@ -28,6 +29,9 @@ class _WebDecisionMakingPageState extends State<WebDecisionMakingPage> {
               subtitle:
                   'A quick task to measure speed and accuracy under simple choices.',
             ),
+            const Gap(24),
+            // AdSense Banner
+            WebAdBanner(height: 100, position: 'decision_game'),
             const Gap(24),
             Container(
               padding: const EdgeInsets.all(24),

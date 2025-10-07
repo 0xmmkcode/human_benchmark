@@ -6,6 +6,7 @@ import 'package:human_benchmark/web/widgets/page_header.dart';
 import 'package:human_benchmark/web/widgets/auth_required_wrapper.dart';
 import 'package:human_benchmark/services/auth_service.dart';
 import 'package:human_benchmark/services/score_service.dart';
+import 'package:human_benchmark/web/components/web_ad_banner.dart';
 import 'dart:math';
 
 class WebNumberMemoryPage extends StatefulWidget {
@@ -222,7 +223,7 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
       child: Scaffold(
         backgroundColor: Colors.white,
         body: SafeArea(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,8 +265,12 @@ class _WebNumberMemoryPageState extends State<WebNumberMemoryPage>
                 ),
                 const Gap(25),
 
-                // Game Area fills remaining space and is centered
-                Expanded(child: Center(child: _buildGameArea())),
+                // AdSense Banner between score cards and game
+                WebAdBanner(height: 100, position: 'score_game'),
+                const Gap(25),
+
+                // Game Area
+                Center(child: _buildGameArea()),
               ],
             ),
           ),

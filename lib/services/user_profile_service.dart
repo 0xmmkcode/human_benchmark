@@ -189,6 +189,20 @@ class UserProfileService {
         await FirebaseFirestore.instance
             .collection('game_scores')
             .add(gameScore.toMap());
+        // Also write a simplified activity document to recent_activity
+        try {
+          await FirebaseFirestore.instance.collection('recent_activity').add({
+            'userId': uid,
+            'userName': currentProfile.displayName ?? 'Guest',
+            'gameType': gameType.name,
+            'gameName': GameScore.getDisplayName(gameType),
+            'score': score,
+            'playedAt': FieldValue.serverTimestamp(),
+            'isHighScore': isHighScore,
+          });
+        } catch (_) {
+          // Non-fatal: dashboard will fall back to game_scores
+        }
       } catch (_) {
         // Non-fatal: recent activity list will fall back to existing data
       }
